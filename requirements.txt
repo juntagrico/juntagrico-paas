@@ -1,0 +1,5 @@
+cookiecutter=1.6.0    
+Django= 2.0.1    
+gunicorn=19.7.1   
+psycopg2=2.7.3.2  
+PyGithub=1.35
