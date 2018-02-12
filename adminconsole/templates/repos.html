@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+    
+
+<form action="" method="post" class="form-horizontal createsubscription">
+{% csrf_token %}
+{% for repo in repos %}
+<div class="form-group">
+                        <label class="col-md-3 control-label"></label>
+                        <div class="col-md-9 offset-md-3 controls radio"> 
+                            <label for="{{ repo.name }}" class="control-label col-md-2">
+                                <input type="radio" name="repo" class="onoffswitch" value="{{ repo.name }}" id="{{ repo.name }}"/>
+                            </label>
+                            <label for="{{ repo.name }}" class="control-label col-md-7">
+                                {{repo.name}}
+			    </label>
+                        </div>
+</div>
+{% endfor %}
+<div class="col-md-offset-4 form-actions">
+                <button type="submit" class="btn btn-success">weiter</button>
+            </div>
+</form>
+
+{% endblock %}
+
+

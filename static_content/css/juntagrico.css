@@ -1,0 +1,407 @@
+.juntagrico_logo {
+    background: url(/static/img/juntagrico.png) 0 0px;
+    display: inline-block;
+    width: 580px;
+    height: 161px;
+}
+
+.next-jobs {
+    margin-top: 5px;
+}
+
+.next-jobs .time {
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.jobs .date {
+    width: 150px;
+}
+
+.jobs .status {
+    padding-left: 30px;
+}
+
+.jobs .full {
+    opacity: 0.2;
+}
+
+#jobs .list {
+    width: 100%;
+}
+
+#jobs_header, #filter-locos_header {
+    margin-bottom: 20px;
+}
+
+#filter-members a {
+    color: white;
+    text-decoration: underline;
+}
+
+#jobs_footer, #filter-members_footer {
+    margin-top: 20px;
+}
+
+#jobs_page_prev, #jobs_page_next, #filter-locos_page_prev, #filter-locos_page_next {
+    display: none !important;
+}
+
+.jobstatus {
+    margin-right: -7px;
+}
+
+.juntagrico {
+    margin-top: 0;
+}
+
+.myjuntagrico {
+    margin-top: 60px;
+    margin-bottom: 50px;
+}
+
+.footer {
+    margin-top: 60px;
+    margin-bottom: 50px;
+}
+
+.juntagrico h3 {
+    margin-top: 0;
+	margin-bottom: 40px;
+	color: #66cc66;
+    font-size: 30pt;
+}
+
+.createsubscription .control-label {
+    font-size: 18px;
+    font-weight: regular;
+}
+
+.createsubscription label {
+    font-weight: normal;
+}
+
+.createsubscription #depot {
+    margin-bottom: 3px;
+}
+
+#map-canvas {
+    width: 100%;
+    height: 400px;
+}
+
+
+.high-label {
+    line-height: 35px;
+}
+
+.high-label input[type=checkbox] {
+    margin-top: 9px;
+}
+
+.file-upload {
+    line-height: 30px;
+}
+
+.file-upload-button {
+    display: inline-block;
+    position: relative;
+}
+
+.file-upload-button > input[type=file] {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    opacity: 0;
+}
+
+textarea#recipients {
+    width: 100%;
+}
+
+textarea#recipients[disabled=disabled] {
+    background: transparent;
+    border: none;
+    cursor: default;
+}
+
+#edit-recipients-action {
+    font-size: smaller;
+}
+
+#edit-recipients-action::before {
+    content: "(";
+}
+
+#edit-recipients-action::after {
+    content: ")";
+}
+
+.nav li.inline a {
+    display: inline-block;
+    padding-left: 0;
+    padding-right: 0;
+    margin-left: 0;
+}
+
+.nav li.inline a:hover {
+    background: none;
+}
+
+table.future {
+    width: 100%;
+    margin-top: 50px;
+}
+
+table.future th {
+    text-align: left;
+}
+
+table.future td {
+    line-height: 30px;
+}
+
+#filter {
+    width: 100%;
+}
+
+#filter table {
+    width: 100%;
+    font-size: 10px;
+}
+#waitinglist {
+    width: 100%;
+}
+
+#waitinglist table {
+    width: 100%;
+    font-size: 14px;
+}
+
+.main-menu {
+    font-size: 18px;
+}
+
+.main-menu li a {
+    line-height: 15px;
+}
+
+.main-menu .separator {
+    height: 10px;
+}
+
+.main-menu-small {
+    font-size: 14px;
+    color: #ffcc66
+}
+
+.admin-menu {
+    font-family: "Source Sans Pro Light";
+    font-size: 14px;
+}
+
+.subadmin-menu {
+    padding-left: 7px;
+}
+
+.admin-menu li a {
+    line-height: 10px;
+}
+
+.table th {
+    position: relative;
+}
+
+.table th:before {
+    position: absolute;
+    right: 10px;
+}
+
+
+/* general overrides of bootstrap */
+@font-face {
+    font-family: 'Source Sans Pro Light';
+    src: url('/static/fonts/SourceSansPro-Light.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Source Sans Pro Regular';
+    src: url('/static/fonts/SourceSansPro-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+a {
+    color: #66cc66;
+}
+
+a.canceled {
+    color: #ff3399;
+    text-decoration: line-through;
+}
+
+a.canceled:hover, a.canceled:focus {
+    color: #ff3399;
+}
+
+ul {
+    padding-left: 20px;
+}
+
+a:hover, a:focus {
+    color: #999999;
+}
+
+html, body {
+    font-family: "Source Sans Pro Light";
+    font-size: 18px;
+    background-color: #fefffa;
+    height: 100%;
+}
+
+h1, h2, h3, h4, h5, h6, .main-menu {
+    font-family: "Source Sans Pro Regular";
+}
+
+select, input[type="text"], input[type="password"], input[type="datetime"], input[type="datetime-local"], input[type="date"], input[type="month"], input[type="time"], input[type="week"], input[type="number"], input[type="email"], input[type="url"], input[type="search"], input[type="tel"], input[type="color"] {
+    height: 30px;
+}
+
+/* general stuff */
+
+.main-menu {
+    font-size: 19px;
+}
+
+.main-menu li a {
+    padding: 0;
+    line-height: 34px;
+}
+
+.main-menu li a {
+    padding: 0;
+}
+
+.container {
+    min-height: 100%;
+    position: relative;
+    padding: 0px 40px 0 40px;
+}
+
+/* menu */
+.nav-pills > li > a {
+	color: black;
+}
+
+
+.nav-pills > li.active > a {
+    color: #66cc66;
+    background-color: transparent;
+}
+
+.nav-pills.nav-stacked > li > a, .nav-pills ul.nav-pills.nav-stacked > li:last-child > a {
+    background-color: transparent;
+}
+
+.nav-pills > li > a.yellow {
+    color: #ffcc66;;
+    background-color: transparent;
+}
+
+.nav-pills > li > a.yellow:hover, .nav-pills > li > a:focus {
+    color: #999999;
+    background-color: transparent;
+}
+
+.nav-pills > li.active > a:hover, .nav-pills > .active > a:focus {
+    color: black;
+    background-color: transparent;
+}
+
+.nav-pills > li > a {
+    border-radius: 0;
+    margin-top: 0;
+    line-height: 22px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    margin-left: -20px;
+    padding-left: 20px;
+}
+
+.nav-pills.nav-stacked > li {
+    width: 280px;
+}
+
+.nav-pills.nav-stacked > li > a, .nav-pills ul.nav-pills.nav-stacked > li:last-child > a {
+    margin-bottom: 0;
+}
+
+.nav-pills a:hover {
+    color: #66cc66;
+}
+
+.nav-pills ul {
+    margin-bottom: 0;
+    background-color: transparent;
+}
+
+.nav-pills ul.nav-pills > .active > a, .nav-pills ul.nav-pills > .active > a:hover, .nav-pills ul.nav-pills > .active > a:focus {
+    background-color: transparent;
+}
+
+/* contact */
+
+.impersonate {
+    position: relative;
+    top: 70px;
+}
+
+.jobs .core, .teams .core {
+    color: #780fff;
+}
+
+/* dl stuff*/
+.dl-horizontal dt, dd{
+    font-weight: normal;
+    margin-bottom: 1em;
+    text-align: left;
+    width: auto;
+}
+
+/* form stuff */
+.form-horizontal .control-label {
+    text-align: left;
+    padding-top: 0 px;
+    font-weight: normal;
+}
+
+/* label stuff */
+label {
+    font-weight: normal;
+}
+
+/* table stuff */
+th {
+    font-weight: normal;
+}
+
+td.details-control, tr.shown td.details-control {
+    font-family: 'Glyphicons Halflings';
+    font-style: normal;
+    font-weight: 400;
+    line-height: 1;    
+	color: #66cc66;
+}
+
+
+td.details-control::before {
+    content: "\e080";
+}
+
+tr.shown td.details-control::before {
+    content: "\e114";
+}

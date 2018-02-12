@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+    
+{% for line in output %}
+{{ line }}<br/>
+{% endfor %}
+
+<a href="{{ next }}" class="btn">weiter</a>
+{% endblock %}
+
+
