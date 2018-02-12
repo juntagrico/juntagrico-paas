@@ -197,7 +197,6 @@ def env_dist(request):
 
 @login_required
 def docker(request):
-    key = request.user.githubkey.key
     user = request.user
     app = user.app
     name = app.name
@@ -220,4 +219,17 @@ def docker(request):
         'next': 'ca/bla'
     }
     return render(request, 'output.html',render_dict)
+    
+@login_required
+def docker2(request):
+    user = request.user
+    app = user.app
+    name = app.name
+    proc = subprocess.Popen(['python','-m','manage','build_docker',name],stdout = subprocess.PIPE)
+    
+    render_dict = {
+        'pid': proc.pid,
+        'next': 'ca/bla'
+    }
+    return render(request, 'output2.html',render_dict)
 
