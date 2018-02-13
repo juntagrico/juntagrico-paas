@@ -6,15 +6,15 @@ from django.core.management.base import BaseCommand
 class Command(BaseCommand):
     def add_arguments(self, parser):
 
-        parser.add_argument('app_name', nargs='1')
+        parser.add_argument('app_name', nargs=1)
 
     # entry point used by manage.py
     def handle(self, *args, **options):
-        name = options['app_name']
+        name = options['app_name'][0]
         dir = '/var/django/projects/'+name
         proc = subprocess.run(['docker-compose','build'],stdout = subprocess.PIPE, cwd=dir)
         print(str(proc.stdout))
-        proc = subprocess.run(['docker-compose','run','-d'],stdout = subprocess.PIPE, cwd=dir)
+        proc = subprocess.run(['docker-compose','up','-d'],stdout = subprocess.PIPE, cwd=dir)
         print(str(proc.stdout))
         proc = subprocess.run(['docker-compose','exec', name ,'python', '-m', 'manage', 'migrate'],stdout = subprocess.PIPE, cwd=dir)
         print(str(proc.stdout))
