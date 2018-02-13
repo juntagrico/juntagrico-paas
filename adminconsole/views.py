@@ -1,6 +1,7 @@
 import subprocess
 import random
 import string
+import psutil
 from urllib import request as r, parse
 
 from cookiecutter.main import cookiecutter
@@ -225,11 +226,23 @@ def docker2(request):
     user = request.user
     app = user.app
     name = app.name
-    proc = subprocess.Popen(['python','-m','manage','build_docker',name],stdout = subprocess.PIPE)
+    fn = '/var/django/projects/'+name+'.txt'
+    with open(fn,'wb') as out
+        proc = subprocess.Popen(['python','-m','manage','build_docker',name], stdout=out, err=out)
     
     render_dict = {
         'pid': proc.pid,
-        'next': 'ca/bla'
+        'next': 'pid/'+proc.pid+'/'
     }
     return render(request, 'output2.html',render_dict)
+    
+@login_required
+def pidcheck(request, pid):
+    p = psutil.Process(int(pid))
+    render_dict = {
+        'pid': pid,
+        'status': p.status().
+        'next': 'pid/'+pid+'/'
+    }
+    return render(request, 'pid.html',render_dict)
 
