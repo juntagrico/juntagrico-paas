@@ -10,6 +10,7 @@ from github import Github
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.db import connection
+from django.http import JsonResponse
 
 from adminconsole.models import GitHubKey, App, AppEnv
 from adminconsole.forms import ProjectForm, EnvForm
@@ -77,10 +78,10 @@ def clone_repo(request):
     proc = subprocess.run(['git','clone',url,'code'],stdout = subprocess.PIPE, cwd=dir)
     output.append(str(proc.stdout))
     render_dict = {
-        'output': output,
+        'step': 'Repo Klonen',
         'next': '/ck/form',
     }
-    return render(request, 'output.html',render_dict)
+    return render(request, 'done_next.html',render_dict)
 
 @login_required
 def cookiecutter_form(request):
@@ -113,10 +114,10 @@ def git_push(request):
     proc = subprocess.run(['git','push'],stdout = subprocess.PIPE, cwd=dir)
     output.append(str(proc.stdout))
     render_dict = {
-        'output': output,
+        'step': 'Cokkiecutter anwenden und repo pushen',
         'next': '/ca/db'
     }
-    return render(request, 'output.html',render_dict)
+    return render(request, 'done_next.html',render_dict)
 
 
 @login_required
@@ -166,38 +167,6 @@ def env_form(request):
 
 
 @login_required
-def env_dist(request):
-    user = request.user
-    app = user.app
-    bdir = '/var/django/projects/'+app.name+'/build'
-    req = '/var/django/projects/'+app.name+'/code/requirements.txt'
-    uri = app.name+'.juntagrico.science'
-    rdir = '/root'
-    output = []
-    ''' 
-    proc = subprocess.run(['mv',app.name+'/*','.',], stdout = subprocess.PIPE, cwd=bdir)
-    output.append(str(proc.stdout))
-    proc = subprocess.run(['mv','docker-compose.yml','..',''], stdout = subprocess.PIPE, cwd=bdir)
-    output.append(str(proc.stdout))
-    proc = subprocess.run(['mv',app.name, '/etc/nginx/sites-available'], stdout = subprocess.PIPE, cwd=bdir)
-    output.append(str(proc.stdout))
-    proc = subprocess.run(['cp',req, '.'], stdout = subprocess.PIPE, cwd=bdir)
-    output.append(str(proc.stdout))
-    '''
-    proc = subprocess.run(['./certbot-auto', '--nginx', '--redirect', '-n', '-d', uri], stdout = subprocess.PIPE, cwd=rdir)
-    output.append(str(proc.stdout))
-    '''
-    proc = subprocess.run(['systemctl', 'restart', 'nginx'], stdout = subprocess.PIPE)
-    output.append(str(proc.stdout))
-    '''
-    render_dict = {
-        'output': output,
-        'next': 'ca/docker'
-    }
-    return render(request, 'output.html',render_dict)
-
-
-@login_required
 def env_dist2(request):
     user = request.user
     app = user.app
@@ -207,35 +176,12 @@ def env_dist2(request):
         proc = subprocess.Popen(['venv/bin/python','-m','manage','dist_infra',name], stdout=out, stderr=out)
     
     render_dict = {
+        'step': 'umgebung distributen und https einrichten'
         'pid': proc.pid,
-        'next': '/pid/'+str(proc.pid)+'/'
+        'next': '/ca/docker'
     }
-    return render(request, 'output2.html',render_dict)
-    
-@login_required
-def docker(request):
-    user = request.user
-    app = user.app
-    name = app.name
-    dir = '/var/django/projects/'+name
-    output = []
-    proc = subprocess.run(['docker-compose','build'],stdout = subprocess.PIPE, cwd=dir)
-    output.append(str(proc.stdout))
-    proc = subprocess.run(['docker-compose','run','-d'],stdout = subprocess.PIPE, cwd=dir)
-    output.append(str(proc.stdout))
-    proc = subprocess.run(['docker-compose','exec', name ,'python', '-m', 'manage', 'migrate'],stdout = subprocess.PIPE, cwd=dir)
-    output.append(str(proc.stdout))
-    proc = subprocess.run(['docker-compose','exec', name ,'python', '-m', 'manage', 'createsuperuser', '--username', 'admin', '--email', 'admin@admin.ch'],stdout = subprocess.PIPE, cwd=dir)
-    output.append(str(proc.stdout))
-    proc = subprocess.run(['docker-compose','exec', name ,'python', '-m', 'manage', 'create_member_for_superusers'],stdout = subprocess.PIPE, cwd=dir)
-    output.append(str(proc.stdout))
-    proc = subprocess.run(['docker-compose','exec', name ,'python', '-m', 'manage', 'collectstatic'],stdout = subprocess.PIPE, cwd=dir)
-    output.append(str(proc.stdout))
-    render_dict = {
-        'output': output,
-        'next': 'ca/bla'
-    }
-    return render(request, 'output.html',render_dict)
+    return render(request, 'wait_next.html',render_dict)
+
 
 @login_required
 def docker2(request):
@@ -247,18 +193,17 @@ def docker2(request):
         proc = subprocess.Popen(['venv/bin/python','-m','manage','build_docker',name], stdout=out, stderr=out)
     
     render_dict = {
+        'step': 'docker build und start'
         'pid': proc.pid,
-        'next': '/pid/'+str(proc.pid)+'/'
+        'next': 'http://'+name+'juntagrico.science'
     }
-    return render(request, 'output2.html',render_dict)
+    return render(request, 'wait_next.html',render_dict)
 
 @login_required
 def pidcheck(request, pid):
     p = psutil.Process(int(pid))
-    render_dict = {
-        'pid': pid,
-        'status': p.status(),
-        'next': '/pid/'+str(pid)+'/'
+    data={
+        'status': p.status()
     }
-    return render(request, 'pid.html',render_dict)
+    return JsonResponse(data)
 

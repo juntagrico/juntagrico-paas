@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+    
+Schritt {{ step }}<p/>
+Prozess id {{ pid }}
+
+<a href="{{ next }}" class="btn disabled" id="next">weiter</a>
+{% endblock %}
+
+{% block scripts %}
+<script type="text/javascript">
+        var pid = '{{ pid }}';
+</script>
+<script type="text/javascript" src="/static/external/require.min.js" data-main="/static/js/initwaitnext.js"></script>
+{% endblock %}
+
