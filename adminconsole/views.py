@@ -175,7 +175,7 @@ def env_dist2(request):
         proc = subprocess.Popen(['venv/bin/python','-m','manage','dist_infra',name], stdout=out, stderr=out)
     
     render_dict = {
-        'step': 'umgebung distributen und https einrichten'
+        'step': 'umgebung distributen und https einrichten',
         'pid': proc.pid,
         'next': '/ca/docker'
     }
@@ -192,7 +192,7 @@ def docker2(request):
         proc = subprocess.Popen(['venv/bin/python','-m','manage','build_docker',name], stdout=out, stderr=out)
     
     render_dict = {
-        'step': 'docker build und start'
+        'step': 'docker build und start',
         'pid': proc.pid,
         'next': 'http://'+name+'juntagrico.science'
     }
