@@ -3,7 +3,7 @@ define([], function () {
 
     function wait_for_pid(){
         $.getJSON( "/pid/"+pid+"/", function( data ) {
-            if(result.status!="zombie"){
+            if(data.status!="zombie"){
                 setTimeout(wait_for_pid,1000) ;
             }
             else{
