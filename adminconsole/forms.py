@@ -27,11 +27,11 @@ class EnvForm(ModelForm):
         model = AppEnv
         fields = ['juntagrico_admin_email', 'juntagrico_host_email', 'juntagrico_email_host', 'juntagrico_email_password', 'juntagrico_email_port', 'juntagrico_email_user', 'google_api_key']
         widgets = {
-            'juntagrico_admin_email': TextInput(attrs={'class': 'form-control'}), required=False,
-            'juntagrico_host_email': TextInput(attrs={'class': 'form-control'}), required=False,
-            'juntagrico_email_host': TextInput(attrs={'class': 'form-control'}), required=False;
-            'juntagrico_email_password': TextInput(attrs={'class': 'form-control'}), required=False,
-            'juntagrico_email_port': TextInput(attrs={'class': 'form-control'}), required=False,
-            'juntagrico_email_user': TextInput(attrs={'class': 'form-control'}), required=False,
-            'google_api_key': TextInput(attrs={'class': 'form-control'}), required=False
+            'juntagrico_admin_email': TextInput(attrs={'class': 'form-control'}),
+            'juntagrico_host_email': TextInput(attrs={'class': 'form-control'}),
+            'juntagrico_email_host': TextInput(attrs={'class': 'form-control'}),
+            'juntagrico_email_password': TextInput(attrs={'class': 'form-control'}),
+            'juntagrico_email_port': TextInput(attrs={'class': 'form-control'}),
+            'juntagrico_email_user': TextInput(attrs={'class': 'form-control'}),
+            'google_api_key': TextInput(attrs={'class': 'form-control'})
        }
