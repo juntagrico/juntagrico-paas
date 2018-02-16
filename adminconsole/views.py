@@ -135,7 +135,7 @@ def init_db(request):
     app_env.juntagrico_database_host = 'localhost'
     app_env.juntagrico_database_name = name
     app_env.juntagrico_database_password = password
-    app_env.juntagrico_database_port = '5430'
+    app_env.juntagrico_database_port = '5432'
     app_env.juntagrico_database_user = name
     app_env.save()
     return redirect('/ca/env/form') 
@@ -155,6 +155,7 @@ def env_form(request):
             data.update(app_env.__dict__)
             data.update({
                 'project_name': app.name,
+                'juntagrico_email_port': '25',
                 'port': '8005',
             })
             cookiecutter(url, no_input=True, extra_context=data, output_dir=dir, overwrite_if_exists=True)
@@ -162,7 +163,6 @@ def env_form(request):
     else:
         form = EnvForm()
     return render(request, 'env.html', {'form': form})
-
 
 
 @login_required
@@ -196,6 +196,22 @@ def env_dist(request):
     }
     return render(request, 'output.html',render_dict)
 
+
+@login_required
+def env_dist2(request):
+    user = request.user
+    app = user.app
+    name = app.name
+    fn = '/var/django/projects/'+name+'.txt'
+    with open(fn,'wb') as out:
+        proc = subprocess.Popen(['venv/bin/python','-m','manage','dist_infra',name], stdout=out, stderr=out)
+    
+    render_dict = {
+        'pid': proc.pid,
+        'next': '/pid/'+str(proc.pid)+'/'
+    }
+    return render(request, 'output2.html',render_dict)
+    
 @login_required
 def docker(request):
     user = request.user
@@ -220,7 +236,7 @@ def docker(request):
         'next': 'ca/bla'
     }
     return render(request, 'output.html',render_dict)
-    
+
 @login_required
 def docker2(request):
     user = request.user
@@ -235,7 +251,7 @@ def docker2(request):
         'next': '/pid/'+str(proc.pid)+'/'
     }
     return render(request, 'output2.html',render_dict)
-    
+
 @login_required
 def pidcheck(request, pid):
     p = psutil.Process(int(pid))

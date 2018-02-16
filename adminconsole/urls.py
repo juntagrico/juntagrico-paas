@@ -32,7 +32,7 @@ urlpatterns = [
     path('git/push', views.git_push),
     path('ca/db', views.init_db),
     path('ca/env/form', views.env_form),
-    path('ca/env/dist', views.env_dist),
+    path('ca/env/dist', views.env_dist2),
     path('ca/docker', views.docker2),
     path('pid/<int:pid>/', views.pidcheck),
 ]
