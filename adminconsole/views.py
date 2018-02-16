@@ -21,7 +21,8 @@ def home(request):
     Overview on juntagrico admin console
     '''
     return render(request, 'home.html', {})
-
+    
+    
 def github_request(request):
     return redirect('https://github.com/login/oauth/authorize?client_id=b420b562ea569fd26b6e&scope=public_repo')
 
