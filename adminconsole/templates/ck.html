@@ -7,16 +7,16 @@
     
     {% for field in form %}
     <div class="form-group">
-                <label class="control-label col-md-4" for="{{ field.id_for_label }}">{{ field.label }} {% if field.field.field.required %}*{% endif %}</label>
+        <label class="control-label col-md-4" for="{{ field.id_for_label }}">{{ field.label }} {% if field.field.required %}*{% endif %}</label>
 
-                <div class="controls col-md-8">
-                    {{ field }}
-                </div>
-            {% if field.errors %}
-                <div class="alert alert-danger col-md-12">{{field.errors}}</div>
-            {% endif %}
-     </div>
-    
+        <div class="controls col-md-8">
+            {{ field }}
+        </div>
+    </div>
+    {% if field.errors %}
+        <div class="alert alert-danger col-md-12">{{field.errors}}</div>
+    {% endif %}
+
     {% endfor %}        
     
             <div class="form-actions col-md-offset-4 col-md-8">
