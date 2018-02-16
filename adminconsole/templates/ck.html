@@ -6,16 +6,18 @@
     {% csrf_token %}
     
     {% for field in form %}
-    <div class="form-group {% if field.errors %}error{% endif %}">
+    <div class="form-group">
+            <div class="col-md-12">
                 <label class="control-label col-md-4">{{ field.label }}</label>
 
                 <div class="controls col-md-8">
                     {{ field }}
                 </div>
-            {% if field.errors %}
-                <div class="alert alert-danger">{{field.errors}}</div>
-            {% endif %}
             </div>
+            {% if field.errors %}
+                <div class="alert alert-danger col-md-12">{{field.errors}}</div>
+            {% endif %}
+     </div>
     
     {% endfor %}        
     
