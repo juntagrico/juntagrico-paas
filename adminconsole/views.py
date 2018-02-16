@@ -156,7 +156,6 @@ def env_form(request):
             data.update(app_env.__dict__)
             data.update({
                 'project_name': app.name,
-                'juntagrico_email_port': '25',
                 'port': '8005',
             })
             cookiecutter(url, no_input=True, extra_context=data, output_dir=dir, overwrite_if_exists=True)
