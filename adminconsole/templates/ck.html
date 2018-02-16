@@ -5,16 +5,16 @@
 <form action="" method="post">
     {% csrf_token %}
     
-    {% for field in form %}
-    <div class="form-group {% if form.field.errors %}error{% endif %}">
-                <label class="control-label col-md-4">{{ form.field.label }}</label>
+    {% for field in form.fields %}
+    <div class="form-group {% if field.errors %}error{% endif %}">
+                <label class="control-label col-md-4">{{ field.label }}</label>
 
                 <div class="controls col-md-8">
-                    {{ form.field }}
+                    {{ field }}
                 </div>
             </div>
-            {% if form.field.errors %}
-                <div class="alert alert-danger">form.field.errors</div>
+            {% if field.errors %}
+                <div class="alert alert-danger">field.errors</div>
             {% endif %}
     
     {% endfor %}        
