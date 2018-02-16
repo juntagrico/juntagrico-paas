@@ -97,7 +97,7 @@ def cookiecutter_form(request):
             cookiecutter(url, no_input=True, extra_context=data, output_dir=dir, overwrite_if_exists=True)
             return redirect('/git/push')
     else:
-        form = ProjectForm({'project_slug':app.name})
+        form = ProjectForm(initial={'project_slug':app.name})
 
     return render(request, 'ck.html', {'form': form})
 
