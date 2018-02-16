@@ -21,8 +21,7 @@ def home(request):
     Overview on juntagrico admin console
     '''
     return render(request, 'home.html', {})
-    
-    
+
 def github_request(request):
     return redirect('https://github.com/login/oauth/authorize?client_id=b420b562ea569fd26b6e&scope=public_repo')
 
@@ -188,10 +187,12 @@ def docker2(request):
     user = request.user
     app = user.app
     name = app.name
+    env = app.env
+    passw = env.juntagrico_database_password
     fn = '/var/django/projects/'+name+'.txt'
     with open(fn,'wb') as out:
-        proc = subprocess.Popen(['venv/bin/python','-m','manage','build_docker',name], stdout=out, stderr=out)
-    
+        proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'build_docker', name, passw], stdout=out, stderr=out)
+
     render_dict = {
         'step': 'docker build und start',
         'pid': proc.pid,
