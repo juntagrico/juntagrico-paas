@@ -78,7 +78,7 @@ def clone_repo(request):
     output.append(str(proc.stdout))
     render_dict = {
         'output': output,
-        'next': 'ck/form',
+        'next': '/ck/form',
     }
     return render(request, 'output.html',render_dict)
 
@@ -114,7 +114,7 @@ def git_push(request):
     output.append(str(proc.stdout))
     render_dict = {
         'output': output,
-        'next': 'ca/db'
+        'next': '/ca/db'
     }
     return render(request, 'output.html',render_dict)
 
@@ -144,7 +144,7 @@ def init_db(request):
 def env_form(request):
     user = request.user
     app = user.app
-    dir = '/var/django/projects/'+app.name+'/build'
+    dir = '/var/django/projects/'+app.name
     url='https://github.com/juntagrico/juntagrico-science-cookiecutter-infra'
     app_env=app.env
     if request.method == 'POST':
