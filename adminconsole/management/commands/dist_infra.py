@@ -17,11 +17,11 @@ class Command(BaseCommand):
         uri = name+'.juntagrico.science'
         rdir = '/root'
         
-        proc = subprocess.run(['mv','docker-compose.yml',dir,''], stdout = subprocess.PIPE, cwd=bdir)
+        proc = subprocess.run(['mv',bdir+'/docker-compose.yml',dir], stdout = subprocess.PIPE, cwd=bdir)
         print(str(proc.stdout))
         proc = subprocess.run(['mv',name, '/etc/nginx/sites-available'], stdout = subprocess.PIPE, cwd=bdir)
         print(str(proc.stdout))
-        proc = subprocess.run(['ln', '-s', '/etc/nginx/sites-available'+name, '/etc/nginx/sites-enabled'], stdout = subprocess.PIPE, cwd=bdir)
+        proc = subprocess.run(['ln', '-s', '/etc/nginx/sites-available/'+name, '/etc/nginx/sites-enabled'], stdout = subprocess.PIPE, cwd=bdir)
         print(str(proc.stdout))
         proc = subprocess.run(['cp',req, bdir], stdout = subprocess.PIPE, cwd=bdir)
         print(str(proc.stdout))
