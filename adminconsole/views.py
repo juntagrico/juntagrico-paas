@@ -194,7 +194,7 @@ def docker2(request):
     render_dict = {
         'step': 'docker build und start',
         'pid': proc.pid,
-        'next': 'http://'+name+'juntagrico.science'
+        'next': 'http://'+name+'.juntagrico.science'
     }
     return render(request, 'wait_next.html',render_dict)
 
