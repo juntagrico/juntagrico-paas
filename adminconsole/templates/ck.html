@@ -8,7 +8,7 @@
     {% for field in form %}
     <div class="form-group">
             <div class="col-md-12">
-                <label class="control-label col-md-4">{{ field.label }} {% if field.required %}*{% endif %}</label>
+                <label class="control-label col-md-4">{{ field.label }} {% if field.field.field.required %}*{% endif %}</label>
 
                 <div class="controls col-md-8">
                     {{ field }}
