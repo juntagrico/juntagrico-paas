@@ -10,7 +10,7 @@ define([], function () {
             else{
                 $( "#next" ).removeClass( "disabled" );
             }
-        }
+        });
     }
     
     wait_for_pid();
