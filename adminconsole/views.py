@@ -242,7 +242,7 @@ def reload(request, app_id):
     with open(fn,'wb') as out:
         proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'rebuild_docker', name], stdout=out, stderr=out)
     render_dict = {
-        'step': 'docker build und start',
+        'step': 'env reload',
         'pid': proc.pid,
         'next': '/'
     }
@@ -280,7 +280,7 @@ def env_restart(request, app_id):
     with open(fn,'wb') as out:
         proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'reload_env', name], stdout=out, stderr=out)
     render_dict = {
-        'step': 'docker build und start',
+        'step': 'docker rebuild und start',
         'pid': proc.pid,
         'next': '/'
     }

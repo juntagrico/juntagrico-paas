@@ -30,8 +30,9 @@ class Command(BaseCommand):
         result = container.exec_run(cmd)
         print(result[1])
 
-        container.commit(repository=name,
+        result = container.commit(repository=name,
                            tag='latest')
+        print(result)
 
         container.restart()
         result = client.images.build(path=dir+'/build/',
