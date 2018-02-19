@@ -242,7 +242,7 @@ def reload(request, app_id):
     with open(fn,'wb') as out:
         proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'rebuild_docker', name], stdout=out, stderr=out)
     render_dict = {
-        'step': 'env reload',
+        'step': 'rebuild docker and start',
         'pid': proc.pid,
         'next': '/'
     }
@@ -258,7 +258,7 @@ def env(request, app_id):
             form.save()
             data =  form.cleaned_data
             data.update(app_env.__dict__)
-            return redirect('/env/restart/'+app_id+'/')
+            return redirect('/env/restart/'+str(app_id)+'/')
     else:
         form = EnvForm(instance=app_env)
     return render(request, 'env.html', {'form': form})
@@ -280,7 +280,7 @@ def env_restart(request, app_id):
     with open(fn,'wb') as out:
         proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'reload_env', name], stdout=out, stderr=out)
     render_dict = {
-        'step': 'docker rebuild und start',
+        'step': 'env reload',
         'pid': proc.pid,
         'next': '/'
     }
