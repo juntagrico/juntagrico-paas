@@ -275,7 +275,7 @@ def env_restart(request, app_id):
             if hasattr(field,'verbose_name'):
                 out.write(field.verbose_name)
                 out.write('=')
-                out.write(getattr(app_env,field.name))
+                out.write(str(getattr(app_env,field.name)))
                 out.write('\n')
     fn = '/var/django/projects/'+name+'.txt'
     with open(fn,'wb') as out:
