@@ -270,13 +270,13 @@ def env_restart(request, app_id):
     app_env = app.env
     fn = '/var/django/projects/'+name+'/build/'+name+'.env'
     with open(fn,'w') as out:
-        fn.write('JUNTAGRICO_DEBUG=False')
+        out.write('JUNTAGRICO_DEBUG=False')
         for field in app_env._meta.get_fields():
             if hasattr(field,'verbose_name'):
-                fn.write(field.verbose_name)
-                fn.write('=')
-                fn.write(getattr(app_env,field.name))
-                fn.write('\n')
+                out.write(field.verbose_name)
+                out.write('=')
+                out.write(getattr(app_env,field.name))
+                out.write('\n')
     fn = '/var/django/projects/'+name+'.txt'
     with open(fn,'wb') as out:
         proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'reload_env', name], stdout=out, stderr=out)
