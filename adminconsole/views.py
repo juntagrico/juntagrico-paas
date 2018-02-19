@@ -215,13 +215,12 @@ def docker2(request):
     fn = '/var/django/projects/'+name+'.txt'
     with open(fn,'wb') as out:
         proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'build_docker2', name, passw, port], stdout=out, stderr=out)
-
     render_dict = {
         'step': 'docker build und start',
         'pid': proc.pid,
-        'next': 'http://'+name+'.juntagrico.science'
+        'next': '/'
     }
-    #request.session['app']=None
+    request.session['app']=None
     return render(request, 'wait_next.html',render_dict)
 
 @login_required
@@ -231,4 +230,56 @@ def pidcheck(request, pid):
         'status': p.status()
     }
     return JsonResponse(data)
+
+@login_required
+def reload(request, app_id):
+    app = get_object_or_404(App, pk=app_id)
+    name = app.name
+    fn = '/var/django/projects/'+name+'.txt'
+    with open(fn,'wb') as out:
+        proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'rebuild_docker', name], stdout=out, stderr=out)
+    render_dict = {
+        'step': 'docker build und start',
+        'pid': proc.pid,
+        'next': '/'
+    }
+    return render(request, 'wait_next.html',render_dict)
+
+@login_required
+def env(request, app_id):
+    app = get_object_or_404(App, pk=app_id)
+    app_env=app.env
+    if request.method == 'POST':
+        form = EnvForm(request.POST, instance=app_env)
+        if form.is_valid():
+            form.save()
+            data =  form.cleaned_data
+            data.update(app_env.__dict__)
+            return redirect('/env/restart/'+app_id+'/')
+    else:
+        form = EnvForm(instance=app_env)
+    return render(request, 'env.html', {'form': form})
+
+@login_required
+def env_restart(request, app_id):
+    app = get_object_or_404(App, pk=app_id)
+    app_env=app.env
+    fn = '/var/django/projects/'+name+'/build/'+name+'.env'
+    with open(fn,'w') as out:
+        fn.write('JUNTAGRICO_DEBUG=False')
+        for field in app_env._meta.get_fields():
+            if hasattr(field,'verbose_name'):
+                fn.write(field.verbose_name)
+                fn.write('=')
+                fn.write(getattr(app_env,field.name))
+                fn.write('\n')
+    fn = '/var/django/projects/'+name+'.txt'
+    with open(fn,'wb') as out:
+        proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'reload_env', name], stdout=out, stderr=out)
+    render_dict = {
+        'step': 'docker build und start',
+        'pid': proc.pid,
+        'next': '/'
+    }
+    return render(request, 'wait_next.html',render_dict)
 

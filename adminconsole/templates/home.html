@@ -2,7 +2,18 @@
 
 {% block content %}
     
-          <a href="/ca/start"> neue Applikation</a>
+          <a href="/ca/start" class="btn btn-success">neue Applikation</a>
+          <table class="list table" style="display: table;">
+          <tbody>
+            {% for app in apps %}
+                <tr>
+                    <td>{{ app.name }}</td>
+                    <td><a href="/reload/{{ app.id }}/" class="btn btn-success">reload</a></td>
+                    <td><a href="/env/{{ app.id }}/" class="btn btn-success">umgebung</a></td>
+                    <td><a href="https://{{ app.name. }}/" class="btn btn-success" target="_blank">öffnen</a></td>
+                </tr>
+            {% endfor %}
+          </table>
 
 {% endblock %}
 

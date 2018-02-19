@@ -35,5 +35,8 @@ urlpatterns = [
     path('ca/env/dist', views.env_dist2),
     path('ca/docker', views.docker2),
     path('pid/<int:pid>/', views.pidcheck),
+    path('reload/<int:app_id>/', views.reload),
+    path('env/<int:app_id>/', views.env),
+    path('env/restart/<int:app_id>/', views.env_restart),
     path('ca/af', views.app_form),
 ]
