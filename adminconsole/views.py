@@ -266,7 +266,8 @@ def env(request, app_id):
 @login_required
 def env_restart(request, app_id):
     app = get_object_or_404(App, pk=app_id)
-    app_env=app.env
+    name = app.name
+    app_env = app.env
     fn = '/var/django/projects/'+name+'/build/'+name+'.env'
     with open(fn,'w') as out:
         fn.write('JUNTAGRICO_DEBUG=False')
