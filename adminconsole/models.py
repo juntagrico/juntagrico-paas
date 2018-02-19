@@ -9,7 +9,7 @@ class GitHubKey(models.Model):
 class App(models.Model):
     user = models.ForeignKey(User, related_name='app', null=True, blank=True, on_delete=models.CASCADE)
     git_clone_url = models.CharField('github', max_length=100)
-    name = models.CharfieldField('name', max_length=100, unique=True, validators=[RegexValidator(regex='^[-a-z0-9_]+$')])
+    name = models.CharField('name', max_length=100, unique=True, validators=[RegexValidator(regex='^[-a-z0-9_]+$')])
     port = models.IntegerField('port', unique=True)
     managed = models.BooleanField('Managed', default=True)
 

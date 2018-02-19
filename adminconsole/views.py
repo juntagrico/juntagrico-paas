@@ -74,17 +74,17 @@ def app_form(request):
     user = request.user
     clone_url = request.session['git_clone_url']
     if request.method == 'POST':
-        form = AppForm(request.POST)
-        if form.is_valid():
-            form.save()
-            request.session['git_clone_url'] = None
-            return redirect('ca/clonerepo')
-    else:
         port = find_port()
         app = App(git_clone_url=clone_url,
                   user=user,
                   port=port)
-        form = AppForm(initial=app)
+        form = AppForm(request.POST, instance=app)
+        if form.is_valid():
+            form.save()
+            request.session['git_clone_url'] = None
+            return redirect('/ca/clonerepo')
+    else:
+        form = AppForm()
 
     return render(request, 'app_form.html', {'form': form})
     
