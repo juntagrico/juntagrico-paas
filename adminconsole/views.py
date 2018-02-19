@@ -82,6 +82,7 @@ def app_form(request):
         if form.is_valid():
             form.save()
             request.session['git_clone_url'] = None
+            request.session['app'] = app
             return redirect('/ca/clonerepo')
     else:
         form = AppForm()
@@ -92,7 +93,7 @@ def app_form(request):
 def clone_repo(request):
     key = request.user.githubkey.key
     user = request.user
-    app = user.app
+    app = request.session['app']
     output = []
     dir = '/var/django/projects/'+app.name
     url = 'https://'+key+':x-oauth-basic@'+app.git_clone_url[8:]
@@ -113,7 +114,7 @@ def clone_repo(request):
 @login_required
 def cookiecutter_form(request):
     user = request.user
-    app = user.app
+    app = request.session['app']
     dir = '/var/django/projects/'+app.name
     url='https://github.com/juntagrico/juntagrico-science-django-cookiecutter'
     if request.method == 'POST':
@@ -131,7 +132,7 @@ def cookiecutter_form(request):
 def git_push(request):
     key = request.user.githubkey.key
     user = request.user
-    app = user.app
+    app = request.session['app']
     dir = '/var/django/projects/'+app.name+'/code'
     output = []
     proc = subprocess.run(['git','add','.','--all'],stdout = subprocess.PIPE, cwd=dir)
@@ -150,7 +151,7 @@ def git_push(request):
 @login_required
 def init_db(request):
     user = request.user
-    name = user.app.name
+    name = request.session['app'].name
     password = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(20))
     with connection.cursor() as cursor:
         cursor.execute("CREATE DATABASE "+ name)
@@ -171,7 +172,7 @@ def init_db(request):
 @login_required
 def env_form(request):
     user = request.user
-    app = user.app
+    app = request.session['app']
     dir = '/var/django/projects/'+app.name
     url='https://github.com/juntagrico/juntagrico-science-cookiecutter-infra'
     app_env=app.env
@@ -195,7 +196,7 @@ def env_form(request):
 @login_required
 def env_dist2(request):
     user = request.user
-    app = user.app
+    app = request.session['app']
     name = app.name
     fn = '/var/django/projects/'+name+'.txt'
     with open(fn,'wb') as out:
@@ -212,7 +213,7 @@ def env_dist2(request):
 @login_required
 def docker2(request):
     user = request.user
-    app = user.app
+    app = request.session['app']
     name = app.name
     env = app.env
     passw = env.juntagrico_database_password
@@ -225,6 +226,7 @@ def docker2(request):
         'pid': proc.pid,
         'next': 'http://'+name+'.juntagrico.science'
     }
+    request.session['app']=None
     return render(request, 'wait_next.html',render_dict)
 
 @login_required
