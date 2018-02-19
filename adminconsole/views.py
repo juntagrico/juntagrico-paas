@@ -7,7 +7,7 @@ from urllib import request as r, parse
 from cookiecutter.main import cookiecutter
 from github import Github
 
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.db import connection
 from django.http import JsonResponse
@@ -82,7 +82,7 @@ def app_form(request):
         if form.is_valid():
             form.save()
             request.session['git_clone_url'] = None
-            request.session['app'] = app
+            request.session['app'] = app.id
             return redirect('/ca/clonerepo')
     else:
         form = AppForm()
@@ -91,9 +91,8 @@ def app_form(request):
     
 @login_required
 def clone_repo(request):
-    key = request.user.githubkey.key
-    user = request.user
-    app = request.session['app']
+    key = request.user.githubkey.keyget_object_or_404(MyModel, pk=
+    app = get_object_or_404(MyModel, pk=request.session['app'])
     output = []
     dir = '/var/django/projects/'+app.name
     url = 'https://'+key+':x-oauth-basic@'+app.git_clone_url[8:]
@@ -113,8 +112,7 @@ def clone_repo(request):
 
 @login_required
 def cookiecutter_form(request):
-    user = request.user
-    app = request.session['app']
+    app = get_object_or_404(MyModel, pk=request.session['app'])
     dir = '/var/django/projects/'+app.name
     url='https://github.com/juntagrico/juntagrico-science-django-cookiecutter'
     if request.method == 'POST':
@@ -131,8 +129,7 @@ def cookiecutter_form(request):
 @login_required
 def git_push(request):
     key = request.user.githubkey.key
-    user = request.user
-    app = request.session['app']
+    app = get_object_or_404(MyModel, pk=request.session['app'])
     dir = '/var/django/projects/'+app.name+'/code'
     output = []
     proc = subprocess.run(['git','add','.','--all'],stdout = subprocess.PIPE, cwd=dir)
@@ -150,8 +147,8 @@ def git_push(request):
 
 @login_required
 def init_db(request):
-    user = request.user
-    name = request.session['app'].name
+    app = get_object_or_404(MyModel, pk=request.session['app'])
+    name = app.name
     password = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(20))
     with connection.cursor() as cursor:
         cursor.execute("CREATE DATABASE "+ name)
@@ -160,7 +157,7 @@ def init_db(request):
         cursor.execute("ALTER ROLE "+name+" SET default_transaction_isolation TO 'read committed'")
         cursor.execute("ALTER ROLE "+name+" SET timezone TO 'CET'")
         cursor.execute("GRANT ALL PRIVILEGES ON DATABASE "+name+" TO "+name)
-    app_env = AppEnv.objects.create(app = user.app)
+    app_env = AppEnv.objects.create(app = app)
     app_env.juntagrico_database_host = 'localhost'
     app_env.juntagrico_database_name = name
     app_env.juntagrico_database_password = password
@@ -171,8 +168,7 @@ def init_db(request):
 
 @login_required
 def env_form(request):
-    user = request.user
-    app = request.session['app']
+    app = get_object_or_404(MyModel, pk=request.session['app'])
     dir = '/var/django/projects/'+app.name
     url='https://github.com/juntagrico/juntagrico-science-cookiecutter-infra'
     app_env=app.env
@@ -195,8 +191,7 @@ def env_form(request):
 
 @login_required
 def env_dist2(request):
-    user = request.user
-    app = request.session['app']
+    app = get_object_or_404(MyModel, pk=request.session['app'])
     name = app.name
     fn = '/var/django/projects/'+name+'.txt'
     with open(fn,'wb') as out:
@@ -212,8 +207,7 @@ def env_dist2(request):
 
 @login_required
 def docker2(request):
-    user = request.user
-    app = request.session['app']
+    app = get_object_or_404(MyModel, pk=request.session['app'])
     name = app.name
     env = app.env
     passw = env.juntagrico_database_password
