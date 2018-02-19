@@ -28,8 +28,8 @@ def home(request):
     '''
     Overview on juntagrico admin console
     '''
-    renderdict{
-        'apps': request.user.app,
+    renderdict={
+        'apps': request.user.app.all(),
     }
     return render(request, 'home.html', renderdict)
 
