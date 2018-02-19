@@ -25,7 +25,7 @@ class Command(BaseCommand):
 
         client = docker.from_env()
 
-        result = client.images.build(path='build/',
+        result = client.images.build(path=dir+'/build/',
                             tag=name+':latest')
         print(result[1])
         container = client.containers.run(image=name+':latest',
@@ -34,26 +34,26 @@ class Command(BaseCommand):
                                        environment=env,
                                        name=name,
                                        network_mode='host',
-                                       restart_policy={'Name': 'always'}
-                                       volumes={'./code': {'bind': '/code/',
+                                       restart_policy={'Name': 'always'},
+                                       volumes={dir+'/code': {'bind': '/code/',
                                                            'mode': 'rw'},
-                                                './static': {'bind': '/code/static/',
+                                                dir+'/static': {'bind': '/code/static/',
                                                              'mode': 'rw'},
-                                                './media': {'bind': '/code/media/',
+                                                dir+'/media': {'bind': '/code/media/',
                                                             'mode': 'rw'},
                                                }
                                         )
 
-        cmd = 'python', '-m', 'manage', 'migrate']
+        cmd = ['python', '-m', 'manage', 'migrate']
         result = container.exec_run(cmd)
         print(result[1])
-        cmd = 'python', '-m', 'manage', 'shell', '-c', crss]
+        cmd = ['python', '-m', 'manage', 'shell', '-c', crss]
         result = container.exec_run(cmd)
         print(result[1])
-        cmd = 'python', '-m', 'manage', 'create_member_for_superusers']
+        cmd = ['python', '-m', 'manage', 'create_member_for_superusers']
         result = container.exec_run(cmd)
         print(result[1])
-        cmd = 'python', '-m', 'manage', 'collectstatic']
+        cmd = ['python', '-m', 'manage', 'collectstatic']
         result = container.exec_run(cmd)
         print(result[1])
 
