@@ -39,7 +39,7 @@ class Command(BaseCommand):
 
         cmd = ['python', '-m', 'manage', 'migrate']
         result = container.exec_run(cmd)
-        print(result[1]))
+        print(result[1])
         cmd = ['python', '-m', 'manage', 'collectstatic', '--noinput', '-c']
         result = container.exec_run(cmd)
         print(result[1])
