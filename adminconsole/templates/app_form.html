@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block content %}
+    
+<form action="" method="post" class="form-horizontal">
+    {% csrf_token %}
+    
+    <div class="form-group">
+        <label class="control-label col-md-4" for="{{ form.name.id_for_label }}">Name der Applikation (nut Kleinbustaben Ziffern und _) *</label>
+
+        <div class="controls col-md-8">
+            {{ form.name }}
+        </div>
+    </div>
+    {% if form.name.errors %}
+        <div class="alert alert-danger col-md-12">{{form.name.errors}}</div>
+    {% endif %}
+    
+    <div class="form-group">
+                        <label class="col-md-3 control-label"></label>
+                        <div class="col-md-9 offset-md-3 controls radio"> 
+                            <label for="form.managed.id_for_label" class="control-label col-md-2">
+                                {{ form.managed }}
+                            </label>
+                            <label for="form.managed.id_for_label" class="control-label col-md-7">
+                                Soll die Applikation automatisch geupdated werden wenn eine nue juntagrico Version erscheint?
+			    </label>
+                        </div>
+</div>
+    
+    
+            <div class="form-actions col-md-offset-4 col-md-8">
+                <button type="submit" class="btn btn-success">weiter</button>
+            </div>
+</form>
+
+{% endblock %}
+

@@ -1,8 +1,8 @@
 from django import forms
-from django.forms import CharField, TextInput
+from django.forms import CharField, TextInput, CheckboxInput
 from django.forms import ModelForm
 
-from  adminconsole.models import AppEnv
+from  adminconsole.models import AppEnv, App
 
 class ProjectForm(forms.Form):
     project_slug = forms.CharField(label='App Name', max_length=100, widget=TextInput(attrs={'readonly':'readonly', 'class': 'form-control'}))
@@ -34,4 +34,13 @@ class EnvForm(ModelForm):
             'juntagrico_email_port': TextInput(attrs={'class': 'form-control'}),
             'juntagrico_email_user': TextInput(attrs={'class': 'form-control'}),
             'google_api_key': TextInput(attrs={'class': 'form-control'})
+       }
+
+class AppForm(ModelForm):
+   class Meta: 
+        model = App
+        fields = ['name', 'managed']
+        widgets = {
+            'name': TextInput(attrs={'class': 'form-control'}),
+            'managed': CheckboxInput(attrs={'class': 'onoffswitch'})
        }

@@ -13,7 +13,15 @@ from django.db import connection
 from django.http import JsonResponse
 
 from adminconsole.models import GitHubKey, App, AppEnv
-from adminconsole.forms import ProjectForm, EnvForm
+from adminconsole.forms import ProjectForm, EnvForm, AppForm
+
+
+def find_port():
+    ports = App.objects.all().values_list('port', flat=True)
+    port=8010
+    while port in ports:
+        port += 1
+    return port
 
 @login_required
 def home(request):
@@ -54,13 +62,32 @@ def select_repo(request):
         selected_repo = request.POST.get('repo')
         for repo in repos:
             if repo.name == selected_repo:
-                App.objects.create(user=request.user, git_clone_url=repo.clone_url, name=repo.name)
-                return redirect('/ca/clonerepo')
+                request.session['git_clone_url'] = repo.clone_url
+                return redirect('/ca/af')
     render_dict = {
         'repos': repos,
     }
     return render(request, 'repos.html',render_dict)
 
+@login_required
+def app_form(request):
+    user = request.user
+    clone_url = request.session['git_clone_url']
+    if request.method == 'POST':
+        form = AppForm(request.POST)
+        if form.is_valid():
+            form.save()
+            request.session['git_clone_url'] = None
+            return redirect('ca/clonerepo')
+    else:
+        port = find_port()
+        app = App(git_clone_url=clone_url,
+                  user=user,
+                  port=port)
+        form = AppForm(initial=app)
+
+    return render(request, 'app_form.html', {'form': form})
+    
 @login_required
 def clone_repo(request):
     key = request.user.githubkey.key
@@ -156,7 +183,7 @@ def env_form(request):
             data.update(app_env.__dict__)
             data.update({
                 'project_name': app.name,
-                'port': '8005',
+                'port': app.port,
             })
             cookiecutter(url, no_input=True, extra_context=data, output_dir=dir, overwrite_if_exists=True)
             return redirect('/ca/env/dist')
@@ -191,7 +218,7 @@ def docker2(request):
     passw = env.juntagrico_database_password
     fn = '/var/django/projects/'+name+'.txt'
     with open(fn,'wb') as out:
-        proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'build_docker', name, passw], stdout=out, stderr=out)
+        proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'build_docker2', name, passw], stdout=out, stderr=out)
 
     render_dict = {
         'step': 'docker build und start',
