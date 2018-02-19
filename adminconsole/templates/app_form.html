@@ -6,7 +6,7 @@
     {% csrf_token %}
     
     <div class="form-group">
-        <label class="control-label col-md-4" for="{{ form.name.id_for_label }}">Name der Applikation (nut Kleinbustaben Ziffern und _) *</label>
+        <label class="control-label col-md-4" for="{{ form.name.id_for_label }}">Name der Applikation (nur Kleinbuchstaben und Ziffern) *</label>
 
         <div class="controls col-md-8">
             {{ form.name }}

@@ -209,18 +209,19 @@ def env_dist2(request):
 def docker2(request):
     app = get_object_or_404(App, pk=request.session['app'])
     name = app.name
+    port = str(app.port)
     env = app.env
     passw = env.juntagrico_database_password
     fn = '/var/django/projects/'+name+'.txt'
     with open(fn,'wb') as out:
-        proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'build_docker2', name, passw], stdout=out, stderr=out)
+        proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'build_docker2', name, passw, port], stdout=out, stderr=out)
 
     render_dict = {
         'step': 'docker build und start',
         'pid': proc.pid,
         'next': 'http://'+name+'.juntagrico.science'
     }
-    request.session['app']=None
+    #request.session['app']=None
     return render(request, 'wait_next.html',render_dict)
 
 @login_required
