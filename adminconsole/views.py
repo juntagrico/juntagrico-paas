@@ -329,7 +329,7 @@ def generate_depot_list(request, app_id):
 def domain_form(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     name = app.name
-    port = app.port
+    port = str(app.port)
     if request.method == 'POST':
         form = DomainForm(request.POST)
         if form.is_valid():
