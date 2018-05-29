@@ -27,7 +27,5 @@ class Command(BaseCommand):
         print(str(proc.stdout))
         proc = subprocess.run(['./certbot-auto', '--nginx', '--redirect', '--keep', '-n', '-d', uri], stdout = subprocess.PIPE, cwd=rdir)
         print(str(proc.stdout))
-        proc = subprocess.run(['./certbot-auto', '--nginx', '--redirect', '--keep', '-n', '-d', uri], stdout = subprocess.PIPE, cwd=rdir)
-        print(str(proc.stdout))
         proc = subprocess.run(['(crontab -l 2>/dev/null; echo "59 23 * * * docker exec '+name+' python -m manage generate_depot_list") | crontab -'], stdout = subprocess.PIPE, cwd=rdir)
         print(str(proc.stdout))

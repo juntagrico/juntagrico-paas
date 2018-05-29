@@ -14,7 +14,7 @@ from django.db import connection
 from django.http import JsonResponse
 
 from adminconsole.models import GitHubKey, App, AppEnv
-from adminconsole.forms import ProjectForm, EnvForm, AppForm
+from adminconsole.forms import ProjectForm, EnvForm, AppForm, DomainForm
 
 
 def find_port():
@@ -322,3 +322,30 @@ def generate_depot_list(request, app_id):
         'next': '/'
     }
     return render(request, 'done_next.html', render_dict)
+
+@login_required
+def domain_form(request, app_id):
+    app = get_object_or_404(App, pk=app_id)
+    name = app.name
+    port = app.port
+    if request.method == 'POST':
+        form = DomainForm(request.POST)
+        if form.is_valid():
+            fn = '/var/django/projects/' + name + '.txt'
+            with open(fn, 'wb') as out:
+                proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'add_host', name], stdout=out,
+                                        stderr=out)
+            return redirect('/dom/add/'+str(proc.pid)+'/')
+    else:
+        form = DomainForm()
+
+    return render(request, 'domain_form.html', {'form': form})
+
+@login_required
+def add_domain(request, pid):
+    render_dict = {
+        'step': 'add domain',
+        'pid': pid,
+        'next': '/'
+    }
+    return render(request, 'wait_next.html', render_dict)

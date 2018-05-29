@@ -44,3 +44,8 @@ class AppForm(ModelForm):
             'name': TextInput(attrs={'class': 'form-control'}),
             'managed': CheckboxInput(attrs={'class': 'onoffswitch'})
        }
+
+
+class DomainForm(ModelForm):
+    domain = forms.CharField(label='Domain', max_length=100,
+                                  widget=TextInput(attrs={'class': 'form-control'}))

@@ -30,6 +30,8 @@ urlpatterns = [
     path('ca/clonerepo', views.clone_repo),
     path('accounts/login/', LoginView.as_view()),
     path('ck/form', views.cookiecutter_form),
+    path('dom/form/<int:app_id>/', views.domain_form),
+    path('dom/add/<int:pid>/', views.add_domain),
     path('git/push', views.git_push),
     path('ca/db', views.init_db),
     path('ca/env/form', views.env_form),

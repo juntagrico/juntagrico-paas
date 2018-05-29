@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+    
+<form action="" method="post" class="form-horizontal">
+    {% csrf_token %}
+    
+    <div class="form-group">
+        <label class="control-label col-md-4" for="{{ form.domain.id_for_label }}">Neue Domain welche sie hinzufügen möchten</label>
+
+        <div class="controls col-md-8">
+            {{ form.domain }}
+        </div>
+    </div>
+    {% if form.domain.errors %}
+        <div class="alert alert-danger col-md-12">{{form.domain.errors}}</div>
+    {% endif %}
+    
+
+    
+    
+            <div class="form-actions col-md-offset-4 col-md-8">
+                <button type="submit" class="btn btn-success">weiter</button>
+            </div>
+</form>
+
+{% endblock %}
+

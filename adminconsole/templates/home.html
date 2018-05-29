@@ -9,9 +9,10 @@
             {% for app in apps %}
                 <tr>
                     <td>{{ app.name }}</td>
-                    <td><a href="/reload/{{ app.id }}/" class="btn btn-success">reload</a></td>
-                    <td><a href="/env/{{ app.id }}/" class="btn btn-success">umgebung</a></td>
-                    <td><a href="/gdl/{{ app.id }}/" class="btn btn-success">depotliste generieren</a></td>
+                    <td><a href="/reload/{{ app.id }}/" class="btn btn-success">redeploy</a></td>
+                    <td><a href="/env/{{ app.id }}/" class="btn btn-success">settings</a></td>
+                    <td><a href="/gdl/{{ app.id }}/" class="btn btn-success">Depotliste generieren</a></td>
+                    <td><a href="/dom/form/{{ app.id }}/" class="btn btn-success">Domain hinzufügen</a></td>
                     <td><a href="https://{{ app.name}}.juntagrico.science/" class="btn btn-success" target="_blank">öffnen</a></td>
                 </tr>
             {% endfor %}
