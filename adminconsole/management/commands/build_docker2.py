@@ -56,7 +56,3 @@ class Command(BaseCommand):
         cmd = ['python', '-m', 'manage', 'collectstatic']
         result = container.exec_run(cmd)
         print(result[1])
-        cmd = ['(crontab -l 2>/dev/null; echo "59 23 * * * docker exec '+name+' python -m manage generate_depot_list") | crontab -']
-        result = container.exec_run(cmd)
-        print(result[1])
-
