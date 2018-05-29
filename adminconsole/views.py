@@ -318,7 +318,7 @@ def generate_depot_list(request, app_id):
     cmd = ['python -m manage generate_depot_list']
     result = container.exec_run(cmd)
     render_dict = {
-        'step': 'depot liste generiert '+ result[1],
+        'step': 'depot liste generiert '+ str(result[1]),
         'next': '/'
     }
     return render(request, 'done_next.html', render_dict)
