@@ -315,10 +315,10 @@ def generate_depot_list(request, app_id):
     name = app.name
     client = docker.from_env()
     container = client.containers.get(name)
-    cmd = ['python', '-m', 'manage', 'generate_depot_list']
+    cmd = ['python', '-m', 'manage', 'generate_depot_list', '--force']
     result = container.exec_run(cmd)
     render_dict = {
-        'step': 'depot liste generiert '+ str(result[1]),
+        'step': 'depot liste generiert ',
         'next': '/'
     }
     return render(request, 'done_next.html', render_dict)
