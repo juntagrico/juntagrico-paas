@@ -27,7 +27,7 @@ class Command(BaseCommand):
         }
         content = template.render(d)
 
-        with open('/etc/nginx/sites-available'+domain, "w") as domain_file:
+        with open('/etc/nginx/sites-available/'+domain, "w") as domain_file:
             domain_file.write(content)
 
         proc = subprocess.run(['ln', '-s', '/etc/nginx/sites-available/'+domain, '/etc/nginx/sites-enabled'], stdout = subprocess.PIPE)
