@@ -2,6 +2,7 @@ import subprocess
 import random
 import string
 import psutil
+import docker
 from urllib import request as r, parse
 
 from cookiecutter.main import cookiecutter
@@ -290,7 +291,7 @@ def env_restart(request, app_id):
     app_env = app.env
     fn = '/var/django/projects/' + name + '/build/' + name + '.env'
     with open(fn, 'w') as out:
-        out.write('JUNTAGRICO_DEBUG=False')
+        out.write('JUNTAGRICO_DEBUG=False\n ')
         for field in app_env._meta.get_fields():
             if hasattr(field, 'verbose_name'):
                 out.write(field.verbose_name)
@@ -306,3 +307,14 @@ def env_restart(request, app_id):
         'next': '/'
     }
     return render(request, 'wait_next.html', render_dict)
+
+
+@login_required
+def generate_depot_list(request, app_id):
+    app = get_object_or_404(App, pk=app_id)
+    name = app.name
+    client = docker.from_env()
+    container = client.containers.get(name)
+    cmd = ['python -m manage generate_depot_list']
+    result = container.exec_run(cmd)
+    return redirect('')
