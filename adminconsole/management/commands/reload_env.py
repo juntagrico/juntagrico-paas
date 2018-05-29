@@ -7,10 +7,12 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
 
         parser.add_argument('app_name', nargs=1)
+        parser.add_argument('port', nargs=1)
 
     # entry point used by manage.py
     def handle(self, *args, **options):
         name = options['app_name'][0]
+        port = options['port'][0]
         dir = '/var/django/projects/'+name
         runcmd = 'gunicorn --bind 0.0.0.0:'+port+' '+name+'.wsgi &'
 

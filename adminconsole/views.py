@@ -300,7 +300,7 @@ def env_restart(request, app_id):
                 out.write('\n')
     fn = '/var/django/projects/' + name + '.txt'
     with open(fn, 'wb') as out:
-        proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'reload_env', name], stdout=out, stderr=out)
+        proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'reload_env', name, app.port], stdout=out, stderr=out)
     render_dict = {
         'step': 'env reload',
         'pid': proc.pid,
@@ -333,7 +333,7 @@ def domain_form(request, app_id):
         if form.is_valid():
             fn = '/var/django/projects/' + name + '.txt'
             with open(fn, 'wb') as out:
-                proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'add_host', name], stdout=out,
+                proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'add_host', name, port, form.domain], stdout=out,
                                         stderr=out)
             return redirect('/dom/add/'+str(proc.pid)+'/')
     else:
