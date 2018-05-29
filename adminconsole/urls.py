@@ -25,6 +25,7 @@ urlpatterns = [
     path('github/request', views.github_request),
     path('github/callback', views.github_callback),
     path('ca/start', views.create_app),
+    path('ca/import', views.import_app),
     path('ca/repo', views.select_repo),
     path('ca/clonerepo', views.clone_repo),
     path('accounts/login/', LoginView.as_view()),

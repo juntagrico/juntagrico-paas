@@ -18,36 +18,43 @@ from adminconsole.forms import ProjectForm, EnvForm, AppForm
 
 def find_port():
     ports = App.objects.all().values_list('port', flat=True)
-    port=8010
+    port = 8010
     while port in ports:
         port += 1
     return port
 
+
 @login_required
 def home(request):
-    '''
-    Overview on juntagrico admin console
-    '''
-    renderdict={
+    renderdict = {
         'apps': request.user.app.all(),
     }
     return render(request, 'home.html', renderdict)
 
+
 def github_request(request):
     return redirect('https://github.com/login/oauth/authorize?client_id=b420b562ea569fd26b6e&scope=public_repo')
 
+
 def github_callback(request):
     code = request.GET.get('code')
-    data_dict={'code':code,
-        'client_id': 'b420b562ea569fd26b6e',
-        'client_secret': '40054b662fedbb506539aa8ab91031ca21383cb2'
-    }
+    data_dict = {'code': code,
+                 'client_id': 'b420b562ea569fd26b6e',
+                 'client_secret': '40054b662fedbb506539aa8ab91031ca21383cb2'
+                 }
     data = parse.urlencode(data_dict).encode()
-    req =  r.Request('https://github.com/login/oauth/access_token', data=data)
+    req = r.Request('https://github.com/login/oauth/access_token', data=data)
     resp = r.urlopen(req)
-    key=str(resp.read()).split('&')[0].split('=')[1]
-    GitHubKey.objects.create(user=request.user,key=key)
+    key = str(resp.read()).split('&')[0].split('=')[1]
+    GitHubKey.objects.create(user=request.user, key=key)
     return redirect('/ca/repo')
+
+
+@login_required
+def import_app(request):
+    request.session['import'] = True
+    return create_app(request)
+
 
 @login_required
 def create_app(request):
@@ -55,6 +62,7 @@ def create_app(request):
     if not hasattr(user, 'githubkey'):
         return redirect('/github/request')
     return redirect('/ca/repo')
+
 
 @login_required
 def select_repo(request):
@@ -70,7 +78,8 @@ def select_repo(request):
     render_dict = {
         'repos': repos,
     }
-    return render(request, 'repos.html',render_dict)
+    return render(request, 'repos.html', render_dict)
+
 
 @login_required
 def app_form(request):
@@ -91,33 +100,37 @@ def app_form(request):
         form = AppForm()
 
     return render(request, 'app_form.html', {'form': form})
-    
+
+
 @login_required
 def clone_repo(request):
     key = request.user.githubkey.key
     app = get_object_or_404(App, pk=request.session['app'])
     output = []
-    dir = '/var/django/projects/'+app.name
-    url = 'https://'+key+':x-oauth-basic@'+app.git_clone_url[8:]
-    proc = subprocess.run(['mkdir',dir],stdout = subprocess.PIPE)
+    dir = '/var/django/projects/' + app.name
+    url = 'https://' + key + ':x-oauth-basic@' + app.git_clone_url[8:]
+    proc = subprocess.run(['mkdir', dir], stdout=subprocess.PIPE)
     output.append(str(proc.stdout))
-    proc = subprocess.run(['mkdir','static'],stdout = subprocess.PIPE, cwd=dir)
+    proc = subprocess.run(['mkdir', 'static'], stdout=subprocess.PIPE, cwd=dir)
     output.append(str(proc.stdout))
-    proc = subprocess.run(['mkdir','media'],stdout = subprocess.PIPE, cwd=dir)
+    proc = subprocess.run(['mkdir', 'media'], stdout=subprocess.PIPE, cwd=dir)
     output.append(str(proc.stdout))
-    proc = subprocess.run(['git','clone',url,'code'],stdout = subprocess.PIPE, cwd=dir)
+    proc = subprocess.run(['git', 'clone', url, 'code'], stdout=subprocess.PIPE, cwd=dir)
     output.append(str(proc.stdout))
     render_dict = {
         'step': 'Repo Klonen',
         'next': '/ck/form',
     }
-    return render(request, 'done_next.html',render_dict)
+    if request.session['import']:
+        render_dict['next']='/ca/db'
+    return render(request, 'done_next.html', render_dict)
+
 
 @login_required
 def cookiecutter_form(request):
     app = get_object_or_404(App, pk=request.session['app'])
-    dir = '/var/django/projects/'+app.name
-    url='https://github.com/juntagrico/juntagrico-science-django-cookiecutter'
+    dir = '/var/django/projects/' + app.name
+    url = 'https://github.com/juntagrico/juntagrico-science-django-cookiecutter'
     if request.method == 'POST':
         form = ProjectForm(request.POST)
         if form.is_valid():
@@ -125,27 +138,28 @@ def cookiecutter_form(request):
             cookiecutter(url, no_input=True, extra_context=data, output_dir=dir, overwrite_if_exists=True)
             return redirect('/git/push')
     else:
-        form = ProjectForm(initial={'project_slug':app.name})
+        form = ProjectForm(initial={'project_slug': app.name})
 
     return render(request, 'ck.html', {'form': form})
+
 
 @login_required
 def git_push(request):
     key = request.user.githubkey.key
     app = get_object_or_404(App, pk=request.session['app'])
-    dir = '/var/django/projects/'+app.name+'/code'
+    dir = '/var/django/projects/' + app.name + '/code'
     output = []
-    proc = subprocess.run(['git','add','.','--all'],stdout = subprocess.PIPE, cwd=dir)
+    proc = subprocess.run(['git', 'add', '.', '--all'], stdout=subprocess.PIPE, cwd=dir)
     output.append(str(proc.stdout))
-    proc = subprocess.run(['git','commit','-a','-m','"adminconsole"'],stdout = subprocess.PIPE, cwd=dir)
+    proc = subprocess.run(['git', 'commit', '-a', '-m', '"adminconsole"'], stdout=subprocess.PIPE, cwd=dir)
     output.append(str(proc.stdout))
-    proc = subprocess.run(['git','push'],stdout = subprocess.PIPE, cwd=dir)
+    proc = subprocess.run(['git', 'push'], stdout=subprocess.PIPE, cwd=dir)
     output.append(str(proc.stdout))
     render_dict = {
         'step': 'Cokkiecutter anwenden und repo pushen',
         'next': '/ca/db'
     }
-    return render(request, 'done_next.html',render_dict)
+    return render(request, 'done_next.html', render_dict)
 
 
 @login_required
@@ -154,32 +168,33 @@ def init_db(request):
     name = app.name
     password = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(20))
     with connection.cursor() as cursor:
-        cursor.execute("CREATE DATABASE "+ name)
-        cursor.execute("CREATE USER "+name+" WITH PASSWORD '"+password+"'")
-        cursor.execute("ALTER ROLE "+name+" SET client_encoding TO 'utf8'")
-        cursor.execute("ALTER ROLE "+name+" SET default_transaction_isolation TO 'read committed'")
-        cursor.execute("ALTER ROLE "+name+" SET timezone TO 'CET'")
-        cursor.execute("GRANT ALL PRIVILEGES ON DATABASE "+name+" TO "+name)
-    app_env = AppEnv.objects.create(app = app)
+        cursor.execute("CREATE DATABASE " + name)
+        cursor.execute("CREATE USER " + name + " WITH PASSWORD '" + password + "'")
+        cursor.execute("ALTER ROLE " + name + " SET client_encoding TO 'utf8'")
+        cursor.execute("ALTER ROLE " + name + " SET default_transaction_isolation TO 'read committed'")
+        cursor.execute("ALTER ROLE " + name + " SET timezone TO 'CET'")
+        cursor.execute("GRANT ALL PRIVILEGES ON DATABASE " + name + " TO " + name)
+    app_env = AppEnv.objects.create(app=app)
     app_env.juntagrico_database_host = 'localhost'
     app_env.juntagrico_database_name = name
     app_env.juntagrico_database_password = password
     app_env.juntagrico_database_port = '5432'
     app_env.juntagrico_database_user = name
     app_env.save()
-    return redirect('/ca/env/form') 
+    return redirect('/ca/env/form')
+
 
 @login_required
 def env_form(request):
     app = get_object_or_404(App, pk=request.session['app'])
-    dir = '/var/django/projects/'+app.name
-    url='https://github.com/juntagrico/juntagrico-science-cookiecutter-infra'
-    app_env=app.env
+    dir = '/var/django/projects/' + app.name
+    url = 'https://github.com/juntagrico/juntagrico-science-cookiecutter-infra'
+    app_env = app.env
     if request.method == 'POST':
         form = EnvForm(request.POST, instance=app_env)
         if form.is_valid():
             form.save()
-            data =  form.cleaned_data
+            data = form.cleaned_data
             data.update(app_env.__dict__)
             data.update({
                 'project_name': app.name,
@@ -196,16 +211,16 @@ def env_form(request):
 def env_dist2(request):
     app = get_object_or_404(App, pk=request.session['app'])
     name = app.name
-    fn = '/var/django/projects/'+name+'.txt'
-    with open(fn,'wb') as out:
-        proc = subprocess.Popen(['venv/bin/python','-m','manage','dist_infra',name], stdout=out, stderr=out)
-    
+    fn = '/var/django/projects/' + name + '.txt'
+    with open(fn, 'wb') as out:
+        proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'dist_infra', name], stdout=out, stderr=out)
+
     render_dict = {
         'step': 'umgebung distributen und https einrichten',
         'pid': proc.pid,
         'next': '/ca/docker'
     }
-    return render(request, 'wait_next.html',render_dict)
+    return render(request, 'wait_next.html', render_dict)
 
 
 @login_required
@@ -215,75 +230,79 @@ def docker2(request):
     port = str(app.port)
     env = app.env
     passw = env.juntagrico_database_password
-    fn = '/var/django/projects/'+name+'.txt'
-    with open(fn,'wb') as out:
-        proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'build_docker2', name, passw, port], stdout=out, stderr=out)
+    fn = '/var/django/projects/' + name + '.txt'
+    with open(fn, 'wb') as out:
+        proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'build_docker2', name, passw, port], stdout=out,
+                                stderr=out)
     render_dict = {
         'step': 'docker build und start',
         'pid': proc.pid,
         'next': '/'
     }
-    request.session['app']=None
-    return render(request, 'wait_next.html',render_dict)
+    request.session['app'] = None
+    return render(request, 'wait_next.html', render_dict)
+
 
 @login_required
 def pidcheck(request, pid):
     p = psutil.Process(int(pid))
-    data={
+    data = {
         'status': p.status()
     }
     return JsonResponse(data)
+
 
 @login_required
 def reload(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     name = app.name
-    fn = '/var/django/projects/'+name+'.txt'
-    with open(fn,'wb') as out:
+    fn = '/var/django/projects/' + name + '.txt'
+    with open(fn, 'wb') as out:
         proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'rebuild_docker', name], stdout=out, stderr=out)
     render_dict = {
         'step': 'rebuild docker and start',
         'pid': proc.pid,
         'next': '/'
     }
-    return render(request, 'wait_next.html',render_dict)
+    return render(request, 'wait_next.html', render_dict)
+
 
 @login_required
 def env(request, app_id):
     app = get_object_or_404(App, pk=app_id)
-    app_env=app.env
+    app_env = app.env
     if request.method == 'POST':
         form = EnvForm(request.POST, instance=app_env)
         if form.is_valid():
             form.save()
-            data =  form.cleaned_data
+            data = form.cleaned_data
             data.update(app_env.__dict__)
-            return redirect('/env/restart/'+str(app_id)+'/')
+            return redirect('/env/restart/' + str(app_id) + '/')
     else:
         form = EnvForm(instance=app_env)
     return render(request, 'env.html', {'form': form})
+
 
 @login_required
 def env_restart(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     name = app.name
     app_env = app.env
-    fn = '/var/django/projects/'+name+'/build/'+name+'.env'
-    with open(fn,'w') as out:
+    fn = '/var/django/projects/' + name + '/build/' + name + '.env'
+    with open(fn, 'w') as out:
         out.write('JUNTAGRICO_DEBUG=False')
         for field in app_env._meta.get_fields():
-            if hasattr(field,'verbose_name'):
+            if hasattr(field, 'verbose_name'):
                 out.write(field.verbose_name)
                 out.write('=')
-                out.write(str(getattr(app_env,field.name)))
+                out.write(str(getattr(app_env, field.name)))
                 out.write('\n')
-    fn = '/var/django/projects/'+name+'.txt'
-    with open(fn,'wb') as out:
+    fn = '/var/django/projects/' + name + '.txt'
+    with open(fn, 'wb') as out:
         proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'reload_env', name], stdout=out, stderr=out)
     render_dict = {
         'step': 'env reload',
         'pid': proc.pid,
         'next': '/'
     }
-    return render(request, 'wait_next.html',render_dict)
-
+    return render(request, 'wait_next.html', render_dict)
