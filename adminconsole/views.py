@@ -123,7 +123,7 @@ def clone_repo(request):
         'next': '/ck/form',
     }
     if request.session['import']:
-        render_dict['next']='/ca/db'
+        render_dict['next'] = '/ca/db'
     return render(request, 'done_next.html', render_dict)
 
 
@@ -300,7 +300,8 @@ def env_restart(request, app_id):
                 out.write('\n')
     fn = '/var/django/projects/' + name + '.txt'
     with open(fn, 'wb') as out:
-        proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'reload_env', name, app.port], stdout=out, stderr=out)
+        proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'reload_env', name, app.port], stdout=out,
+                                stderr=out)
     render_dict = {
         'step': 'env reload',
         'pid': proc.pid,
@@ -323,6 +324,7 @@ def generate_depot_list(request, app_id):
     }
     return render(request, 'done_next.html', render_dict)
 
+
 @login_required
 def domain_form(request, app_id):
     app = get_object_or_404(App, pk=app_id)
@@ -333,13 +335,15 @@ def domain_form(request, app_id):
         if form.is_valid():
             fn = '/var/django/projects/' + name + '.txt'
             with open(fn, 'wb') as out:
-                proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'add_host', name, port, form.domain], stdout=out,
+                proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'add_host', name, port, form.domain],
+                                        stdout=out,
                                         stderr=out)
-            return redirect('/dom/add/'+str(proc.pid)+'/')
+            return redirect('/dom/add/' + str(proc.pid) + '/')
     else:
         form = DomainForm()
 
     return render(request, 'domain_form.html', {'form': form})
+
 
 @login_required
 def add_domain(request, pid):
