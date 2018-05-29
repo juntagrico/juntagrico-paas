@@ -334,8 +334,9 @@ def domain_form(request, app_id):
         form = DomainForm(request.POST)
         if form.is_valid():
             fn = '/var/django/projects/' + name + '.txt'
+            domain = form.cleaned_data['domain']
             with open(fn, 'wb') as out:
-                proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'add_host', name, port, form.domain],
+                proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'add_host', name, port, domain],
                                         stdout=out,
                                         stderr=out)
             return redirect('/dom/add/' + str(proc.pid) + '/')
