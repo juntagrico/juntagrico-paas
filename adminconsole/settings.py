@@ -38,6 +38,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'adminconsole',
+    'qa',
+    'taggit',
+    'hitcount',
+    'django_markdown',
 ]
 
 MIDDLEWARE = [

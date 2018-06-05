@@ -27,8 +27,13 @@ def find_port():
 
 @login_required
 def home(request):
+    apps = request.user.app.all()
+    number_of_apps = apps.count()
+    superuser = request.user.is_superuser
+    can_add_apps = number_of_apps < 1 or superuser
     renderdict = {
-        'apps': request.user.app.all(),
+        'apps': apps,
+        'can_add_app' : superuser,
     }
     return render(request, 'home.html', renderdict)
 

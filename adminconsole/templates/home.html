@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
-    
+        {% if can_add_app %}
           <a href="/ca/start" class="btn btn-success">neue Applikation</a><p/>
           <a href="/ca/import" class="btn btn-success">bestehende Applikation importieren</a><p/>
+        {% endif %}
           <table class="list table" style="display: table;">
           <tbody>
             {% for app in apps %}

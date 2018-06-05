@@ -15,6 +15,7 @@ v    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
 from django.urls import path
+from django.conf.urls import include, url
 from django.contrib.auth.views import LoginView
 from adminconsole import views
 
@@ -43,4 +44,5 @@ urlpatterns = [
     path('env/restart/<int:app_id>/', views.env_restart),
     path('ca/af', views.app_form),
     path('gdl/<int:app_id>/', views.generate_depot_list),
+    url(r'^', include('qa.urls')),
 ]
