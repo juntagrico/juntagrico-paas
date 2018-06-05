@@ -44,5 +44,5 @@ urlpatterns = [
     path('env/restart/<int:app_id>/', views.env_restart),
     path('ca/af', views.app_form),
     path('gdl/<int:app_id>/', views.generate_depot_list),
-    url(r'^', include('qa.urls')),
+    url(r'^qa/', include('qa.urls')),
 ]
