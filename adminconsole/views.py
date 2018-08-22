@@ -296,7 +296,7 @@ def env_restart(request, app_id):
     app_env = app.env
     fn = '/var/django/projects/' + name + '/build/' + name + '.env'
     with open(fn, 'w') as out:
-        out.write('JUNTAGRICO_DEBUG=False\n ')
+        out.write('JUNTAGRICO_DEBUG=True\n ')
         for field in app_env._meta.get_fields():
             if hasattr(field, 'verbose_name'):
                 out.write(field.verbose_name)
