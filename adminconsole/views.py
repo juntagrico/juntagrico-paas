@@ -305,7 +305,7 @@ def env_restart(request, app_id):
                 out.write('\n')
     fn = '/var/django/projects/' + name + '.txt'
     with open(fn, 'wb') as out:
-        proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'reload_env', name, app.port], stdout=out,
+        proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'reload_env', name, str(app.port)], stdout=out,
                                 stderr=out)
     render_dict = {
         'step': 'env reload',
