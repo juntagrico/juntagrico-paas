@@ -33,7 +33,7 @@ def home(request):
     can_add_apps = number_of_apps < 1 or superuser
     renderdict = {
         'apps': apps,
-        'can_add_app' : superuser,
+        'can_add_app' : can_add_apps,
     }
     return render(request, 'home.html', renderdict)
 
