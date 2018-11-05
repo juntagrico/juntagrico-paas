@@ -43,6 +43,8 @@ class EnvForm(ModelForm):
             'juntagrico_email_password': TextInput(attrs={'class': 'form-control'}),
             'juntagrico_email_port': TextInput(attrs={'class': 'form-control'}),
             'juntagrico_email_user': TextInput(attrs={'class': 'form-control'}),
+            'juntagrico_email_tls': CheckboxInput(attrs={'class': 'form-control'}),
+            'juntagrico_email_ssl': CheckboxInput(attrs={'class': 'form-control'}),
             'google_api_key': TextInput(attrs={'class': 'form-control'})
         }
 
