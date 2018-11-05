@@ -18,13 +18,16 @@ class Command(BaseCommand):
 
         with open(dir+'/build/'+name+'.env') as f:
             env = f.readlines()
-        env = [x.strip() for x in env] 
+        env = [x.strip() for x in env]
 
         client = docker.from_env()
 
-        container = client.containers.get(name)
-
-        container.stop()
+        try:
+            container = client.containers.get(name)
+            container.stop()
+            container.remove()
+        except:
+            print('container not found or other error')
 
         container = client.containers.run(image=name+':latest',
                                        command=runcmd,
