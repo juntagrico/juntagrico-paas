@@ -1,6 +1,7 @@
 cookiecutter==1.6.0    
-Django==2.0.2    
+Django==2.0.8    
 gunicorn==19.7.1   
 psycopg2==2.7.3.2  
 PyGithub==1.35
 docker==3.0.1
+psutil==5.4.7
