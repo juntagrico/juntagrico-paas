@@ -127,7 +127,7 @@ def clone_repo(request):
         'step': 'Repo Klonen',
         'next': '/ck/form',
     }
-    if request.session['import']:
+    if request.session.get('import', False):
         render_dict['next'] = '/ca/db'
     return render(request, 'done_next.html', render_dict)
 
