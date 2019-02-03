@@ -1,0 +1,16 @@
+# this has to be adapted for your server
+
+server {
+    listen 80;
+    server_name _;
+
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location /static/ {
+        root /var/django/adminconsole;
+    }
+
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:/var/django/adminconsole/adminconsole.sock;
+    }
+}

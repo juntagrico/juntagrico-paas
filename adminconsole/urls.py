@@ -17,30 +17,34 @@ from django.contrib import admin
 from django.urls import path
 from django.contrib.auth.views import LoginView
 from adminconsole import views
-
+from adminconsole import views_git
+from adminconsole import views_ca
 urlpatterns = [
     
     path('admin/', admin.site.urls),
     path('', views.home),
-    path('github/request', views.github_request),
-    path('github/callback', views.github_callback),
-    path('ca/start', views.create_app),
-    path('ca/import', views.import_app),
-    path('ca/repo', views.select_repo),
-    path('ca/clonerepo', views.clone_repo),
+    path('ca/import', views_ca.import_app),
     path('accounts/login/', LoginView.as_view()),
-    path('ck/form', views.cookiecutter_form),
     path('dom/form/<int:app_id>/', views.domain_form),
     path('dom/add/<int:pid>/', views.add_domain),
-    path('git/push', views.git_push),
-    path('ca/db', views.init_db),
-    path('ca/env/form', views.env_form),
-    path('ca/env/dist', views.env_dist2),
-    path('ca/docker', views.docker2),
     path('pid/<int:pid>/', views.pidcheck),
     path('reload/<int:app_id>/', views.reload),
     path('env/<int:app_id>/', views.env),
     path('env/restart/<int:app_id>/', views.env_restart),
-    path('ca/af', views.app_form),
     path('gdl/<int:app_id>/', views.generate_depot_list),
+
+# create application urls in the right order how they flow
+    path('ca/start', views_ca.create_app),
+    path('github/request', views_git.github_request),
+    path('github/callback', views_git.github_callback),
+    path('ca/repo', views_git.select_repo),
+    path('ca/af', views_ca.app_form),
+    path('ca/clonerepo', views_git.clone_repo),
+    path('ck/form', views_ca.cookiecutter_form),
+    path('git/push', views_git.git_push),
+    path('ca/db', views_ca.init_db),
+    path('ca/env/form', views_ca.env_form),
+    path('ca/env/dist', views_ca.env_dist2),
+    path('ca/docker', views_ca.docker2),
+
 ]

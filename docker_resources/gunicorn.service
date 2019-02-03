@@ -1,0 +1,13 @@
+[Unit]
+Description=gunicorn daemon
+After=network.target
+
+[Service]
+User=root
+Group=www-data
+EnvironmentFile=/var/django/adminconsole/venv/env.env
+WorkingDirectory=/var/django/adminconsole/
+ExecStart=/var/django/adminconsole/venv/bin/gunicorn --access-logfile - --workers 1 --bind unix:/var/django/adminconsole/adminconsole.sock adminconsole.wsgi:application
+
+[Install]
+WantedBy=multi-user.target

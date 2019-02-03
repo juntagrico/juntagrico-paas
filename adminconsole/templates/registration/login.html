@@ -7,9 +7,9 @@
                 {% csrf_token %}
                 <br/><br/>
                 <div class="form-group">
-                    <label class="control-label col-md-4" for="username">Email </label>
+                    <label class="control-label col-md-4" for="username">Benutzername </label>
                     <div class="controls col-md-8">
-                        <input type="text" class="form-control" name="username" id="username" placeholder="Email-Adresse">
+                        <input type="text" class="form-control" name="username" id="username" placeholder="Benutzername">
                     </div>
                 </div>
                 <div class="form-group">
@@ -24,12 +24,7 @@
                 <div class="form-group">
                     <div class="col-md-offset-4 col-md-8">
                         <button type="submit" class="btn btn-success">Anmelden</button><br/><br/>
-                        <a href="/my/newpassword">Neues Passwort anfordern</a>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <div class="col-md-offset-4 col-md-8">
-                        <a href="/my/signup">Registrieren und mitmachen!</a>
+                        <!--a href="/my/newpassword">Neues Passwort anfordern</a-->
                     </div>
                 </div>
                 <input type="hidden" name="next" value="{{ next|escape }}"/>
