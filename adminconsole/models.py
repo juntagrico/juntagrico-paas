@@ -27,7 +27,10 @@ class AppEnv(models.Model):
     juntagrico_email_password = models.CharField('JUNTAGRICO_EMAIL_PASSWORD', max_length=100, blank=True)
     juntagrico_email_port = models.CharField('JUNTAGRICO_EMAIL_PORT', max_length=100, default='25', blank=True)
     juntagrico_email_user = models.CharField('JUNTAGRICO_EMAIL_USER', max_length=100, blank=True)
+    juntagrico_email_tls = models.BooleanField('JUNTAGRICO_EMAIL_TLS', default=False)
+    juntagrico_email_ssl = models.BooleanField('JUNTAGRICO_EMAIL_SSL', default=False)
     google_api_key = models.CharField('GOOGLE_API_KEY', max_length=100, blank=True)
+    
 
 
 

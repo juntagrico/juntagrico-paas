@@ -34,8 +34,8 @@ class ProjectForm(forms.Form):
 class EnvForm(ModelForm):
     class Meta:
         model = AppEnv
-        fields = ['juntagrico_admin_email', 'juntagrico_host_email', 'juntagrico_email_host',
-                  'juntagrico_email_password', 'juntagrico_email_port', 'juntagrico_email_user', 'google_api_key']
+        fields = ['juntagrico_admin_email', 'juntagrico_email_host',
+                  'juntagrico_email_password', 'juntagrico_email_port', 'juntagrico_email_user','juntagrico_email_tls','juntagrico_email_ssl', 'google_api_key']
         widgets = {
             'juntagrico_admin_email': TextInput(attrs={'class': 'form-control'}),
             'juntagrico_host_email': TextInput(attrs={'class': 'form-control'}),
@@ -43,6 +43,8 @@ class EnvForm(ModelForm):
             'juntagrico_email_password': TextInput(attrs={'class': 'form-control'}),
             'juntagrico_email_port': TextInput(attrs={'class': 'form-control'}),
             'juntagrico_email_user': TextInput(attrs={'class': 'form-control'}),
+            'juntagrico_email_tls': CheckboxInput(attrs={'class': 'form-control'}),
+            'juntagrico_email_ssl': CheckboxInput(attrs={'class': 'form-control'}),
             'google_api_key': TextInput(attrs={'class': 'form-control'})
         }
 

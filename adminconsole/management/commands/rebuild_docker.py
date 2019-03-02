@@ -35,9 +35,7 @@ class Command(BaseCommand):
         print(result)
 
         container.restart()
-        result = client.images.build(path=dir+'/build/',
-                            tag=name+':latest')
-
+        
         cmd = ['python', '-m', 'manage', 'migrate']
         result = container.exec_run(cmd)
         print(result[1])
