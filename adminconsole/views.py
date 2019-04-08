@@ -366,6 +366,6 @@ def mailtexts(request, app_id):
     cmd = ['python', '-m', 'manage', 'mailtexts']
     result = container.exec_run(cmd)
     result_text = result.output.decode('utf-8')
-    if '(result)' in result_text:
-        result_text = result_text.split('(result)')[1]
+    if '(request)' in result_text:
+        result_text = result_text.split('(request)')[1]
     return render(request, 'mailtexts.html', {'text': result_text})
