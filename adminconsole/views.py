@@ -365,4 +365,4 @@ def mailtexts(request, app_id):
     container = client.containers.get(name)
     cmd = ['python', '-m', 'manage', 'mailtexts']
     text = container.exec_run(cmd)
-    return render(request, 'mailtexts.html', {'text': text.output})
+    return render(request, 'mailtexts.html', {'text': text.output.decode('utf-8')})
