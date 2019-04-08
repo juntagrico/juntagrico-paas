@@ -364,5 +364,8 @@ def mailtexts(request, app_id):
     client = docker.from_env()
     container = client.containers.get(name)
     cmd = ['python', '-m', 'manage', 'mailtexts']
-    text = container.exec_run(cmd)
-    return render(request, 'mailtexts.html', {'text': text.output.decode('utf-8')})
+    result = container.exec_run(cmd)
+    result_text = result.output.decode('utf-8')
+    if '(result)' in result_text:
+        result_text = result_text.split('(result)')[1]
+    return render(request, 'mailtexts.html', {'text': result_text})
