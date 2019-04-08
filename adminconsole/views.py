@@ -1,13 +1,21 @@
+import random
+import string
 import subprocess
 import psutil
 import docker
 
+from urllib import request as r, parse
+from cookiecutter.main import cookiecutter
+from github import Github
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+from django.db import connection
 
-from adminconsole.models import App
-from adminconsole.forms import EnvForm, DomainForm
+from adminconsole.models import App, GitHubKey, AppEnv
+from adminconsole.forms import EnvForm, DomainForm, AppForm, ProjectForm
+from adminconsole.util.create_app import find_port
 
 
 @login_required
@@ -347,3 +355,14 @@ def add_domain(request, pid):
         'next': '/'
     }
     return render(request, 'wait_next.html', render_dict)
+
+
+@login_required
+def mailtexts(request, app_id):
+    app = get_object_or_404(App, pk=app_id)
+    name = app.name
+    client = docker.from_env()
+    container = client.containers.get(name)
+    cmd = ['python', '-m', 'manage', 'mailtexts']
+    text = container.exec_run(cmd)
+    return render(request, 'mailtexts.html', {'text': text})
