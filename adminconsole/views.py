@@ -295,8 +295,9 @@ def env_restart(request, app_id):
         out.write('JUNTAGRICO_DATABASE_ENGINE=django.db.backends.postgresql\n ')
         for field in app_env._meta.get_fields():
             if hasattr(field, 'verbose_name'):
-                out.write(field.verbose_name)
-                out.write('=')
+                if field.verbose_name != 'VARIOUS':
+                    out.write(field.verbose_name)
+                    out.write('=')
                 out.write(str(getattr(app_env, field.name)))
                 out.write('\n')
     fn = '/var/django/projects/' + name + '.txt'
