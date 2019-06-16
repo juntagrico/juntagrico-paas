@@ -1,10 +1,15 @@
 from django.db import models
 from django.contrib.auth.models import User
-from  django.core.validators import RegexValidator
+from django.core.validators import RegexValidator
+
 
 class GitHubKey(models.Model):
     user = models.OneToOneField(User, related_name='githubkey', null=True, blank=True, on_delete=models.CASCADE)
     key = models.CharField(max_length=500)
+
+    def __str__(self):
+        return self.user
+
 
 class App(models.Model):
     user = models.ForeignKey(User, related_name='app', null=True, blank=True, on_delete=models.CASCADE)
@@ -12,6 +17,9 @@ class App(models.Model):
     name = models.CharField('name', max_length=100, unique=True, validators=[RegexValidator(regex='^[a-z0-9]+$')])
     port = models.IntegerField('port', unique=True)
     managed = models.BooleanField('Managed', default=True)
+
+    def __str__(self):
+        return self.name
 
 
 class AppEnv(models.Model):
@@ -30,6 +38,11 @@ class AppEnv(models.Model):
     juntagrico_email_tls = models.BooleanField('JUNTAGRICO_EMAIL_TLS', default=False)
     juntagrico_email_ssl = models.BooleanField('JUNTAGRICO_EMAIL_SSL', default=False)
     google_api_key = models.CharField('GOOGLE_API_KEY', max_length=100, blank=True)
+    various = models.TextField('VARIOUS', blank=True)
+
+    def __str__(self):
+        return self.app.name
+
     
 
 

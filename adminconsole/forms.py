@@ -1,5 +1,5 @@
 from django import forms
-from django.forms import CharField, TextInput, CheckboxInput
+from django.forms import CharField, TextInput, CheckboxInput, Textarea
 from django.forms import ModelForm
 
 from adminconsole.models import AppEnv, App
@@ -35,7 +35,9 @@ class EnvForm(ModelForm):
     class Meta:
         model = AppEnv
         fields = ['juntagrico_admin_email', 'juntagrico_email_host',
-                  'juntagrico_email_password', 'juntagrico_email_port', 'juntagrico_email_user','juntagrico_email_tls','juntagrico_email_ssl', 'google_api_key']
+                  'juntagrico_email_password', 'juntagrico_email_port',
+                  'juntagrico_email_user', 'juntagrico_email_tls',
+                  'juntagrico_email_ssl', 'google_api_key', 'various']
         widgets = {
             'juntagrico_admin_email': TextInput(attrs={'class': 'form-control'}),
             'juntagrico_host_email': TextInput(attrs={'class': 'form-control'}),
@@ -45,7 +47,8 @@ class EnvForm(ModelForm):
             'juntagrico_email_user': TextInput(attrs={'class': 'form-control'}),
             'juntagrico_email_tls': CheckboxInput(attrs={'class': 'form-control'}),
             'juntagrico_email_ssl': CheckboxInput(attrs={'class': 'form-control'}),
-            'google_api_key': TextInput(attrs={'class': 'form-control'})
+            'google_api_key': TextInput(attrs={'class': 'form-control'}),
+            'various': Textarea(attrs={'class': 'form-control'})
         }
 
 
