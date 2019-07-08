@@ -27,6 +27,7 @@ urlpatterns = [
     path('accounts/login/', LoginView.as_view()),
     path('dom/form/<int:app_id>/', views.domain_form),
     path('mailtexts/<int:app_id>/', views.mailtexts),
+    path('logs/<int:app_id>/', views.logs),
     path('dom/add/<int:pid>/', views.add_domain),
     path('pid/<int:pid>/', views.pidcheck),
     path('reload/<int:app_id>/', views.reload),

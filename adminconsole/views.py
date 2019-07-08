@@ -243,7 +243,6 @@ def docker2(request):
     return render(request, 'wait_next.html', render_dict)
 
 
-
 @login_required
 def pidcheck(request, pid):
     p = psutil.Process(int(pid))
@@ -369,4 +368,14 @@ def mailtexts(request, app_id):
     result_text = result.output.decode('utf-8')
     if '(request)' in result_text:
         result_text = result_text.split('(request)')[1]
+    return render(request, 'mailtexts.html', {'text': result_text})
+
+
+@login_required
+def logs(request, app_id):
+    app = get_object_or_404(App, pk=app_id)
+    name = app.name
+    client = docker.from_env()
+    container = client.containers.get(name)
+    result_text = container.logs()
     return render(request, 'mailtexts.html', {'text': result_text})
