@@ -20,9 +20,12 @@ from adminconsole.util.create_app import find_port
 
 @login_required
 def home(request):
-    apps = request.user.app.all()
-    number_of_apps = apps.count()
     superuser = request.user.is_superuser
+    if superuser:
+        apps = App.objects.all()
+    else:
+        apps = request.user.app.all()
+    number_of_apps = apps.count()
     can_add_apps = number_of_apps < 1 or superuser
     renderdict = {
         'apps': apps,
