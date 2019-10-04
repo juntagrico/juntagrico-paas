@@ -13,6 +13,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.db import connection
 
+from adminconsole.decorators import owner_of_app
 from adminconsole.models import App, GitHubKey, AppEnv
 from adminconsole.forms import EnvForm, DomainForm, AppForm, ProjectForm
 from adminconsole.util.create_app import find_port
@@ -255,7 +256,7 @@ def pidcheck(request, pid):
     return JsonResponse(data)
 
 
-@login_required
+@owner_of_app
 def reload(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     name = app.name
@@ -270,7 +271,7 @@ def reload(request, app_id):
     return render(request, 'wait_next.html', render_dict)
 
 
-@login_required
+@owner_of_app
 def env(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     app_env = app.env
@@ -286,7 +287,7 @@ def env(request, app_id):
     return render(request, 'env.html', {'form': form})
 
 
-@login_required
+@owner_of_app
 def env_restart(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     name = app.name
@@ -314,7 +315,7 @@ def env_restart(request, app_id):
     return render(request, 'wait_next.html', render_dict)
 
 
-@login_required
+@owner_of_app
 def generate_depot_list(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     name = app.name
@@ -329,7 +330,7 @@ def generate_depot_list(request, app_id):
     return render(request, 'done_next.html', render_dict)
 
 
-@login_required
+@owner_of_app
 def domain_form(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     name = app.name
@@ -360,7 +361,7 @@ def add_domain(request, pid):
     return render(request, 'wait_next.html', render_dict)
 
 
-@login_required
+@owner_of_app
 def mailtexts(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     name = app.name
@@ -374,7 +375,7 @@ def mailtexts(request, app_id):
     return render(request, 'mailtexts.html', {'text': result_text})
 
 
-@login_required
+@owner_of_app
 def logs(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     name = app.name
