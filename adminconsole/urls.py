@@ -34,6 +34,9 @@ urlpatterns = [
     path('env/<int:app_id>/', views.env),
     path('env/restart/<int:app_id>/', views.env_restart),
     path('gdl/<int:app_id>/', views.generate_depot_list),
+    path('migrate/<int:app_id>/', views.migrate),
+    path('collectstatic/<int:app_id>/', views.collectstatic),
+    path('crestart/<int:app_id>/', views.restart),
 
 # create application urls in the right order how they flow
     path('ca/start', views_ca.create_app),

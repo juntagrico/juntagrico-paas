@@ -382,6 +382,41 @@ def logs(request, app_id):
     client = docker.from_env()
     container = client.containers.get(name)
     result_text = container.logs()
-    #result_text = result_text.replace('\\n', '<br/>')
     result_text = result_text.decode('utf-8') 
+    return render(request, 'mailtexts.html', {'text': result_text})
+
+
+@owner_of_app
+def migrate(request, app_id):
+    app = get_object_or_404(App, pk=app_id)
+    name = app.name
+    client = docker.from_env()
+    container = client.containers.get(name)
+    cmd = ['python', '-m', 'manage', 'migrate']
+    result = container.exec_run(cmd)
+    result_text = result.output.decode('utf-8')
+    return render(request, 'mailtexts.html', {'text': result_text})
+
+
+@owner_of_app
+def collectstatic(request, app_id):
+    app = get_object_or_404(App, pk=app_id)
+    name = app.name
+    client = docker.from_env()
+    container = client.containers.get(name)
+    cmd = ['python', '-m', 'manage', 'collectstatic']
+    result = container.exec_run(cmd)
+    result_text = result.output.decode('utf-8')
+    return render(request, 'mailtexts.html', {'text': result_text})
+
+
+@owner_of_app
+def restart(request, app_id):
+    app = get_object_or_404(App, pk=app_id)
+    name = app.name
+    client = docker.from_env()
+    container = client.containers.get(name)
+    container.restart()
+    result_text = container.stats()
+    result_text = result_text.decode('utf-8')
     return render(request, 'mailtexts.html', {'text': result_text})
