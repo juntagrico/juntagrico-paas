@@ -422,6 +422,6 @@ def restart(request, app_id):
     container.restart()
     result_text = container.attrs['State']['StartedAt'].split('.')[0]+' UTC+0000'
     dt = datetime.strptime(result_text, '%Y-%m-%dT%H:%M:%S %Z%z')
-    dt.astimezone(timezone('CET'))
+    dt = dt.astimezone(timezone('CET'))
     result_text = dt.strftime('%d-%m-%Y %H:%M:%S %Z%z')
     return render(request, 'mailtexts.html', {'text': result_text})
