@@ -418,5 +418,4 @@ def restart(request, app_id):
     container = client.containers.get(name)
     container.restart()
     result_text = str(container.stats(stream=False))
-    result_text = result_text.decode('utf-8')
     return render(request, 'mailtexts.html', {'text': result_text})
