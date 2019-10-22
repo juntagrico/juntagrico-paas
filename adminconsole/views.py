@@ -420,8 +420,8 @@ def restart(request, app_id):
     client = docker.from_env()
     container = client.containers.get(name)
     container.restart()
-    result_text = container.attrs['State']['StartedAt']
-    dt = datetime.strptime(result_text, '%Y-%m-%dT%H:%M:%S.%f%Z')
+    result_text = container.attrs['State']['StartedAt'].split('.')[0]+' UTC+0000'
+    dt = datetime.strptime(result_text, '%Y-%m-%dT%H:%M:%S %Z%z')
     dt.astimezone(timezone('CET'))
     result_text = dt.strftime('%d-%m-%Y %H:%M:%S %Z%z')
     return render(request, 'mailtexts.html', {'text': result_text})
