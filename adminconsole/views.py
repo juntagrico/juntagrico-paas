@@ -417,6 +417,6 @@ def restart(request, app_id):
     client = docker.from_env()
     container = client.containers.get(name)
     container.restart()
-    result_text = container.stats(stream=False)
+    result_text = str(container.stats(stream=False))
     result_text = result_text.decode('utf-8')
     return render(request, 'mailtexts.html', {'text': result_text})
