@@ -404,7 +404,7 @@ def collectstatic(request, app_id):
     name = app.name
     client = docker.from_env()
     container = client.containers.get(name)
-    cmd = ['python', '-m', 'manage', 'collectstatic']
+    cmd = ['python', '-m', 'manage', 'collectstatic', '--noinput', '-c']
     result = container.exec_run(cmd)
     result_text = result.output.decode('utf-8')
     return render(request, 'mailtexts.html', {'text': result_text})
