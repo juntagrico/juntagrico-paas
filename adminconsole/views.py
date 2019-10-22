@@ -1,6 +1,8 @@
 import random
 import string
 import subprocess
+from datetime import datetime
+
 import psutil
 import docker
 
@@ -12,6 +14,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.db import connection
+from pytz import timezone
 
 from adminconsole.decorators import owner_of_app
 from adminconsole.models import App, GitHubKey, AppEnv
@@ -418,4 +421,7 @@ def restart(request, app_id):
     container = client.containers.get(name)
     container.restart()
     result_text = container.attrs['State']['StartedAt']
+    dt = datetime.strptime(result_text, '%Y-%m-%dT%H:%M:%S.%f%Z')
+    dt.replace(tzinfo=timezone('CET'))
+    result_text = dt.strftime('%d-%m-%Y %H:%M:%S %Z%z')
     return render(request, 'mailtexts.html', {'text': result_text})
