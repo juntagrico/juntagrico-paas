@@ -8,7 +8,7 @@ class GitHubKey(models.Model):
     key = models.CharField(max_length=500)
 
     def __str__(self):
-        return self.user
+        return str(self.user)
 
 
 class App(models.Model):
