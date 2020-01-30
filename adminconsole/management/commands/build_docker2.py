@@ -17,7 +17,7 @@ class Command(BaseCommand):
         port = options['port'][0]
         dir = '/var/django/projects/'+name
         crss = 'from django.contrib.auth.models import User; User.objects.create_superuser("admin", "admin@admin.com", "'+ passw +'")'
-        runcmd = 'gunicorn --bind 0.0.0.0:'+port+' '+name+'.wsgi &'
+        runcmd = 'gunicorn --bind 127.0.0.1:'+port+' '+name+'.wsgi &'
 
         with open(dir+'/build/'+name+'.env') as f:
             env = f.readlines()
