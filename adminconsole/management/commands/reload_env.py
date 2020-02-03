@@ -19,6 +19,7 @@ class Command(BaseCommand):
         with open(dir+'/build/'+name+'.env') as f:
             env = f.readlines()
         env = [x.strip() for x in env]
+        env = [x for x in env if x]
 
         client = docker.from_env()
 
