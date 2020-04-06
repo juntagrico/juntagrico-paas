@@ -46,7 +46,7 @@ def reload(request, app_id):
     with open(fn, 'wb') as out:
         proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'rebuild_docker', name], stdout=out, stderr=out)
     render_dict = {
-        'step': 'rebuild docker and start',
+        'step': 'install requirements commit image collectstatic and migrate',
         'pid': proc.pid,
         'next': '/showlog/' + str(app_id) + '/'
     }
