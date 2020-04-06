@@ -48,9 +48,19 @@ def reload(request, app_id):
     render_dict = {
         'step': 'rebuild docker and start',
         'pid': proc.pid,
-        'next': '/'
+        'next': '/showlog/' + str(app_id) + '/'
     }
     return render(request, 'wait_next.html', render_dict)
+
+@owner_of_app
+def show_log(request, app_id):
+    app = get_object_or_404(App, pk=app_id)
+    name = app.name
+    fn = '/var/django/projects/' + name + '.txt'
+    with open(fn, 'rb') as file:
+        text = file.read()
+        result_text = text.decode('utf8')
+    return render(request, 'mailtexts.html', {'text': result_text})
 
 
 @owner_of_app
