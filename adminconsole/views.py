@@ -57,9 +57,10 @@ def show_log(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     name = app.name
     fn = '/var/django/projects/' + name + '.txt'
-    with open(fn, 'rb') as file:
-        text = file.read()
-        result_text = text.decode('utf8')
+    with open(fn, 'r') as file:
+        b_texts = file.readlines()
+        texts = [str(eval(b_text), 'utf-8') if b_text.startswith('b') else b_text for b_text in b_texts]
+        result_text = '\n'.join(texts)
     return render(request, 'mailtexts.html', {'text': result_text})
 
 
