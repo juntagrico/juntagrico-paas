@@ -1,5 +1,5 @@
 from django import forms
-from django.forms import CharField, TextInput, CheckboxInput, Textarea
+from django.forms import CharField, TextInput, CheckboxInput, Textarea, EmailField
 from django.forms import ModelForm
 
 from adminconsole.models import AppEnv, App
@@ -65,3 +65,7 @@ class AppForm(ModelForm):
 class DomainForm(forms.Form):
     domain = CharField(label='Domain', max_length=100,
                              widget=TextInput(attrs={'class': 'form-control'}))
+
+class ProfileForm(forms.Form):
+    email = EmailField(label='email adresse', max_length=100,
+                           widget=TextInput(attrs={'class': 'form-control'}))

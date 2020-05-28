@@ -9,7 +9,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from pytz import timezone
 
 from adminconsole.decorators import owner_of_app
-from adminconsole.forms import EnvForm, DomainForm
+from adminconsole.forms import EnvForm, DomainForm, ProfileForm
 from adminconsole.models import App
 
 
@@ -215,3 +215,15 @@ def restart(request, app_id):
     dt = dt.astimezone(timezone('CET'))
     result_text = dt.strftime('%d-%m-%Y %H:%M:%S %Z%z')
     return render(request, 'mailtexts.html', {'text': result_text})
+
+@login_required
+def profile(request):
+    user = request.user
+    if request.method == 'POST':
+        form = ProfileForm(request.POST)
+        if form.is_valid():
+            user.email = form.cleaned_data.get('email')
+            return redirect('/')
+    else:
+        form = ProfileForm({'email': user.email})
+    return render(request, 'profile.html', {'form': form})

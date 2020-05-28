@@ -130,3 +130,9 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static_content"),
 ]
 
+EMAIL_HOST = os.environ.get('JUNTAGRICO_EMAIL_HOST')
+EMAIL_HOST_USER = os.environ.get('JUNTAGRICO_EMAIL_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('JUNTAGRICO_EMAIL_PASSWORD')
+EMAIL_PORT = int(os.environ.get('JUNTAGRICO_EMAIL_PORT', '25' ))
+EMAIL_USE_TLS = os.environ.get('JUNTAGRICO_EMAIL_TLS', 'False')=='True'
+EMAIL_USE_SSL = os.environ.get('JUNTAGRICO_EMAIL_SSL', 'False')=='True'
