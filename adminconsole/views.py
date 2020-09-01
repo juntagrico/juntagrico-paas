@@ -223,6 +223,7 @@ def profile(request):
         form = ProfileForm(request.POST)
         if form.is_valid():
             user.email = form.cleaned_data.get('email')
+            user.save()
             return redirect('/')
     else:
         form = ProfileForm({'email': user.email})
