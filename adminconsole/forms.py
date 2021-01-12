@@ -14,7 +14,7 @@ class ProjectForm(forms.Form):
     number = CharField(label='Nummer', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))
     zip = CharField(label='PLZ', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))
     city = CharField(label='Stadt', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))
-    extra = CharField(label='AdressZusatz', max_length=100, widget=TextInput(attrs={'class': 'form-control'}), required=false)
+    extra = CharField(label='AdressZusatz', max_length=100, widget=TextInput(attrs={'class': 'form-control'}), required=False)
     PC = CharField(label='PC Kontonummer', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))
     IBAN = CharField(label='IBAN', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))
     BIC = CharField(label='BIC', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))

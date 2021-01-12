@@ -26,7 +26,7 @@ class Command(BaseCommand):
         proc = subprocess.run(['git', 'pull'], stdout = subprocess.PIPE, cwd=cdir)
         print(str(proc.stdout))
 
-        cmd = ['pip', 'install', '--upgrade', '-r', 'requirements.txt']
+        cmd = 'pip install --upgrade -r requirements.txt'
         result = container.exec_run(cmd)
         print(result[1])
 
