@@ -32,5 +32,5 @@ class Command(BaseCommand):
 
         proc = subprocess.run(['ln', '-s', '/etc/nginx/sites-available/'+domain, '/etc/nginx/sites-enabled'], stdout = subprocess.PIPE)
         print(str(proc.stdout))
-        proc = subprocess.run(['./certbot-auto', '--nginx', '--redirect', '--keep', '-n', '-d', domain], stdout = subprocess.PIPE, cwd=rdir)
+        proc = subprocess.run(['certbot', '--nginx', '--redirect', '--keep', '-n', '-d', domain], stdout = subprocess.PIPE, cwd=rdir)
         print(str(proc.stdout))
