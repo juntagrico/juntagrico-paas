@@ -6,3 +6,5 @@ static/*
 .idea
 *.bak
 ssl/*
+*.db
+*.bat

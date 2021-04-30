@@ -4,4 +4,4 @@ docker==5.0.0
 gunicorn==20.1.0
 psutil==5.8.0
 psycopg2==2.8.6
-PyGithub==1.545
+PyGithub==1.55
