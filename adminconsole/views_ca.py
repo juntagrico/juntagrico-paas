@@ -11,6 +11,7 @@ from django.db import connection
 from adminconsole.config import Config
 from adminconsole.models import App, AppEnv
 from adminconsole.forms import ProjectForm, EnvForm, AppForm
+from adminconsole.util import generate_password
 from adminconsole.util.create_app import find_port
 
 
@@ -74,7 +75,7 @@ def cookiecutter_form(request):
 def init_db(request):
     app = get_object_or_404(App, pk=request.session['app'])
     name = app.name
-    password = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(20))
+    password = generate_password()
     with connection.cursor() as cursor:
         cursor.execute("CREATE DATABASE " + name)
         cursor.execute("CREATE USER " + name + " WITH PASSWORD '" + password + "'")

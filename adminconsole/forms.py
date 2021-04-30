@@ -41,6 +41,7 @@ class EnvForm(ModelForm):
                   'juntagrico_email_port',
                   'juntagrico_email_tls',
                   'juntagrico_email_ssl',
+                  'juntagrico_secret_key',
                   'various']
         widgets = {
             'juntagrico_admin_email': TextInput(attrs={'class': 'form-control'}),
