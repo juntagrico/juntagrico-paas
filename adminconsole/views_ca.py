@@ -90,7 +90,17 @@ def init_db(request):
     app_env.juntagrico_database_port = '5432'
     app_env.juntagrico_database_user = name
     app_env.save()
-    return redirect('/ca/env/form')
+    return redirect('/ca/ap')
+
+@login_required
+def admin_password(request):
+    app = get_object_or_404(App, pk=request.session['app'])
+    app_env = app.env
+    render_dict = {
+        'step': 'Admin Passwort<br/>' + app_env.juntagrico_database_password + '<br/>Unbedingt aufschreiben!',
+        'next': '/ca/env/form'
+    }
+    return render(request, 'done_next.html', render_dict)
 
 
 @login_required
