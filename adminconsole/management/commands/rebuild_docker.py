@@ -30,16 +30,19 @@ class Command(BaseCommand):
         result = container.exec_run(cmd)
         print(result[1])
 
-        result = container.commit(repository=name,
-                           tag='latest')
-        print(result)
+        if result[0] == 0:  # only continue if pip install succeeded
+            result = container.commit(repository=name,
+                               tag='latest')
+            print(result)
 
-        container.restart()
-        
-        cmd = ['python', '-m', 'manage', 'migrate']
-        result = container.exec_run(cmd)
-        print(result[1])
-        cmd = ['python', '-m', 'manage', 'collectstatic', '--noinput', '-c']
-        result = container.exec_run(cmd)
-        print(result[1])
+            container.restart()
+
+            cmd = ['python', '-m', 'manage', 'migrate']
+            result = container.exec_run(cmd)
+            print(result[1])
+            cmd = ['python', '-m', 'manage', 'collectstatic', '--noinput', '-c']
+            result = container.exec_run(cmd)
+            print(result[1])
+        else:
+            print('pip install failed! Fix your requirements.txt and redeploy. Do not restart the instance.')
 
