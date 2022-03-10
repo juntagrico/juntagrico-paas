@@ -23,10 +23,6 @@ class ProjectForm(forms.Form):
                           widget=TextInput(attrs={'class': 'form-control'}), required=False)
     info_email = CharField(label='info email adresse', max_length=100,
                                  widget=TextInput(attrs={'class': 'form-control'}))
-    admin_portal_name = CharField(label='Name des adminposrtals', max_length=100,
-                                        widget=TextInput(attrs={'class': 'form-control'}))
-    admin_portal_url = CharField(label='URL des admin portals', max_length=100,
-                                       widget=TextInput(attrs={'class': 'form-control'}))
     share_price = CharField(label='Preis eines Anteilscheines', max_length=100,
                                   widget=TextInput(attrs={'class': 'form-control'}))
 
