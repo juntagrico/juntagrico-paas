@@ -50,6 +50,7 @@ urlpatterns = [
     path('ck/form', views_ca.cookiecutter_form),
     path('git/push', views_git.git_push),
     path('ca/db', views_ca.init_db),
+    path('ca/ap', views_ca.admin_password),
     path('ca/env/form', views_ca.env_form),
     path('ca/env/dist', views_ca.env_dist2),
     path('ca/docker', views_ca.docker2),
