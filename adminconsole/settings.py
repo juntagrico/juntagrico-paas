@@ -142,4 +142,4 @@ EMAIL_PORT = int(os.environ.get('JUNTAGRICO_EMAIL_PORT', '25' ))
 EMAIL_USE_TLS = os.environ.get('JUNTAGRICO_EMAIL_TLS', 'False')=='True'
 EMAIL_USE_SSL = os.environ.get('JUNTAGRICO_EMAIL_SSL', 'False')=='True'
 
-DEFAULT_EMAIL = os.environ.get('JUNTAGRICO_EMAIL_USER')
+DEFAULT_FROM_EMAIL = os.environ.get('JUNTAGRICO_EMAIL_USER')
