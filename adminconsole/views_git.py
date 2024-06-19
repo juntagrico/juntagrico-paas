@@ -24,7 +24,7 @@ def github_callback(request):
     req = r.Request('https://github.com/login/oauth/access_token', data=data)
     resp = r.urlopen(req)
     key = str(resp.read()).split('&')[0].split('=')[1]
-    GitHubKey.objects.create(user=request.user, key=key)
+    GitHubKey.objects.update_or_create(user=request.user, defaults={'key': key})
     return redirect('/ca/repo')
 
 
