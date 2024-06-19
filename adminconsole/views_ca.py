@@ -35,7 +35,7 @@ def create_app(request):
 @login_required
 def app_form(request):
     user = request.user
-    clone_url = request.session.get('git_clone_url','')
+    clone_url = request.session.get('git_clone_url', '')
     if request.method == 'POST':
         port = find_port()
         app = App(git_clone_url=clone_url,

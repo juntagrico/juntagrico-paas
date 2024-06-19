@@ -36,7 +36,7 @@ def select_repo(request):
     if request.method == 'POST':
         selected_repo = request.POST.get('repo')
         for repo in repos:
-            if repo.name == selected_repo:
+            if repo.id == selected_repo:
                 request.session['git_clone_url'] = repo.clone_url
                 return redirect('/ca/af')
     render_dict = {
