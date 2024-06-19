@@ -174,7 +174,7 @@ def logs(request, app_id):
     name = app.name
     client = docker.from_env()
     container = client.containers.get(name)
-    result_text = container.logs()
+    result_text = container.logs(tail=1000)
     result_text = result_text.decode('utf-8') 
     return render(request, 'mailtexts.html', {'text': result_text})
 
