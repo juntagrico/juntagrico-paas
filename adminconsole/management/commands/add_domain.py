@@ -6,7 +6,6 @@ from django.template.loader import get_template
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
-
         parser.add_argument('app_name', nargs=1)
         parser.add_argument('port', nargs=1)
         parser.add_argument('domain', nargs=1)
@@ -27,10 +26,12 @@ class Command(BaseCommand):
         }
         content = template.render(d)
 
-        with open('/etc/nginx/sites-available/'+domain, "w") as domain_file:
+        with open('/etc/nginx/sites-available/' + domain, "w") as domain_file:
             domain_file.write(content)
 
-        proc = subprocess.run(['ln', '-s', '/etc/nginx/sites-available/'+domain, '/etc/nginx/sites-enabled'], stdout = subprocess.PIPE)
+        proc = subprocess.run(['ln', '-s', '/etc/nginx/sites-available/' + domain, '/etc/nginx/sites-enabled'],
+                              stdout=subprocess.PIPE)
         print(str(proc.stdout))
-        proc = subprocess.run(['certbot', '--nginx', '--redirect', '--keep', '-n', '-d', domain], stdout = subprocess.PIPE, cwd=rdir)
+        proc = subprocess.run(['certbot', '--nginx', '--redirect', '--keep', '-n', '-d', domain],
+                              stdout=subprocess.PIPE, cwd=rdir)
         print(str(proc.stdout))

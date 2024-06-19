@@ -12,9 +12,9 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         name = options['app_name'][0]
         python_version = options['python_version']
-        dir = '/var/django/projects/'+name
+        base_dir = '/var/django/projects/'+name
 
         client = docker.from_env()
 
-        result = client.images.build(path=dir, tag=name+':latest', buildargs={'pythonversion':python_version})
+        result = client.images.build(path=base_dir, tag=name+':latest', buildargs={'pythonversion': python_version})
         print(*result[1], sep="\n")

@@ -12,12 +12,7 @@ class Command(BaseCommand):
     # entry point used by manage.py
     def handle(self, *args, **options):
         name = options['app_name'][0]
-        dir = '/var/django/projects/'+name
         cdir = '/var/django/projects/'+name+'/code'
-
-        with open(dir+'/build/'+name+'.env') as f:
-            env = f.readlines()
-        env = [x.strip() for x in env] 
 
         client = docker.from_env()
 

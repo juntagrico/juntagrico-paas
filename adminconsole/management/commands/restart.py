@@ -4,6 +4,7 @@ from django.core.management.base import BaseCommand
 
 from adminconsole.models import App
 
+
 class Command(BaseCommand):
     def add_arguments(self, parser):
 
@@ -14,9 +15,9 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         name = options['app_name'][0]
         port = options['port'] or App.objects.get(name=name).port
-        dir = '/var/django/projects/'+name
+        base_dir = '/var/django/projects/'+name
 
-        with open(dir+'/build/'+name+'.env') as f:
+        with open(base_dir+'/build/'+name+'.env') as f:
             env = f.readlines()
         env = [x.strip() for x in env]
         env = [x for x in env if x]
@@ -30,19 +31,18 @@ class Command(BaseCommand):
         except:
             print('container not found or other error')
 
-        container = client.containers.run(image=name+':latest',
-                                       detach=True,
-                                       environment=env,
-                                       name=name,
-                                       ports={'80':port},
-                                       extra_hosts={"host.docker.internal":"172.17.0.1"},
-                                       restart_policy={'Name': 'always'},
-                                       volumes={dir+'/code': {'bind': '/code/',
-                                                           'mode': 'rw'},
-                                                dir+'/static': {'bind': '/code/static/',
-                                                             'mode': 'rw'},
-                                                dir+'/media': {'bind': '/code/media/',
-                                                            'mode': 'rw'},
-                                               }
-                                        )
+        container = client.containers.run(
+            image=name + ':latest',
+            detach=True,
+            environment=env,
+            name=name,
+            ports={'80': ('127.0.0.1', port)},
+            extra_hosts={"host.docker.internal": "172.17.0.1"},
+            restart_policy={'Name': 'always'},
+            volumes={
+                base_dir + '/code': {'bind': '/code/', 'mode': 'rw'},
+                base_dir + '/static': {'bind': '/code/static/', 'mode': 'rw'},
+                base_dir + '/media': {'bind': '/code/media/', 'mode': 'rw'},
+            }
+        )
         print(container.status)
