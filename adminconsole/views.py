@@ -89,7 +89,7 @@ def show_log(request, app_id):
         b_texts = file.readlines()
         texts = [str(eval(b_text), 'utf-8') if b_text.startswith('b') else b_text for b_text in b_texts]
         result_text = '\n'.join(texts)
-    return render(request, 'mailtexts.html', {'text': result_text})
+    return render(request, 'mailtexts.html', {'app': app, 'text': result_text})
 
 
 @owner_of_app
@@ -193,7 +193,7 @@ def mailtexts(request, app_id):
     result_text = result.output.decode('utf-8')
     if '(request)' in result_text:
         result_text = result_text.split('(request)')[1]
-    return render(request, 'mailtexts.html', {'text': result_text})
+    return render(request, 'mailtexts.html', {'app': app, 'text': result_text})
 
 
 @owner_of_app
@@ -204,7 +204,7 @@ def logs(request, app_id):
     container = client.containers.get(name)
     result_text = container.logs(tail=1000)
     result_text = result_text.decode('utf-8') 
-    return render(request, 'mailtexts.html', {'text': result_text})
+    return render(request, 'mailtexts.html', {'app': app, 'text': result_text})
 
 
 @owner_of_app
@@ -216,7 +216,7 @@ def migrate(request, app_id):
     cmd = ['python', '-m', 'manage', 'migrate']
     result = container.exec_run(cmd)
     result_text = result.output.decode('utf-8')
-    return render(request, 'mailtexts.html', {'text': result_text})
+    return render(request, 'mailtexts.html', {'app': app, 'text': result_text})
 
 
 @owner_of_app
@@ -228,7 +228,7 @@ def collectstatic(request, app_id):
     cmd = ['python', '-m', 'manage', 'collectstatic', '--noinput', '-c']
     result = container.exec_run(cmd)
     result_text = result.output.decode('utf-8')
-    return render(request, 'mailtexts.html', {'text': result_text})
+    return render(request, 'mailtexts.html', {'app': app, 'text': result_text})
 
 
 @owner_of_app
@@ -242,7 +242,7 @@ def restart(request, app_id):
     dt = datetime.strptime(result_text, '%Y-%m-%dT%H:%M:%S %Z%z')
     dt = dt.astimezone(timezone('CET'))
     result_text = dt.strftime('%d-%m-%Y %H:%M:%S %Z%z')
-    return render(request, 'mailtexts.html', {'text': result_text})
+    return render(request, 'mailtexts.html', {'app': app, 'text': result_text})
 
 @login_required
 def profile(request):
