@@ -36,7 +36,7 @@ class Command(BaseCommand):
         client = docker.from_env()
 
         result = client.images.build(path=bdir + '/', tag=name + ':latest')
-        print(result[1])
+        print(*result[1], sep="\n")
 
         try:
             container = client.containers.get(name)
@@ -59,11 +59,12 @@ class Command(BaseCommand):
                 dir + '/media': {'bind': '/code/media/', 'mode': 'rw'},
             }
         )
+        print(container.status)
 
         cmd = ['python', '-m', 'manage', 'migrate']
         result = container.exec_run(cmd)
         print(result[1])
-        cmd = ['python', '-m', 'manage', 'collectstatic']
+        cmd = ['python', '-m', 'manage', 'collectstatic', '--noinput', '-c']
         result = container.exec_run(cmd)
         print(result[1])
 
