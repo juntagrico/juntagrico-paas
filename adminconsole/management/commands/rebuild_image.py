@@ -23,6 +23,7 @@ class Command(BaseCommand):
         with open(bdir + '/' + name + '.env') as f:
             env = f.readlines()
         env = [x.strip() for x in env]
+        env = [x for x in env if x]
 
         # get latest requirements.txt
         proc = subprocess.run(['git', 'fetch'], stdout=subprocess.PIPE, cwd=cdir)
@@ -34,8 +35,7 @@ class Command(BaseCommand):
 
         client = docker.from_env()
 
-        result = client.images.build(path=dir + '/build/',
-                                     tag=name + ':latest')
+        result = client.images.build(path=bdir + '/', tag=name + ':latest')
         print(result[1])
 
         try:
@@ -55,8 +55,8 @@ class Command(BaseCommand):
             restart_policy={'Name': 'always'},
             volumes={
                 dir + '/code': {'bind': '/code/', 'mode': 'rw'},
-                dir + '/static': {'bind': '/code/static/',  'mode': 'rw'},
-                dir + '/media': {'bind': '/code/media/',  'mode': 'rw'},
+                dir + '/static': {'bind': '/code/static/', 'mode': 'rw'},
+                dir + '/media': {'bind': '/code/media/', 'mode': 'rw'},
             }
         )
 
