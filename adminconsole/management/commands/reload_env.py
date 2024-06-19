@@ -13,7 +13,7 @@ class Command(BaseCommand):
         name = options['app_name'][0]
         port = options['port'][0]
         dir = '/var/django/projects/'+name
-        runcmd = 'gunicorn --bind 127.0.0.1:'+port+' -t 6000  '+name+'.wsgi &'
+        runcmd = 'gunicorn --bind 127.0.0.1:'+port+' -t 6000 '+name+'.wsgi &'
 
         with open(dir+'/build/'+name+'.env') as f:
             env = f.readlines()

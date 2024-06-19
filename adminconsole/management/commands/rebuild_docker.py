@@ -19,6 +19,7 @@ class Command(BaseCommand):
         container = client.containers.get(name)
 
         proc = subprocess.run(['git', 'fetch'], stdout=subprocess.PIPE, cwd=cdir)
+        print(str(proc.stdout))
         proc = subprocess.run(['git', 'reset', '--hard', '@{u}'], stdout=subprocess.PIPE, cwd=cdir)
         print(str(proc.stdout))
 

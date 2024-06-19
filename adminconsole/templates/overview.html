@@ -8,7 +8,7 @@
     <div class="row mb-3">
         <div class="col-md-12">
             <h2>Deploy</h2>
-            <div class="row mb-3">
+            <div class="row mb-2">
                 <div class="col-md-3">
                     <a href="/reload/{{ app.id }}/" class="btn btn-primary">redeploy</a>
                 </div>
@@ -19,14 +19,26 @@
                     </p>
                 </div>
             </div>
-            <div class="row mb-3">
-                <div class="col-md-12">
+            <div class="row mb-4">
+                <div class="offset-md-3 col-md-9">
                     <p>
                         Erneute manuelle Ausführung der letzten 3 Schritte:
                     </p>
                     <a href="/migrate/{{ app.id }}/" class="btn btn-outline-primary">migrate</a>
                     <a href="/collectstatic/{{ app.id }}/" class="btn btn-outline-primary">collectstatic</a>
                     <a href="/crestart/{{ app.id }}/" class="btn btn-outline-primary">restart</a>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <a href="{% url "rebuild-image" app.id %}" class="btn btn-outline-danger">rebuild</a>
+                </div>
+                <div class="col-md-9">
+                    <p>
+                        Verwende dies, falls die Instanz nicht mehr starten will und einen 502 Error zeigt.
+                        Dies erstellt das Docker-Image neu mit deinen neusten requirements, wie bei der
+                        ersten Installation. Die Datenbankdaten bleiben erhalten.
+                    </p>
                 </div>
             </div>
         </div>

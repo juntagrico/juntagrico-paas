@@ -1,6 +1,4 @@
 import subprocess
-import random
-import string
 
 from cookiecutter.main import cookiecutter
 

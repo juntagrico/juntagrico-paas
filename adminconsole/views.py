@@ -63,6 +63,23 @@ def reload(request, app_id):
     }
     return render(request, 'wait_next.html', render_dict)
 
+
+@owner_of_app
+def rebuild_image(request, app_id):
+    app = get_object_or_404(App, pk=app_id)
+    name = app.name
+    fn = '/var/django/projects/' + name + '.txt'
+    with open(fn, 'wb') as out:
+        proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'rebuild_image', name, str(app.port)],
+                                stdout=out, stderr=out)
+    render_dict = {
+        'step': 'git pull, rebuild docker image with latest requirements, restart container, migrate and collectstatic',
+        'pid': proc.pid,
+        'next': '/showlog/' + str(app_id) + '/'
+    }
+    return render(request, 'wait_next.html', render_dict)
+
+
 @owner_of_app
 def show_log(request, app_id):
     app = get_object_or_404(App, pk=app_id)
