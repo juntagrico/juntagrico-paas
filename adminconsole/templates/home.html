@@ -15,11 +15,13 @@
         <div class="row mb-3">
             <div class="col-md-12">
                 <h2>Apps</h2>
-                {% for app in apps %}
-                    <p>
-                        <a href="{% url "overview" app.id %}">{{ app.name }}</a>
-                    </p>
-                {% endfor %}
+                <ol>
+                    {% for app in apps %}
+                        <li>
+                            <a href="{% url "overview" app.id %}">{{ app.name }}</a>
+                        </li>
+                    {% endfor %}
+                </ol>
             </div>
         </div>
     {% endif %}
