@@ -6,9 +6,8 @@
     {% csrf_token %}
     
     {% for field in form %}
-    <div class="form-group">
+    <div class="form-group row">
         <label class="control-label col-md-4" for="{{ field.id_for_label }}">{{ field.label }} {% if field.field.required %}*{% endif %}</label>
-
         <div class="controls col-md-8">
             {{ field }}
         </div>
@@ -19,9 +18,9 @@
 
     {% endfor %}        
     
-            <div class="form-actions col-md-offset-4 col-md-8">
-                <button type="submit" class="btn btn-success">weiter</button>
-            </div>
+    <div class="form-actions offset-md-4 col-md-8">
+        <button type="submit" class="btn btn-success">weiter</button>
+    </div>
 </form>
 
 {% endblock %}

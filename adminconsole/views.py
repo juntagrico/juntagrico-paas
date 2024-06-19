@@ -22,7 +22,7 @@ def home(request):
         apps = request.user.app.all()
     number_of_apps = apps.count()
     if number_of_apps == 1 and not superuser:
-        redirect('overview', app_id=apps[0].id)
+        return redirect('overview', app_id=apps[0].id)
     can_add_apps = number_of_apps < 1 or superuser
     renderdict = {
         'apps': apps,
