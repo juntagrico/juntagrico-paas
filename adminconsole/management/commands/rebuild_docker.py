@@ -38,6 +38,8 @@ class Command(BaseCommand):
             cmd = ['python', '-m', 'manage', 'collectstatic', '--noinput', '-c']
             result = container.exec_run(cmd)
             print(result[1])
+
+            container.restart()
         else:
             print('pip install failed! Fix your requirements.txt and redeploy. Do not restart the instance.')
 
