@@ -18,7 +18,8 @@ class Command(BaseCommand):
 
         container = client.containers.get(name)
 
-        proc = subprocess.run(['git', 'pull'], stdout = subprocess.PIPE, cwd=cdir)
+        proc = subprocess.run(['git', 'fetch'], stdout=subprocess.PIPE, cwd=cdir)
+        proc = subprocess.run(['git', 'reset', '--hard', '@{u}'], stdout=subprocess.PIPE, cwd=cdir)
         print(str(proc.stdout))
 
         cmd = 'pip install --upgrade -r requirements.txt'
