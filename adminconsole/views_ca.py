@@ -23,6 +23,7 @@ def import_app(request):
 
 @login_required
 def create_app(request):
+    request.session['import'] = False
     user = request.user
     if Config.test_localhost():
         return redirect('/ca/af')
