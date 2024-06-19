@@ -16,6 +16,13 @@
     }
 }
 
+.bi {
+    width: 1em;
+    height: 1em;
+    vertical-align: -.125em;
+    padding-right: 0.2em;
+}
+
 .juntagrico_logo {
     background: url(/static/img/juntagrico.png) 0 0px;
     background-size: contain;

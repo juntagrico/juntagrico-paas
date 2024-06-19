@@ -7,97 +7,133 @@
 {% block content %}
     <div class="row mb-3">
         <div class="col-md-12">
-            <h2>Deploy</h2>
-            <div class="row mb-2">
-                <div class="col-md-3">
-                    <a href="/reload/{{ app.id }}/" class="btn btn-primary">redeploy</a>
-                </div>
-                <div class="col-md-9">
-                    <p>
-                        Lädt den aktuellen Code von Github, installiert requirements.txt,
-                        lässt migrate and collectstatic laufen und startet den Docker-Container neu.
-                    </p>
-                </div>
-            </div>
-            <div class="row mb-4">
-                <div class="offset-md-3 col-md-9">
-                    <p>
-                        Erneute manuelle Ausführung der letzten 3 Schritte:
-                    </p>
-                    <a href="/migrate/{{ app.id }}/" class="btn btn-outline-primary">migrate</a>
-                    <a href="/collectstatic/{{ app.id }}/" class="btn btn-outline-primary">collectstatic</a>
-                    <a href="/crestart/{{ app.id }}/" class="btn btn-outline-primary">restart</a>
-                </div>
-            </div>
-            <div class="row mb-3">
-                <div class="col-md-3">
-                    <a href="{% url "rebuild-image" app.id %}" class="btn btn-outline-danger">rebuild</a>
-                </div>
-                <div class="col-md-9">
-                    <p>
-                        Verwende dies, falls die Instanz nicht mehr starten will und einen 502 Error zeigt.
-                        Dies erstellt das Docker-Image neu mit deinen neusten requirements, wie bei der
-                        ersten Installation. Die Datenbankdaten bleiben erhalten.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="row mb-3">
-        <div class="col-md-12">
-            <h2>Setup</h2>
-            <div class="row mb-3">
-                <div class="col-md-3">
-                    <a href="/env/{{ app.id }}/" class="btn btn-primary">settings</a>
-                </div>
-                <div class="col-md-9">
-                    Hier können E-Mail-Server und mehr geändert werden.
-                </div>
-            </div>
-            <div class="row mb-3">
-                <div class="col-md-3">
-                    <a href="/dom/form/{{ app.id }}/" class="btn btn-outline-primary">Domain hinzufügen</a>
-                </div>
-                <div class="col-md-9">
-                    Fügt eine neue Domain hinzu und installiert SSL-Verschlüsselung für diese.
-                    <p class="alert alert-info">
-                        Der DNS-Eintrag der Domain muss auf 185.178.192.170 zeigen. 
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="row mb-3">
-        <div class="col-md-12">
-            <h2>Admin</h2>
-            <div class="row mb-3">
-                <div class="col-md-3">
-                    <a href="/gdl/{{ app.id }}/" class="btn btn-outline-primary">Depotliste generieren</a>
-                </div>
-                <div class="col-md-9">
-                    <samp>manage.py generate_depot_list --force</samp>
-                    <p class="alert alert-info">
-                        Seit Juntagrico 1.6 kann die Depotliste auch in der Instanz selbst generiert werden
-                        unter Administration &rarr; Listen &rarr; Erzeugen.
-                    </p>
-                </div>
-            </div>
-
-            <div class="row mb-3">
-                <div class="col-md-3">
-                    <a href="/mailtexts/{{ app.id }}/" class="btn btn-outline-primary">Mail Texte</a>
-                </div>
-                <div class="col-md-9">
-                    <samp>manage.py mailtexts</samp>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="row mb-3">
-        <div class="col-md-12">
-            <h2>Status</h2>
+            <h3>Status</h3>
             <a href="/logs/{{ app.id }}/" class="btn btn-outline-primary">Logs anzeigen</a>
             <a href="https://{{ app.name}}.juntagrico.science/" class="btn btn-primary" target="_blank">Seite öffnen</a>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <h3>Deploy</h3>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="card border-primary">
+                        <h4 class="card-header">Redeploy</h4>
+                        <div class="card-body">
+                            <p class="card-text">
+                                Lädt den aktuellen Code von Github, installiert requirements.txt,
+                                lässt migrate and collectstatic laufen und startet den Docker-Container neu.
+                            </p>
+                            <a href="/reload/{{ app.id }}/" class="btn btn-primary btn-lg">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-box-arrow-in-down" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M3.5 6a.5.5 0 0 0-.5.5v8a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-8a.5.5 0 0 0-.5-.5h-2a.5.5 0 0 1 0-1h2A1.5 1.5 0 0 1 14 6.5v8a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 14.5v-8A1.5 1.5 0 0 1 3.5 5h2a.5.5 0 0 1 0 1z"/>
+                                    <path fill-rule="evenodd" d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/>
+                                </svg>
+                                Redeploy
+                            </a>
+                            <p class="card-text mt-3">
+                                Erneute manuelle Ausführung der letzten 3 Schritte:
+                            </p>
+                            <div class="btn-group" role="group">
+                                <a href="/migrate/{{ app.id }}/" class="btn btn-outline-primary">Migrate</a>
+                                <a href="/collectstatic/{{ app.id }}/" class="btn btn-outline-primary">Collectstatic</a>
+                                <a href="/crestart/{{ app.id }}/" class="btn btn-outline-primary">Neustart</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <h4 class="card-header">Rebuild</h4>
+                        <div class="card-body">
+                            <p class="card-text">
+                                Verwende diese Funktion, falls die Instanz nicht mehr starten will und
+                                einen 502 Error zeigt.
+                                Dies erstellt das Docker-Image neu mit deinen neusten requirements, wie bei der
+                                ersten Installation. Die Datenbankdaten bleiben erhalten.
+                            </p>
+                            <a href="{% url "rebuild-image" app.id %}" class="btn btn-outline-danger">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-boxes" viewBox="0 0 16 16">
+                                    <path d="M7.752.066a.5.5 0 0 1 .496 0l3.75 2.143a.5.5 0 0 1 .252.434v3.995l3.498 2A.5.5 0 0 1 16 9.07v4.286a.5.5 0 0 1-.252.434l-3.75 2.143a.5.5 0 0 1-.496 0l-3.502-2-3.502 2.001a.5.5 0 0 1-.496 0l-3.75-2.143A.5.5 0 0 1 0 13.357V9.071a.5.5 0 0 1 .252-.434L3.75 6.638V2.643a.5.5 0 0 1 .252-.434zM4.25 7.504 1.508 9.071l2.742 1.567 2.742-1.567zM7.5 9.933l-2.75 1.571v3.134l2.75-1.571zm1 3.134 2.75 1.571v-3.134L8.5 9.933zm.508-3.996 2.742 1.567 2.742-1.567-2.742-1.567zm2.242-2.433V3.504L8.5 5.076V8.21zM7.5 8.21V5.076L4.75 3.504v3.134zM5.258 2.643 8 4.21l2.742-1.567L8 1.076zM15 9.933l-2.75 1.571v3.134L15 13.067zM3.75 14.638v-3.134L1 9.933v3.134z"/>
+                                </svg>
+                                Rebuild
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <h3>Setup</h3>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="card">
+                        <h4 class="card-header">Einstellungen</h4>
+                        <div class="card-body">
+                            <p class="card-text">
+                                Hier kann u.a. der E-Mail-Server für den Versand konfiguriert werden.
+                            </p>
+                            <a href="/env/{{ app.id }}/" class="btn btn-primary">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-gear" viewBox="0 0 16 16">
+                                    <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492M5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0"/>
+                                    <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115z"/>
+                                </svg>
+                                konfigurieren
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <h4 class="card-header">Domain hinzufügen</h4>
+                        <div class="card-body">
+                            <p class="card-text">
+                                Fügt eine neue Domain hinzu und installiert ein SSL-Zertifikat für diese.
+                            </p>
+                            <p class="alert alert-info">
+                                Der DNS-Eintrag der Domain muss auf 185.178.192.170 zeigen.
+                            </p>
+                            <a href="/dom/form/{{ app.id }}/" class="btn btn-outline-primary">Hinzufügen</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <h3>Admin-Tools</h3>
+                        <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="card">
+                        <h4 class="card-header">Depotliste erzeugen</h4>
+                        <div class="card-body">
+                            <p class="card-text">
+                                Erzeuge neue Depotlisten mit folgendem Befehl:
+                            </p>
+                            <samp class="small">manage.py generate_depot_list &#8209;&#8209;force</samp>
+                            <p class="alert alert-info">
+                                Seit Juntagrico 1.6 kann die Depotliste auch in der Instanz selbst generiert werden
+                                unter Administration &rarr; Listen &rarr; Erzeugen.
+                            </p>
+                            <a href="/gdl/{{ app.id }}/" class="btn btn-outline-primary">Erzeugen</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <h4 class="card-header">Email-Texte ansehen</h4>
+                        <div class="card-body">
+                            <p class="card-text">
+                                Erzeugt die E-Mail-Texte mit deinen personalisierten Templates.
+                            </p>
+                            <a href="/mailtexts/{{ app.id }}/" class="btn btn-outline-primary">Email-Texte</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 {% endblock %}
