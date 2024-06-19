@@ -21,12 +21,23 @@ def home(request):
     else:
         apps = request.user.app.all()
     number_of_apps = apps.count()
+    if number_of_apps == 1 and not superuser:
+        redirect('overview', app_id=apps[0].id)
     can_add_apps = number_of_apps < 1 or superuser
     renderdict = {
         'apps': apps,
-        'can_add_app' : can_add_apps,
+        'can_add_app': can_add_apps,
     }
     return render(request, 'home.html', renderdict)
+
+
+@owner_of_app
+def overview(request, app_id):
+    app = get_object_or_404(App, pk=app_id)
+    renderdict = {
+        'app': app,
+    }
+    return render(request, 'overview.html', renderdict)
 
 
 @login_required

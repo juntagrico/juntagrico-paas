@@ -1,29 +1,28 @@
 {% extends "base.html" %}
 
 {% block content %}
-        {% if can_add_app %}
-          <a href="/ca/start" class="btn btn-success">neue Applikation</a><p/>
-          <a href="/ca/import" class="btn btn-success">bestehende Applikation importieren</a><p/>
-        {% endif %}
-          <table class="list table" style="display: table;">
-          <tbody>
-            {% for app in apps %}
-                <tr>
-                    <td>{{ app.name }}</td>
-                    <td><a href="/reload/{{ app.id }}/" class="btn btn-success">redeploy</a></td>
-                    <td><a href="/env/{{ app.id }}/" class="btn btn-success">settings</a></td>
-                    <td><a href="/gdl/{{ app.id }}/" class="btn btn-success">Depotliste generieren</a></td>
-                    <td><a href="/dom/form/{{ app.id }}/" class="btn btn-success">Domain hinzufügen</a></td>
-                    <td><a href="/mailtexts/{{ app.id }}/" class="btn btn-success">Mail Texte</a></td>
-                    <td><a href="/logs/{{ app.id }}/" class="btn btn-success">Logs</a></td>
-                    <td><a href="/migrate/{{ app.id }}/" class="btn btn-success">migrate</a></td>
-                    <td><a href="/collectstatic/{{ app.id }}/" class="btn btn-success">collectstatic</a></td>
-                    <td><a href="/crestart/{{ app.id }}/" class="btn btn-success">restart</a></td>
-                    <td><a href="https://{{ app.name}}.juntagrico.science/" class="btn btn-success" target="_blank">öffnen</a></td>
-                </tr>
-            {% endfor %}
-          </table>
-
+    {% if can_add_app %}
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <div role="group">
+                    <a href="/ca/start" class="btn btn-success">neue Applikation</a>
+                    <a href="/ca/import" class="btn btn-outline-success">bestehende Applikation importieren</a>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    {% if apps %}
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <h2>Apps</h2>
+                {% for app in apps %}
+                    <p>
+                        <a href="{% url "overview" app.id %}">{{ app.name }}</a>
+                    </p>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
 {% endblock %}
 
 

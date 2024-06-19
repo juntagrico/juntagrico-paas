@@ -1,3 +1,9 @@
+@media (min-width: 1200px) {
+    .page-container {
+        width: 1170px;
+    }
+}
+
 .juntagrico_logo {
     background: url(/static/img/juntagrico.png) 0 0px;
     background-size: contain;

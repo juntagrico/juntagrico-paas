@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block page_title %}
+    <h1>{{ app.name }}</h1>
+{% endblock %}
+
+{% block content %}
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <h2>Deploy</h2>
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <a href="/reload/{{ app.id }}/" class="btn btn-primary">redeploy</a>
+                </div>
+                <div class="col-md-9">
+                    <p>
+                        Lädt den aktuellen Code von Github, installiert requirements.txt,
+                        lässt migrate and collectstatic laufen und startet den Docker-Container neu.
+                    </p>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <p>
+                        Erneute manuelle Ausführung der letzten 3 Schritte:
+                    </p>
+                    <a href="/migrate/{{ app.id }}/" class="btn btn-outline-primary">migrate</a>
+                    <a href="/collectstatic/{{ app.id }}/" class="btn btn-outline-primary">collectstatic</a>
+                    <a href="/crestart/{{ app.id }}/" class="btn btn-outline-primary">restart</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <h2>Setup</h2>
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <a href="/env/{{ app.id }}/" class="btn btn-primary">settings</a>
+                </div>
+                <div class="col-md-9">
+                    Hier können E-Mail-Server und mehr geändert werden.
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <a href="/dom/form/{{ app.id }}/" class="btn btn-outline-primary">Domain hinzufügen</a>
+                </div>
+                <div class="col-md-9">
+                    Fügt eine neue Domain hinzu und installiert SSL-Verschlüsselung für diese.
+                    <p class="alert alert-info">
+                        Der DNS-Eintrag der Domain muss auf 185.178.192.170 zeigen. 
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <h2>Admin</h2>
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <a href="/gdl/{{ app.id }}/" class="btn btn-outline-primary">Depotliste generieren</a>
+                </div>
+                <div class="col-md-9">
+                    <samp>manage.py generate_depot_list --force</samp>
+                    <p class="alert alert-info">
+                        Seit Juntagrico 1.6 kann die Depotliste auch in der Instanz selbst generiert werden
+                        unter Administration &rarr; Listen &rarr; Erzeugen.
+                    </p>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <a href="/mailtexts/{{ app.id }}/" class="btn btn-outline-primary">Mail Texte</a>
+                </div>
+                <div class="col-md-9">
+                    <samp>manage.py mailtexts</samp>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <h2>Status</h2>
+            <a href="/logs/{{ app.id }}/" class="btn btn-outline-primary">Logs anzeigen</a>
+            <a href="https://{{ app.name}}.juntagrico.science/" class="btn btn-primary" target="_blank">Seite öffnen</a>
+        </div>
+    </div>
+{% endblock %}

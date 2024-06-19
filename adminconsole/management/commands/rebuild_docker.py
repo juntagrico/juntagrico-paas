@@ -26,8 +26,7 @@ class Command(BaseCommand):
         print(result[1])
 
         if result[0] == 0:  # only continue if pip install succeeded
-            result = container.commit(repository=name,
-                               tag='latest')
+            result = container.commit(repository=name, tag='latest')
             print(result)
 
             container.restart()
