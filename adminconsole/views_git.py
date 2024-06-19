@@ -1,7 +1,7 @@
 import subprocess
 from urllib import request as r, parse
 
-from github import Github
+from github import Github, BadCredentialsException
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -32,6 +32,12 @@ def github_callback(request):
 def select_repo(request):
     key = request.user.githubkey.key
     g = Github(key)
+    # check if key is still valid
+    try:
+        g.get_user().login
+    except BadCredentialsException:
+        return redirect('/github/request')
+    # show repos
     repos = g.get_user().get_repos()
     if request.method == 'POST':
         selected_repo = request.POST.get('repo')
