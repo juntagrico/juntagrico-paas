@@ -32,19 +32,20 @@ def github_callback(request):
 def select_repo(request):
     key = request.user.githubkey.key
     g = Github(key)
+
+    if request.method == 'POST':
+        selected_repo = int(request.POST.get('repo'))
+        request.session['git_clone_url'] = g.get_repo(selected_repo).clone_url
+        return redirect('/ca/af')
+
     # check if key is still valid
     try:
         g.get_user().login
     except BadCredentialsException:
         return redirect('/github/request')
+
     # show repos
     repos = g.get_user().get_repos()
-    if request.method == 'POST':
-        selected_repo = request.POST.get('repo')
-        for repo in repos:
-            if repo.id == selected_repo:
-                request.session['git_clone_url'] = repo.clone_url
-                return redirect('/ca/af')
     render_dict = {
         'repos': repos,
     }
