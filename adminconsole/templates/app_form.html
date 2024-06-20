@@ -3,7 +3,7 @@
 {% block content %}
     <form action="" method="post">
         {% csrf_token %}
-        
+
         <div class="form-group">
             <label for="{{ form.name.id_for_label }}">Name der Applikation*</label>
             {{ form.name }}
@@ -14,16 +14,19 @@
         {% if form.name.errors %}
             <div class="alert alert-danger col-md-12">{{form.name.errors}}</div>
         {% endif %}
-        
+
         <div class="form-check">
             <span class="switch switch-sm">
                 {{ form.managed }}
                 <label for="{{ form.managed.id_for_label }}">
-                    Soll die Applikation automatisch aktualisiert werden, wenn eine neue juntagrico Version erscheint?
+                    Automatische Updates
                 </label>
             </span>
+            <small id="managed_help" class="form-text text-muted">
+                Soll die Applikation automatisch aktualisiert werden, wenn eine neue juntagrico Version erscheint?
+            </small>
         </div>
-    
+
         <button type="submit" class="btn btn-success mt-3">weiter</button>
     </form>
 {% endblock %}

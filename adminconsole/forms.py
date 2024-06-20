@@ -58,7 +58,7 @@ class AppForm(ModelForm):
         fields = ['name', 'managed']
         widgets = {
             'name': TextInput(attrs={'class': 'form-control', 'aria-describedby': 'app_name_help'}),
-            'managed': CheckboxInput(attrs={'class': 'switch'})
+            'managed': CheckboxInput(attrs={'class': 'switch', 'aria-describedby': 'managed_help'})
         }
 
 
