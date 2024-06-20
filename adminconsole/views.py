@@ -143,19 +143,35 @@ def change_branch(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     name = app.name
     cdir = '/var/django/projects/' + name + '/code'
-    success = None
+    cdir = '.'
+    error = ''
+    success = False
     if request.method == 'POST':
         form = BranchForm(request.POST)
         if form.is_valid():
             branch = re.sub('[?*[@#$;&~^: ]', '', form.cleaned_data['branch'])
-            proc = subprocess.Popen(['git', 'checkout', '-B', branch], cwd=cdir)
-            proc.wait()
-            success = proc.returncode == 0
+            proc = subprocess.run(['git', 'fetch', 'origin', branch],
+                                  stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
+            if proc.returncode != 0:
+                error += proc.stdout.decode()
+            else:
+                proc = subprocess.run(['git', 'checkout', '-B', branch],
+                                      stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
+                if proc.returncode != 0:
+                    error += proc.stdout.decode()
+                else:
+                    proc = subprocess.run(['git', 'branch', '-u', 'origin/' + branch, branch],
+                                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
+                    if proc.returncode != 0:
+                        error += proc.stdout.decode()
+                    else:
+                        success = True
     proc = subprocess.Popen(['git', 'branch', '--show-current'], stdout=subprocess.PIPE, cwd=cdir)
     branch = proc.stdout.read().decode().strip()
     form = BranchForm(initial={'branch': branch})
-    return render(request, 'branch_form.html', {'form': form, 'success': success, 'app': app})
-
+    return render(request, 'branch_form.html', {
+        'form': form, 'success': success, 'error': error, 'app': app
+    })
 
 
 @owner_of_app

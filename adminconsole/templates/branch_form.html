@@ -3,21 +3,28 @@
 {% block content %}
     {% if success %}
         <div class="alert alert-success">
-            Branch wurde erfolgreich geändert.
-            Mache einen Redeploy um den neuen Branch zu verwenden.
+            Branch wurde erfolgreich geändert.<br>
+            Mache einen Redeploy um den neuen Branch zu verwenden.<br>
             <a href="{% url "overview" app.id %}" class="btn btn-success">Zurück</a>
         </div>
+    {% else %}
+        <div class="alert alert-info">
+            Der neue Branch muss auf Github bereits existieren.
+        </div>
     {% endif %}
-    <div class="alert alert-info">
-        Es wird nicht geprüft ob der Branch auf Github existiert. Beachte den Log nach dem redeploy.
-    </div>
+    {% if error %}
+        <div class="alert alert-danger">
+            Änderung fehlgeschlagen:<br>
+            {{ error|linebreaksbr }}
+        </div>
+    {% endif %}
     <form action="" method="post">
         {% csrf_token %}
 
         <div class="form-group row">
-            <label class="col-form-label col-md-4" for="{{ form.branch.id_for_label }}">Branch</label>
+            <label class="col-form-label col-md-3" for="{{ form.branch.id_for_label }}">Neuer Branch</label>
 
-            <div class="col-md-8">
+            <div class="col-md-9">
                 {{ form.branch }}
             </div>
         </div>
@@ -26,7 +33,7 @@
         {% endif %}
 
         <div class="form-group row">
-            <div class="offset-md-4 col-md-8">
+            <div class="offset-md-3 col-md-9">
                 <button type="submit" class="btn btn-success">weiter</button>
             </div>
         </div>
