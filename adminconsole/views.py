@@ -5,7 +5,8 @@ from datetime import datetime
 import docker
 import psutil
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
+from django.utils import timezone as django_timezone
 from django.shortcuts import render, redirect, get_object_or_404
 from pytz import timezone
 
@@ -215,6 +216,19 @@ def mailtexts(request, app_id):
     if '(request)' in result_text:
         result_text = result_text.split('(request)')[1]
     return render(request, 'mailtexts.html', {'app': app, 'text': result_text})
+
+
+@owner_of_app
+def dumpdata(request, app_id):
+    app = get_object_or_404(App, pk=app_id)
+    name = app.name
+    client = docker.from_env()
+    container = client.containers.get(name)
+    cmd = ['python', '-m', 'manage', 'dumpdata']
+    result = container.exec_run(cmd)
+    response = HttpResponse(result.output.decode('utf-8'), content_type="application/json")
+    response['Content-Disposition'] = f'inline; filename={name}-{django_timezone.now().strftime("%y_%m_%d_%H_%M")}.json'
+    return response
 
 
 @owner_of_app

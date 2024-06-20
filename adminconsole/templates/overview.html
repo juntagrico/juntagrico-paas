@@ -119,6 +119,31 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="card mb-3">
+                        <h4 class="card-header">Email-Texte ansehen</h4>
+                        <div class="card-body">
+                            <p class="card-text">
+                                Erzeugt die E-Mail-Texte mit deinen personalisierten Templates.
+                            </p>
+                            <a href="/mailtexts/{{ app.id }}/" class="btn btn-outline-primary">Email-Texte</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <h4 class="card-header">Daten exportieren</h4>
+                        <div class="card-body">
+                            <p class="card-text">
+                                Exportiert die Datenbankdaten mit django dumpdata.
+                                Diese können mit django
+                                <a href="https://docs.djangoproject.com/en/4.2/ref/django-admin/#loaddata">loaddata</a>
+                                importiert werden.
+                            </p>
+                            <a href="{% url "dumpdata" app.id %}" class="btn btn-outline-primary">Exportieren</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card mb-3">
                         <h4 class="card-header">Depotliste erzeugen</h4>
                         <div class="card-body">
                             <p class="card-text">
@@ -130,17 +155,6 @@
                                 unter Administration &rarr; Listen &rarr; Erzeugen.
                             </p>
                             <a href="/gdl/{{ app.id }}/" class="btn btn-outline-primary">Erzeugen</a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="card mb-3">
-                        <h4 class="card-header">Email-Texte ansehen</h4>
-                        <div class="card-body">
-                            <p class="card-text">
-                                Erzeugt die E-Mail-Texte mit deinen personalisierten Templates.
-                            </p>
-                            <a href="/mailtexts/{{ app.id }}/" class="btn btn-outline-primary">Email-Texte</a>
                         </div>
                     </div>
                 </div>
