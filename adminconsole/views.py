@@ -143,7 +143,6 @@ def change_branch(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     name = app.name
     cdir = '/var/django/projects/' + name + '/code'
-    cdir = '.'
     error = ''
     success = False
     if request.method == 'POST':
