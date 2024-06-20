@@ -2,13 +2,13 @@
 
 {% block content %}
     
-<form action="" method="post" class="form-horizontal">
+<form action="" method="post">
     {% csrf_token %}
     
     <div class="form-group row">
-        <label class="control-label col-md-4" for="{{ form.name.id_for_label }}">Name der Applikation (nur Kleinbuchstaben und Ziffern) *</label>
+        <label class="col-form-label col-md-4" for="{{ form.name.id_for_label }}">Name der Applikation (nur Kleinbuchstaben und Ziffern) *</label>
 
-        <div class="controls col-md-8">
+        <div class="col-md-8">
             {{ form.name }}
         </div>
     </div>
@@ -17,20 +17,21 @@
     {% endif %}
     
     <div class="form-group row">
-        <label class="col-md-3 control-label"></label>
+        <label class="col-md-3 col-form-label"></label>
         <div class="col-md-9 offset-md-3 controls radio"> 
-            <label for="form.managed.id_for_label" class="control-label col-md-2">
+            <label for="form.managed.id_for_label" class="col-form-label col-md-2">
                 {{ form.managed }}
             </label>
-            <label for="form.managed.id_for_label" class="control-label col-md-7">
+            <label for="form.managed.id_for_label" class="col-form-label col-md-7">
                 Soll die Applikation automatisch aktualisiert werden, wenn eine neue juntagrico Version erscheint?
             </label>
         </div>
     </div>
     
-    
-    <div class="form-actions offset-md-4 col-md-8">
-        <button type="submit" class="btn btn-success">weiter</button>
+    <div class="form-group row">
+        <div class="offset-md-4 col-md-8">
+            <button type="submit" class="btn btn-success">weiter</button>
+        </div>
     </div>
 </form>
 

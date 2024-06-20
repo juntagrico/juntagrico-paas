@@ -19,17 +19,17 @@
     <div class="borderleft"></div>
     <div class="borderright"></div>
     <div class="borderbottom"></div>
-    <div class="row myjuntagrico">
-        <div class="col-md-12">
-            <a href="/"><span class="juntagrico_logo"></span></a>
+    <div class="logo-row row">
+        <div class="logo-col col-md-12">
+            <a href="{% url 'home' %}">
+                <span class="juntagrico-logo juntagrico_logo">
+                </span>
+            </a>
         </div>
     </div>
-    <div class="row myjuntagrico">
+    <div class="all-page-title row mb-3">
     {% block all_page_title %}
-        <div class="col-md-3"> 
-            &nbsp;
-        </div>
-        <div class="col-md-9 juntagrico">
+        <div class="page-title offset-md-3 col-md-9">
             {% block page_title %}
             {% endblock %}
         </div>
@@ -38,9 +38,10 @@
     
     <div class="row juntagrico">
         {% block allcontent %}
-            <div class="col-md-3">
+            <div class="navigation col-md-3 mb-5">
                 <ul class="nav nav-pills nav-stacked main-menu">
-                    <li><h5>Dein Menu {{ user.first_name }}</h5>
+                    <li>
+                        <h5>Dein Menu {{ user.first_name }}</h5>
                     </li>
                     <li>
                         <a href="/">Home</a>
