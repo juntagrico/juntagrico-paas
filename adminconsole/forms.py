@@ -62,9 +62,12 @@ class AppForm(ModelForm):
 
 
 class DomainForm(forms.Form):
-    domain = CharField(label='Domain', max_length=100,
-                             widget=TextInput(attrs={'class': 'form-control'}))
+    domain = CharField(label='Domain', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))
+
+
+class BranchForm(forms.Form):
+    branch = CharField(label='Branch', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))
+
 
 class ProfileForm(forms.Form):
-    email = EmailField(label='email adresse', max_length=100,
-                           widget=TextInput(attrs={'class': 'form-control'}))
+    email = EmailField(label='email adresse', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))

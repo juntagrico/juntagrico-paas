@@ -41,6 +41,8 @@ urlpatterns = [
     path('collectstatic/<int:app_id>/', views.collectstatic),
     path('crestart/<int:app_id>/', views.restart),
     path('rebuild/<int:app_id>/', views.rebuild_image, name='rebuild-image'),
+    path('branch/change/<int:app_id>/', views.change_branch, name='change-branch'),
+
 
 # create application urls in the right order how they flow
     path('ca/start', views_ca.create_app),

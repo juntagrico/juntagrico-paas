@@ -69,7 +69,7 @@
             <h3>Setup</h3>
             <div class="row mb-3">
                 <div class="col-md-6">
-                    <div class="card">
+                    <div class="card mb-3">
                         <h4 class="card-header">Einstellungen</h4>
                         <div class="card-body">
                             <p class="card-text">
@@ -86,7 +86,18 @@
                     </div>
                 </div>
                 <div class="col-md-6">
-                    <div class="card">
+                    <div class="card mb-3">
+                        <h4 class="card-header">Branch wechseln</h4>
+                        <div class="card-body">
+                            <p class="card-text">
+                                Wechsle den branch, von welchem der Code von Github geladen wird.
+                            </p>
+                            <a href="{% url "change-branch" app.id %}" class="btn btn-outline-primary">Ändern</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card mb-3">
                         <h4 class="card-header">Domain hinzufügen</h4>
                         <div class="card-body">
                             <p class="card-text">

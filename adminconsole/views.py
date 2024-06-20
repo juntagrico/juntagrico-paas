@@ -1,3 +1,4 @@
+import re
 import subprocess
 from datetime import datetime
 
@@ -9,7 +10,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from pytz import timezone
 
 from adminconsole.decorators import owner_of_app
-from adminconsole.forms import EnvForm, DomainForm, ProfileForm
+from adminconsole.forms import EnvForm, DomainForm, ProfileForm, BranchForm
 from adminconsole.models import App
 
 
@@ -134,6 +135,25 @@ def env_restart(request, app_id):
         'next': '/'
     }
     return render(request, 'wait_next.html', render_dict)
+
+
+@owner_of_app
+def change_branch(request, app_id):
+    app = get_object_or_404(App, pk=app_id)
+    name = app.name
+    cdir = '/var/django/projects/' + name + '/code'
+    success = None
+    if request.method == 'POST':
+        form = BranchForm(request.POST)
+        if form.is_valid():
+            branch = re.sub('[?*[@#$;&~^: ]', '', form.cleaned_data['branch'])
+            proc = subprocess.Popen(['git', 'checkout', '-B', branch], cwd=cdir)
+            success = proc.returncode == 0
+    proc = subprocess.Popen(['git', 'branch', '--show-current'], stdout=subprocess.PIPE, cwd=cdir)
+    branch = proc.stdout.read()
+    form = BranchForm(initial={'branch': branch})
+    return render(request, 'branch_form.html', {'form': form, 'success': success, 'app': app})
+
 
 
 @owner_of_app

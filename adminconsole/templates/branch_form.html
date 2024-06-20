@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+    {% if success %}
+        <div class="alert alert-success">
+            Branch wurde erfolgreich geändert. 
+            Mache einen Redeploy um den neuen Branch zu verwenden.
+            <a href="{% url "overview" app.id %}" class="btn btn-success">Zurück</a>
+        </div>
+    {% endif %}
+    <div class="alert alert-info">
+        Es wird nicht geprüft ob der Branch auf Github existiert. Beachte den Log nach dem redeploy.
+    </div>
+    <form action="" method="post" class="form-horizontal">
+        {% csrf_token %}
+        
+        <div class="form-group row">
+            <label class="control-label col-md-4" for="{{ form.branch.id_for_label }}">Branch</label>
+    
+            <div class="controls col-md-8">
+                {{ form.branch }}
+            </div>
+        </div>
+        {% if form.branch.errors %}
+            <div class="alert alert-danger col-md-12">{{form.branch.errors}}</div>
+        {% endif %}
+    
+        <div class="form-actions offset-md-4 col-md-8">
+            <button type="submit" class="btn btn-success">weiter</button>
+        </div>
+    </form>
+{% endblock %}
+
