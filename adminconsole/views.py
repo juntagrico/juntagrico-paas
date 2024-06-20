@@ -148,6 +148,7 @@ def change_branch(request, app_id):
         if form.is_valid():
             branch = re.sub('[?*[@#$;&~^: ]', '', form.cleaned_data['branch'])
             proc = subprocess.Popen(['git', 'checkout', '-B', branch], cwd=cdir)
+            proc.wait()
             success = proc.returncode == 0
     proc = subprocess.Popen(['git', 'branch', '--show-current'], stdout=subprocess.PIPE, cwd=cdir)
     branch = proc.stdout.read().decode().strip()
