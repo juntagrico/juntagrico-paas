@@ -227,7 +227,7 @@ def dumpdata(request, app_id):
     cmd = ['python', '-m', 'manage', 'dumpdata']
     result = container.exec_run(cmd)
     response = HttpResponse(result.output.decode('utf-8'), content_type="application/json")
-    response['Content-Disposition'] = f'inline; filename={name}-{django_timezone.now().strftime("%y_%m_%d_%H_%M")}.json'
+    response['Content-Disposition'] = f'attachment; filename={name}-{django_timezone.now().strftime("%y_%m_%d_%H_%M")}.json'
     return response
 
 
