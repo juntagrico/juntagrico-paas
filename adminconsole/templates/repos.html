@@ -1,25 +1,19 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <form action="" method="post" class="createsubscription">
+    <form action="" method="post">
         {% csrf_token %}
         {% for repo in repos %}
-            <div class="form-group row">
-                <label class="col-md-3 col-form-label"></label>
-                <div class="col-md-9 offset-md-3 controls radio"> 
-                    <label for="repo-{{ repo.id }}" class="col-form-label col-md-2">
-                        <input type="radio" name="repo" class="onoffswitch" value="{{ repo.id }}" id="repo-{{ repo.id }}"/>
-                    </label>
-                    <label for="repo-{{ repo.id }}" class="col-form-label col-md-7">
+            <div class="form-group">
+                <span class="switch switch-sm">
+                    <input type="radio" class="switch" name="repo" value="{{ repo.id }}" id="repo-{{ repo.id }}"/>
+                    <label for="repo-{{ repo.id }}">
                         {{repo.full_name}}
                     </label>
-                </div>
+                </span>
             </div>
         {% endfor %}
-        <div class="form-group row">
-            <div class="offset-md-3 col-md-9">
-                <button type="submit" class="btn btn-success">weiter</button>
-            </div>
-        </div>
+
+        <button type="submit" class="btn btn-success mt-3">weiter</button>
     </form>
 {% endblock %}

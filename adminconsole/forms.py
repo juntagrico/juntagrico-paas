@@ -47,6 +47,7 @@ class EnvForm(ModelForm):
             'juntagrico_email_port': TextInput(attrs={'class': 'form-control'}),
             'juntagrico_email_tls': CheckboxInput(attrs={'class': 'form-control'}),
             'juntagrico_email_ssl': CheckboxInput(attrs={'class': 'form-control'}),
+            'juntagrico_secret_key': TextInput(attrs={'class': 'form-control'}),
             'various': Textarea(attrs={'class': 'form-control'})
         }
 
@@ -56,8 +57,8 @@ class AppForm(ModelForm):
         model = App
         fields = ['name', 'managed']
         widgets = {
-            'name': TextInput(attrs={'class': 'form-control'}),
-            'managed': CheckboxInput(attrs={'class': 'onoffswitch'})
+            'name': TextInput(attrs={'class': 'form-control', 'aria-describedby': 'app_name_help'}),
+            'managed': CheckboxInput(attrs={'class': 'switch'})
         }
 
 
