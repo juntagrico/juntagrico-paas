@@ -1,6 +1,7 @@
 import subprocess
 from urllib import request as r, parse
 
+from django.conf import settings
 from github import Github, BadCredentialsException
 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -11,15 +12,16 @@ from adminconsole.models import GitHubKey, App
 
 
 def github_request(request):
-    return redirect('https://github.com/login/oauth/authorize?client_id=b420b562ea569fd26b6e&scope=public_repo')
+    return redirect(f'https://github.com/login/oauth/authorize?client_id={settings.GITHUB_CLIENT_ID}&scope=public_repo')
 
 
 def github_callback(request):
     code = request.GET.get('code')
-    data_dict = {'code': code,
-                 'client_id': 'b420b562ea569fd26b6e',
-                 'client_secret': '40054b662fedbb506539aa8ab91031ca21383cb2'
-                 }
+    data_dict = {
+        'code': code,
+        'client_id': settings.GITHUB_CLIENT_ID,
+        'client_secret': settings.GITHUB_CLIENT_SECRET
+    }
     data = parse.urlencode(data_dict).encode()
     req = r.Request('https://github.com/login/oauth/access_token', data=data)
     resp = r.urlopen(req)
@@ -38,14 +40,13 @@ def select_repo(request):
         request.session['git_clone_url'] = g.get_repo(selected_repo).clone_url
         return redirect('/ca/af')
 
-    # check if key is still valid
-    try:
-        g.get_user().login
-    except BadCredentialsException:
-        return redirect('/github/request')
-
     # show repos
     repos = g.get_user().get_repos()
+    try:
+        # check if key is still valid
+        repos[0]
+    except BadCredentialsException:
+        return redirect('/github/request')
     render_dict = {
         'repos': repos,
     }
@@ -73,7 +74,7 @@ def clone_repo(request):
         'step': 'Repo Klonen',
         'next': '/ck/form',
     }
-    if request.session.get('import',False):
+    if request.session.get('import', False):
         render_dict['next'] = '/ca/db'
     return render(request, 'done_next.html', render_dict)
 
