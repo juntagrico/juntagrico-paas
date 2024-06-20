@@ -24,7 +24,7 @@
 }
 
 .juntagrico_logo {
-    background: url(/static/img/juntagrico.png) 0 0px;
+    background: url(/static/img/juntagrico.png) 0 0;
     background-size: contain;
     background-repeat: no-repeat;
     display: inline-block;
@@ -108,31 +108,9 @@
     font-size: 28pt;
 }
 
-.createsubscription .control-label {
-    font-size: 18px;
-    font-weight: normal;
-}
-
-.createsubscription label {
-    font-weight: normal;
-}
-
-.createsubscription #depot {
-    margin-bottom: 3px;
-}
-
 #map-canvas {
     width: 100%;
     height: 400px;
-}
-
-
-.high-label {
-    line-height: 35px;
-}
-
-.high-label input[type=checkbox] {
-    margin-top: 9px;
 }
 
 .file-upload {
@@ -294,17 +272,12 @@ a:hover, a:focus {
 
 html, body {
     font-family: "Source Sans Pro Light";
-    font-size: 18px;
     background-color: #fefffa;
     height: 100%;
 }
 
 h1, h2, h3, h4, h5, h6, .main-menu {
     font-family: "Source Sans Pro Regular";
-}
-
-select, input[type="text"], input[type="password"], input[type="datetime"], input[type="datetime-local"], input[type="date"], input[type="month"], input[type="time"], input[type="week"], input[type="number"], input[type="email"], input[type="url"], input[type="search"], input[type="tel"], input[type="color"] {
-    height: 30px;
 }
 
 /* general stuff */
@@ -406,13 +379,6 @@ select, input[type="text"], input[type="password"], input[type="datetime"], inpu
     margin-bottom: 1em;
     text-align: left;
     width: auto;
-}
-
-/* form stuff */
-.form-horizontal .control-label {
-    text-align: left;
-    padding-top: 0 px;
-    font-weight: normal;
 }
 
 /* label stuff */
