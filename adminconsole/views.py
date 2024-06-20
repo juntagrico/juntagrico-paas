@@ -150,7 +150,7 @@ def change_branch(request, app_id):
             proc = subprocess.Popen(['git', 'checkout', '-B', branch], cwd=cdir)
             success = proc.returncode == 0
     proc = subprocess.Popen(['git', 'branch', '--show-current'], stdout=subprocess.PIPE, cwd=cdir)
-    branch = proc.stdout.read()
+    branch = proc.stdout.read().decode().strip()
     form = BranchForm(initial={'branch': branch})
     return render(request, 'branch_form.html', {'form': form, 'success': success, 'app': app})
 
