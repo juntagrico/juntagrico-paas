@@ -6,6 +6,7 @@ import docker
 import psutil
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse
+from django.urls import reverse
 from django.utils import timezone as django_timezone
 from django.shortcuts import render, redirect, get_object_or_404
 from pytz import timezone
@@ -133,7 +134,7 @@ def env_restart(request, app_id):
     render_dict = {
         'step': 'env reload',
         'pid': proc.pid,
-        'next': '/'
+        'next': reverse('overview', args=[app.id])
     }
     return render(request, 'wait_next.html', render_dict)
 
@@ -183,7 +184,7 @@ def generate_depot_list(request, app_id):
     container.exec_run(cmd)
     render_dict = {
         'step': 'depot liste generiert ',
-        'next': '/'
+        'next': reverse('overview', args=[app.id])
     }
     return render(request, 'done_next.html', render_dict)
 
