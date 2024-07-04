@@ -240,7 +240,8 @@ def dumpdata(request, app_id):
     name = app.name
     client = docker.from_env()
     container = client.containers.get(name)
-    cmd = ['python', '-m', 'manage', 'dumpdata']
+    cmd = ['python', '-m', 'manage', 'dumpdata', '--natural-foreign', '--natural-primary',
+           '-e', 'contenttypes', '-e', 'auth.permission', '-e', 'sessions']
     result = container.exec_run(cmd, stderr=False)
     response = HttpResponse(result.output.decode('utf-8'), content_type="application/json")
     response['Content-Disposition'] = f'attachment; filename={name}-{django_timezone.now().strftime("%y_%m_%d_%H_%M")}.json'
