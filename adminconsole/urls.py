@@ -25,6 +25,7 @@ urlpatterns = [
     path('accounts/', include('django.contrib.auth.urls')),
     path('profile', views.profile, name='profile'),
     path('', views.home, name='home'),
+    path('overview/<int:app_id>/', views.overview, name='overview'),
     path('ca/import', views_ca.import_app),
     path('dom/form/<int:app_id>/', views.domain_form),
     path('mailtexts/<int:app_id>/', views.mailtexts),
@@ -39,6 +40,9 @@ urlpatterns = [
     path('migrate/<int:app_id>/', views.migrate),
     path('collectstatic/<int:app_id>/', views.collectstatic),
     path('crestart/<int:app_id>/', views.restart),
+    path('rebuild/<int:app_id>/', views.rebuild_image, name='rebuild-image'),
+    path('branch/change/<int:app_id>/', views.change_branch, name='change-branch'),
+    path('dumpdata/<int:app_id>/', views.dumpdata, name='dumpdata'),
 
 # create application urls in the right order how they flow
     path('ca/start', views_ca.create_app),

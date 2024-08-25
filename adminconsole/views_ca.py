@@ -1,6 +1,4 @@
 import subprocess
-import random
-import string
 
 from cookiecutter.main import cookiecutter
 
@@ -23,6 +21,7 @@ def import_app(request):
 
 @login_required
 def create_app(request):
+    request.session['import'] = False
     user = request.user
     if Config.test_localhost():
         return redirect('/ca/af')
@@ -34,7 +33,7 @@ def create_app(request):
 @login_required
 def app_form(request):
     user = request.user
-    clone_url = request.session.get('git_clone_url','')
+    clone_url = request.session.get('git_clone_url', '')
     if request.method == 'POST':
         port = find_port()
         app = App(git_clone_url=clone_url,

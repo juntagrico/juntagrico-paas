@@ -12,18 +12,15 @@ class Command(BaseCommand):
     # entry point used by manage.py
     def handle(self, *args, **options):
         name = options['app_name'][0]
-        dir = '/var/django/projects/'+name
         cdir = '/var/django/projects/'+name+'/code'
-
-        with open(dir+'/build/'+name+'.env') as f:
-            env = f.readlines()
-        env = [x.strip() for x in env] 
 
         client = docker.from_env()
 
         container = client.containers.get(name)
 
-        proc = subprocess.run(['git', 'pull'], stdout = subprocess.PIPE, cwd=cdir)
+        proc = subprocess.run(['git', 'fetch'], stdout=subprocess.PIPE, cwd=cdir)
+        print(str(proc.stdout))
+        proc = subprocess.run(['git', 'reset', '--hard', '@{u}'], stdout=subprocess.PIPE, cwd=cdir)
         print(str(proc.stdout))
 
         cmd = 'pip install --upgrade -r requirements.txt'
@@ -31,8 +28,7 @@ class Command(BaseCommand):
         print(result[1])
 
         if result[0] == 0:  # only continue if pip install succeeded
-            result = container.commit(repository=name,
-                               tag='latest')
+            result = container.commit(repository=name, tag='latest')
             print(result)
 
             container.restart()
@@ -43,6 +39,8 @@ class Command(BaseCommand):
             cmd = ['python', '-m', 'manage', 'collectstatic', '--noinput', '-c']
             result = container.exec_run(cmd)
             print(result[1])
+
+            container.restart()
         else:
             print('pip install failed! Fix your requirements.txt and redeploy. Do not restart the instance.')
 

@@ -1,7 +1,8 @@
 import subprocess
 from urllib import request as r, parse
 
-from github import Github
+from django.conf import settings
+from github import Github, BadCredentialsException
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -11,20 +12,21 @@ from adminconsole.models import GitHubKey, App
 
 
 def github_request(request):
-    return redirect('https://github.com/login/oauth/authorize?client_id=b420b562ea569fd26b6e&scope=public_repo')
+    return redirect(f'https://github.com/login/oauth/authorize?client_id={settings.GITHUB_CLIENT_ID}&scope=public_repo')
 
 
 def github_callback(request):
     code = request.GET.get('code')
-    data_dict = {'code': code,
-                 'client_id': 'b420b562ea569fd26b6e',
-                 'client_secret': '40054b662fedbb506539aa8ab91031ca21383cb2'
-                 }
+    data_dict = {
+        'code': code,
+        'client_id': settings.GITHUB_CLIENT_ID,
+        'client_secret': settings.GITHUB_CLIENT_SECRET
+    }
     data = parse.urlencode(data_dict).encode()
     req = r.Request('https://github.com/login/oauth/access_token', data=data)
     resp = r.urlopen(req)
     key = str(resp.read()).split('&')[0].split('=')[1]
-    GitHubKey.objects.create(user=request.user, key=key)
+    GitHubKey.objects.update_or_create(user=request.user, defaults={'key': key})
     return redirect('/ca/repo')
 
 
@@ -32,13 +34,19 @@ def github_callback(request):
 def select_repo(request):
     key = request.user.githubkey.key
     g = Github(key)
-    repos = g.get_user().get_repos()
+
     if request.method == 'POST':
-        selected_repo = request.POST.get('repo')
-        for repo in repos:
-            if repo.name == selected_repo:
-                request.session['git_clone_url'] = repo.clone_url
-                return redirect('/ca/af')
+        selected_repo = int(request.POST.get('repo'))
+        request.session['git_clone_url'] = g.get_repo(selected_repo).clone_url
+        return redirect('/ca/af')
+
+    # show repos
+    repos = g.get_user().get_repos()
+    try:
+        # check if key is still valid
+        repos[0]
+    except BadCredentialsException:
+        return redirect('/github/request')
     render_dict = {
         'repos': repos,
     }
@@ -66,7 +74,7 @@ def clone_repo(request):
         'step': 'Repo Klonen',
         'next': '/ck/form',
     }
-    if request.session.get('import',False):
+    if request.session.get('import', False):
         render_dict['next'] = '/ca/db'
     return render(request, 'done_next.html', render_dict)
 

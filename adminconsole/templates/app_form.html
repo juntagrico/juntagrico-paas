@@ -1,38 +1,33 @@
 {% extends "base.html" %}
 
 {% block content %}
-    
-<form action="" method="post" class="form-horizontal">
-    {% csrf_token %}
-    
-    <div class="form-group">
-        <label class="control-label col-md-4" for="{{ form.name.id_for_label }}">Name der Applikation (nur Kleinbuchstaben und Ziffern) *</label>
+    <form action="" method="post">
+        {% csrf_token %}
 
-        <div class="controls col-md-8">
+        <div class="form-group">
+            <label for="{{ form.name.id_for_label }}">Name der Applikation*</label>
             {{ form.name }}
+            <small id="app_name_help" class="form-text text-muted">
+                Nur Kleinbuchstaben und Ziffern
+            </small>
         </div>
-    </div>
-    {% if form.name.errors %}
-        <div class="alert alert-danger col-md-12">{{form.name.errors}}</div>
-    {% endif %}
-    
-    <div class="form-group">
-                        <label class="col-md-3 control-label"></label>
-                        <div class="col-md-9 offset-md-3 controls radio"> 
-                            <label for="form.managed.id_for_label" class="control-label col-md-2">
-                                {{ form.managed }}
-                            </label>
-                            <label for="form.managed.id_for_label" class="control-label col-md-7">
-                                Soll die Applikation automatisch geupdated werden wenn eine nue juntagrico Version erscheint?
-			    </label>
-                        </div>
-</div>
-    
-    
-            <div class="form-actions col-md-offset-4 col-md-8">
-                <button type="submit" class="btn btn-success">weiter</button>
-            </div>
-</form>
+        {% if form.name.errors %}
+            <div class="alert alert-danger col-md-12">{{form.name.errors}}</div>
+        {% endif %}
 
+        <div class="form-check">
+            <span class="switch switch-sm">
+                {{ form.managed }}
+                <label for="{{ form.managed.id_for_label }}">
+                    Automatische Updates
+                </label>
+            </span>
+            <small id="managed_help" class="form-text text-muted">
+                Soll die Applikation automatisch aktualisiert werden, wenn eine neue juntagrico Version erscheint?
+            </small>
+        </div>
+
+        <button type="submit" class="btn btn-success mt-3">weiter</button>
+    </form>
 {% endblock %}
 

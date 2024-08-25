@@ -1,28 +1,26 @@
 {% extends "base.html" %}
 
 {% block content %}
-    
-<form action="" method="post" class="form-horizontal">
-    {% csrf_token %}
-    
-    {% for field in form %}
-    <div class="form-group">
-        <label class="control-label col-md-4" for="{{ field.id_for_label }}">{{ field.label }} {% if field.field.required %}*{% endif %}</label>
-
-        <div class="controls col-md-8">
-            {{ field }}
-        </div>
-    </div>
-    {% if field.errors %}
-        <div class="alert alert-danger col-md-12">{{field.errors}}</div>
-    {% endif %}
-
-    {% endfor %}        
-    
-            <div class="form-actions col-md-offset-4 col-md-8">
+    <form action="" method="post">
+        {% csrf_token %}
+        
+        {% for field in form %}
+            <div class="form-group row">
+                <label class="col-form-label col-md-4" for="{{ field.id_for_label }}">{{ field.label }} {% if field.field.required %}*{% endif %}</label>
+                <div class="col-md-8">
+                    {{ field }}
+                </div>
+            </div>
+            {% if field.errors %}
+                <div class="alert alert-danger col-md-12">{{field.errors}}</div>
+            {% endif %}
+        {% endfor %}
+        
+        <div class="form-group row">
+            <div class="offset-md-4 col-md-8">
                 <button type="submit" class="btn btn-success">weiter</button>
             </div>
-</form>
-
+        </div>
+    </form>
 {% endblock %}
 

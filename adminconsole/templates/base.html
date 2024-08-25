@@ -1,35 +1,32 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <title></title>
+    <title>Juntagrico Hosting</title>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="shortcut icon" href="/static/img/favicon.ico"/>
-
-    <link href="/static/external/bootstrap-3.3.1/css/bootstrap.min.css" rel="stylesheet">
-    <link href="/static/external/mid/css/materialdesignicons.min.css" rel="stylesheet">
-    <link href="/static/external/ionicons-2.0.1/css/ionicons.min.css" rel="stylesheet">
-    <link href="/static/external/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link href="/static/external/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="/static/css/juntagrico.css" rel="stylesheet">
     <link href="/static/css/slider.css" rel="stylesheet">
 
 </head>
 <body>
-<div class="container">
+<div class="page-container container">
     <div class="bordertop"></div>
     <div class="borderleft"></div>
     <div class="borderright"></div>
     <div class="borderbottom"></div>
-    <div class="row myjuntagrico">
-        <div class="col-md-12">
-            <a href="/"><span class="juntagrico_logo"></span></a>
+    <div class="logo-row row">
+        <div class="logo-col col-md-12">
+            <a href="{% url 'home' %}">
+                <span class="juntagrico-logo juntagrico_logo">
+                </span>
+            </a>
         </div>
     </div>
-    <div class="row myjuntagrico">
+    <div class="all-page-title row mb-3">
     {% block all_page_title %}
-        <div class="col-md-3"> 
-            &nbsp;
-        </div>
-        <div class="col-md-9 juntagrico">
+        <div class="page-title offset-md-3 col-md-9">
             {% block page_title %}
             {% endblock %}
         </div>
@@ -38,15 +35,19 @@
     
     <div class="row juntagrico">
         {% block allcontent %}
-            <div class="col-md-3">
+            <div class="navigation col-md-3 mb-5">
                 <ul class="nav nav-pills nav-stacked main-menu">
-                    <li><h5>Dein Menu {{ user.first_name }}</h5>
+                    <li>
+                        <h5>Dein Menu {{ user.first_name }}</h5>
                     </li>
-                    <li class="">
+                    <li>
                         <a href="/">Home</a>
                     </li>
-                    <li class="">
+                    <li>
                         <a href="{% url 'profile' %}">Profil</a>
+                    </li>
+                    <li>
+                        <a href="{% url 'logout' %}">Logout</a>
                     </li>
                 </ul>
             </div>
@@ -61,8 +62,7 @@
 </div>
 
 <script type="text/javascript" src="/static/external/jquery-1.11.2/jquery-1.11.2.min.js"></script>
-<script type="text/javascript" src="/static/external/bootstrap-3.3.1/js/bootstrap.min.js"></script>
-<script type="text/javascript" src="/static/js/slider.js"></script>
+<script type="text/javascript" src="/static/external/bootstrap/js/bootstrap.bundle.min.js"></script>
 
 {% block scripts %}
     {# no scripts by default #}

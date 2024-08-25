@@ -1,15 +1,18 @@
+import re
 import subprocess
 from datetime import datetime
 
 import docker
 import psutil
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
+from django.urls import reverse
+from django.utils import timezone as django_timezone
 from django.shortcuts import render, redirect, get_object_or_404
 from pytz import timezone
 
 from adminconsole.decorators import owner_of_app
-from adminconsole.forms import EnvForm, DomainForm, ProfileForm
+from adminconsole.forms import EnvForm, DomainForm, ProfileForm, BranchForm
 from adminconsole.models import App
 
 
@@ -21,12 +24,23 @@ def home(request):
     else:
         apps = request.user.app.all()
     number_of_apps = apps.count()
+    if number_of_apps == 1 and not superuser:
+        return redirect('overview', app_id=apps[0].id)
     can_add_apps = number_of_apps < 1 or superuser
     renderdict = {
         'apps': apps,
-        'can_add_app' : can_add_apps,
+        'can_add_app': can_add_apps,
     }
     return render(request, 'home.html', renderdict)
+
+
+@owner_of_app
+def overview(request, app_id):
+    app = get_object_or_404(App, pk=app_id)
+    renderdict = {
+        'app': app,
+    }
+    return render(request, 'overview.html', renderdict)
 
 
 @login_required
@@ -52,6 +66,23 @@ def reload(request, app_id):
     }
     return render(request, 'wait_next.html', render_dict)
 
+
+@owner_of_app
+def rebuild_image(request, app_id):
+    app = get_object_or_404(App, pk=app_id)
+    name = app.name
+    fn = '/var/django/projects/' + name + '.txt'
+    with open(fn, 'wb') as out:
+        proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'rebuild_image', name, str(app.port)],
+                                stdout=out, stderr=out)
+    render_dict = {
+        'step': 'git pull, rebuild docker image with latest requirements, restart container, migrate and collectstatic',
+        'pid': proc.pid,
+        'next': '/showlog/' + str(app_id) + '/'
+    }
+    return render(request, 'wait_next.html', render_dict)
+
+
 @owner_of_app
 def show_log(request, app_id):
     app = get_object_or_404(App, pk=app_id)
@@ -61,7 +92,7 @@ def show_log(request, app_id):
         b_texts = file.readlines()
         texts = [str(eval(b_text), 'utf-8') if b_text.startswith('b') else b_text for b_text in b_texts]
         result_text = '\n'.join(texts)
-    return render(request, 'mailtexts.html', {'text': result_text})
+    return render(request, 'mailtexts.html', {'app': app, 'text': result_text})
 
 
 @owner_of_app
@@ -103,9 +134,44 @@ def env_restart(request, app_id):
     render_dict = {
         'step': 'env reload',
         'pid': proc.pid,
-        'next': '/'
+        'next': reverse('overview', args=[app.id])
     }
     return render(request, 'wait_next.html', render_dict)
+
+
+@owner_of_app
+def change_branch(request, app_id):
+    app = get_object_or_404(App, pk=app_id)
+    name = app.name
+    cdir = '/var/django/projects/' + name + '/code'
+    error = ''
+    success = False
+    if request.method == 'POST':
+        form = BranchForm(request.POST)
+        if form.is_valid():
+            branch = re.sub('[?*[@#$;&~^: ]', '', form.cleaned_data['branch'])
+            proc = subprocess.run(['git', 'fetch', 'origin', branch],
+                                  stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
+            if proc.returncode != 0:
+                error += proc.stdout.decode()
+            else:
+                proc = subprocess.run(['git', 'checkout', '-B', branch],
+                                      stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
+                if proc.returncode != 0:
+                    error += proc.stdout.decode()
+                else:
+                    proc = subprocess.run(['git', 'branch', '-u', 'origin/' + branch, branch],
+                                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
+                    if proc.returncode != 0:
+                        error += proc.stdout.decode()
+                    else:
+                        success = True
+    proc = subprocess.Popen(['git', 'branch', '--show-current'], stdout=subprocess.PIPE, cwd=cdir)
+    branch = proc.stdout.read().decode().strip()
+    form = BranchForm(initial={'branch': branch})
+    return render(request, 'branch_form.html', {
+        'form': form, 'success': success, 'error': error, 'app': app
+    })
 
 
 @owner_of_app
@@ -118,7 +184,7 @@ def generate_depot_list(request, app_id):
     container.exec_run(cmd)
     render_dict = {
         'step': 'depot liste generiert ',
-        'next': '/'
+        'next': reverse('overview', args=[app.id])
     }
     return render(request, 'done_next.html', render_dict)
 
@@ -165,7 +231,20 @@ def mailtexts(request, app_id):
     result_text = result.output.decode('utf-8')
     if '(request)' in result_text:
         result_text = result_text.split('(request)')[1]
-    return render(request, 'mailtexts.html', {'text': result_text})
+    return render(request, 'mailtexts.html', {'app': app, 'text': result_text})
+
+
+@owner_of_app
+def dumpdata(request, app_id):
+    app = get_object_or_404(App, pk=app_id)
+    name = app.name
+    client = docker.from_env()
+    container = client.containers.get(name)
+    cmd = ['python', '-m', 'manage', 'dumpdata', '--natural-foreign', '--natural-primary', '-e', 'sessions']
+    result = container.exec_run(cmd, stderr=False)
+    response = HttpResponse(result.output.decode('utf-8'), content_type="application/json")
+    response['Content-Disposition'] = f'attachment; filename={name}-{django_timezone.now().strftime("%y_%m_%d_%H_%M")}.json'
+    return response
 
 
 @owner_of_app
@@ -174,9 +253,9 @@ def logs(request, app_id):
     name = app.name
     client = docker.from_env()
     container = client.containers.get(name)
-    result_text = container.logs()
+    result_text = container.logs(tail=1000)
     result_text = result_text.decode('utf-8') 
-    return render(request, 'mailtexts.html', {'text': result_text})
+    return render(request, 'mailtexts.html', {'app': app, 'text': result_text})
 
 
 @owner_of_app
@@ -188,7 +267,7 @@ def migrate(request, app_id):
     cmd = ['python', '-m', 'manage', 'migrate']
     result = container.exec_run(cmd)
     result_text = result.output.decode('utf-8')
-    return render(request, 'mailtexts.html', {'text': result_text})
+    return render(request, 'mailtexts.html', {'app': app, 'text': result_text})
 
 
 @owner_of_app
@@ -200,7 +279,7 @@ def collectstatic(request, app_id):
     cmd = ['python', '-m', 'manage', 'collectstatic', '--noinput', '-c']
     result = container.exec_run(cmd)
     result_text = result.output.decode('utf-8')
-    return render(request, 'mailtexts.html', {'text': result_text})
+    return render(request, 'mailtexts.html', {'app': app, 'text': result_text})
 
 
 @owner_of_app
@@ -214,7 +293,7 @@ def restart(request, app_id):
     dt = datetime.strptime(result_text, '%Y-%m-%dT%H:%M:%S %Z%z')
     dt = dt.astimezone(timezone('CET'))
     result_text = dt.strftime('%d-%m-%Y %H:%M:%S %Z%z')
-    return render(request, 'mailtexts.html', {'text': result_text})
+    return render(request, 'mailtexts.html', {'app': app, 'text': result_text})
 
 @login_required
 def profile(request):
