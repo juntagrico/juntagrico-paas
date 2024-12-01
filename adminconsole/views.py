@@ -85,13 +85,16 @@ def redeploy_result(request, app_id):
         'Django Migrate': {'text': ''},
         'Django Collectstatic': {'text': ''},
         'Restart Docker Container again': {'text': ''}
+        'DEBUG': {'text': 'DEBUG:\n'},
     }
     current = None
     with open(fn, 'r') as file:
         while line := file.readline():
             if line in sections:
+                sections['DEBUG']['text'] += f'Found {line}\n'
                 current = sections[line]
             elif current is not None:
+                sections['DEBUG']['text'] += f'Adding {line}\n'
                 current['text'] += str(eval(line), 'utf-8') if line.startswith('b') else line
                 current['text'] += '\n'
     return render(request, 'redeploy/result.html',
