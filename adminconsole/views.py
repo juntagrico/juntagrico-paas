@@ -89,11 +89,11 @@ def redeploy_result(request, app_id):
     }
     current = None
     with open(fn, 'r') as file:
-        while line := file.readline():
+        while line := file.readline().strip():
             sections['DEBUG']['text'] += f'Line {line} type {type(line)}\n'
-            if str(line) in sections:
+            if line in sections:
                 sections['DEBUG']['text'] += f'Found {line}\n'
-                current = sections[str(line)]
+                current = sections[line]
             elif current is not None:
                 sections['DEBUG']['text'] += f'Adding {line}\n'
                 current['text'] += str(eval(line), 'utf-8') if line.startswith('b') else line
