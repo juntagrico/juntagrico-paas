@@ -84,7 +84,7 @@ def redeploy_result(request, app_id):
         'Restart Docker Container': {'text': ''},
         'Django Migrate': {'text': ''},
         'Django Collectstatic': {'text': ''},
-        'Restart Docker Container again': {'text': ''}
+        'Restart Docker Container again': {'text': ''},
         'DEBUG': {'text': 'DEBUG:\n'},
     }
     current = None
