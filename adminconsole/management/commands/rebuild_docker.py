@@ -18,10 +18,8 @@ class Command(BaseCommand):
 
         container = client.containers.get(name)
 
-        proc = subprocess.run(['git', 'fetch'], stdout=subprocess.PIPE, cwd=cdir)
-        print(str(proc.stdout))
-        proc = subprocess.run(['git', 'reset', '--hard', '@{u}'], stdout=subprocess.PIPE, cwd=cdir)
-        print(str(proc.stdout))
+        subprocess.run(['git', 'fetch'], cwd=cdir)
+        subprocess.run(['git', 'reset', '--hard', '@{u}'], cwd=cdir)
 
         cmd = 'pip install --upgrade -r requirements.txt'
         result = container.exec_run(cmd)
@@ -32,6 +30,7 @@ class Command(BaseCommand):
             print(result)
 
             container.restart()
+            print(container.logs())
 
             cmd = ['python', '-m', 'manage', 'migrate']
             result = container.exec_run(cmd)
@@ -41,6 +40,7 @@ class Command(BaseCommand):
             print(result[1])
 
             container.restart()
+            print(container.logs())
         else:
             print('pip install failed! Fix your requirements.txt and redeploy. Do not restart the instance.')
 
