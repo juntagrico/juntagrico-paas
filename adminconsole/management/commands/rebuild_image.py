@@ -26,12 +26,9 @@ class Command(BaseCommand):
         env = [x for x in env if x]
 
         # get latest requirements.txt
-        proc = subprocess.run(['git', 'fetch'], stdout=subprocess.PIPE, cwd=cdir)
-        print(str(proc.stdout))
-        proc = subprocess.run(['git', 'reset', '--hard', '@{u}'], stdout=subprocess.PIPE, cwd=cdir)
-        print(str(proc.stdout))
-        proc = subprocess.run(['cp', req, bdir], stdout=subprocess.PIPE, cwd=bdir)
-        print(str(proc.stdout))
+        subprocess.run(['git', 'fetch'], cwd=cdir)
+        subprocess.run(['git', 'reset', '--hard', '@{u}'], cwd=cdir)
+        subprocess.run(['cp', req, bdir], cwd=bdir)
 
         client = docker.from_env()
 
@@ -69,3 +66,4 @@ class Command(BaseCommand):
         print(result[1])
 
         container.restart()
+        print(container.logs())
