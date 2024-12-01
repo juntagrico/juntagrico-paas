@@ -21,38 +21,39 @@ class Command(BaseCommand):
 
         container = client.containers.get(name)
 
-        print('Fetch latest code')
+        print('Fetch latest code', flush=True)
         subprocess.run(['git', 'fetch'], stderr=subprocess.STDOUT, cwd=cdir)
         subprocess.run(['git', 'reset', '--hard', '@{u}'], stderr=subprocess.STDOUT, cwd=cdir)
 
-        print('Install Requirements')
+        print('Install Requirements', flush=True)
         cmd = 'pip install --upgrade -r requirements.txt'
         result = container.exec_run(cmd)
         print(result[1])
 
         if result[0] == 0:  # only continue if pip install succeeded
-            print('Commit to Docker Container')
+            print('Commit to Docker Container', flush=True)
             result = container.commit(repository=name, tag='latest')
             print(result)
 
-            print('Restart Docker Container')
+            print('Restart Docker Container', flush=True)
             restart(container)
 
-            print('Django Migrate')
+            print('Django Migrate', flush=True)
             cmd = ['python', '-m', 'manage', 'migrate']
             result = container.exec_run(cmd)
             print(result[1])
 
-            print('Django Collectstatic')
+            print('Django Collectstatic', flush=True)
             cmd = ['python', '-m', 'manage', 'collectstatic', '--noinput', '-c']
             result = container.exec_run(cmd)
             print(result[1])
 
-            print('Restart Docker Container again')
+            print('Restart Docker Container again', flush=True)
             restart(container)
         else:
             print('ERROR!')
-            print('pip install failed! Fix your requirements.txt and redeploy. Do not restart the instance.')
+            print('pip install failed! Fix your requirements.txt and redeploy. '
+                  'Do not restart the instance.', flush=True)
 
 
 def restart(container, timeout=20):
@@ -62,6 +63,7 @@ def restart(container, timeout=20):
     """
     now = datetime.now()
     container.restart()
+    container.reload()
     elapsed_time = 0
     interval = 1
     while container.status != 'running' and elapsed_time < timeout:
