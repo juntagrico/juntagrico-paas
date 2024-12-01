@@ -21,8 +21,8 @@ class Command(BaseCommand):
         container = client.containers.get(name)
 
         print('Fetch latest code')
-        subprocess.run(['git', 'fetch'], cwd=cdir)
-        subprocess.run(['git', 'reset', '--hard', '@{u}'], cwd=cdir)
+        subprocess.run(['git', 'fetch'], stderr=subprocess.STDOUT, cwd=cdir)
+        subprocess.run(['git', 'reset', '--hard', '@{u}'], stderr=subprocess.STDOUT, cwd=cdir)
 
         print('Install Requirements')
         cmd = 'pip install --upgrade -r requirements.txt'
