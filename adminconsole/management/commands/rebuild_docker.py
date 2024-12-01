@@ -22,13 +22,16 @@ class Command(BaseCommand):
         container = client.containers.get(name)
 
         print('Fetch latest code', flush=True)
-        subprocess.run(['git', 'fetch'], stderr=subprocess.STDOUT, cwd=cdir)
-        subprocess.run(['git', 'reset', '--hard', '@{u}'], stderr=subprocess.STDOUT, cwd=cdir)
+        proc = subprocess.run(['git', 'fetch'], stderr=subprocess.STDOUT, cwd=cdir)
+        print('Return ', proc.returncode, flush=True)
+        proc = subprocess.run(['git', 'reset', '--hard', '@{u}'], stderr=subprocess.STDOUT, cwd=cdir)
+        print('Return ', proc.returncode, flush=True)
 
         print('Install Requirements', flush=True)
         cmd = 'pip install --upgrade -r requirements.txt'
         result = container.exec_run(cmd)
         print(result[1])
+        print('Return ', result[0], flush=True)
 
         if result[0] == 0:  # only continue if pip install succeeded
             print('Commit to Docker Container', flush=True)
@@ -42,11 +45,13 @@ class Command(BaseCommand):
             cmd = ['python', '-m', 'manage', 'migrate']
             result = container.exec_run(cmd)
             print(result[1])
+            print('Return ', result[0], flush=True)
 
             print('Django Collectstatic', flush=True)
             cmd = ['python', '-m', 'manage', 'collectstatic', '--noinput', '-c']
             result = container.exec_run(cmd)
             print(result[1])
+            print('Return ', result[0], flush=True)
 
             print('Restart Docker Container again', flush=True)
             restart(container)
