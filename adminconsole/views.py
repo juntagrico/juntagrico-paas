@@ -259,6 +259,18 @@ def logs(request, app_id):
 
 
 @owner_of_app
+def versions(request, app_id):
+    app = get_object_or_404(App, pk=app_id)
+    name = app.name
+    client = docker.from_env()
+    container = client.containers.get(name)
+    result1 = container.exec_run(['python', '--version'])
+    result2 = container.exec_run(['pip', 'freeze'])
+    result_text = result1.output.decode('utf-8') + "\n" + result2.output.decode('utf-8')
+    return render(request, 'mailtexts.html', {'app': app, 'text': result_text})
+
+
+@owner_of_app
 def migrate(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     name = app.name
