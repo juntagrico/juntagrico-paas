@@ -72,10 +72,6 @@ def redeploy_result(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     name = app.name
     fn = '/var/django/projects/' + name + '.txt'
-    with open(fn, 'r') as file:
-        b_texts = file.readlines()
-        texts = [str(eval(b_text), 'utf-8') if b_text.startswith('b') else b_text for b_text in b_texts]
-        result_text = '\n'.join(texts)
     # parse log
     sections = {
         'Fetch latest code': {'text': ''},
@@ -85,21 +81,17 @@ def redeploy_result(request, app_id):
         'Django Migrate': {'text': ''},
         'Django Collectstatic': {'text': ''},
         'Restart Docker Container again': {'text': ''},
-        'DEBUG': {'text': 'DEBUG:\n'},
     }
     current = None
     with open(fn, 'r') as file:
         while line := file.readline().strip():
-            sections['DEBUG']['text'] += f'Line {line} type {type(line)}\n'
             if line in sections:
-                sections['DEBUG']['text'] += f'Found {line}\n'
                 current = sections[line]
             elif current is not None:
-                sections['DEBUG']['text'] += f'Adding {line}\n'
                 current['text'] += str(eval(line), 'utf-8') if line.startswith('b') else line
                 current['text'] += '\n'
     return render(request, 'redeploy/result.html',
-                  {'app': app, 'text': result_text, 'sections': sections})
+                  {'app': app, 'sections': sections})
 
 
 @owner_of_app
