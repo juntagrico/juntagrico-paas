@@ -90,6 +90,7 @@ def redeploy_result(request, app_id):
     current = None
     with open(fn, 'r') as file:
         while line := file.readline():
+            sections['DEBUG']['text'] += f'Line {line}\n'
             if line in sections:
                 sections['DEBUG']['text'] += f'Found {line}\n'
                 current = sections[line]
