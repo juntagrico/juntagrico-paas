@@ -62,9 +62,40 @@ def reload(request, app_id):
     render_dict = {
         'step': 'install requirements commit image collectstatic and migrate',
         'pid': proc.pid,
-        'next': '/showlog/' + str(app_id) + '/'
+        'next': reverse('redeploy-result', args=[app_id])
     }
     return render(request, 'wait_next.html', render_dict)
+
+
+@owner_of_app
+def redeploy_result(request, app_id):
+    app = get_object_or_404(App, pk=app_id)
+    name = app.name
+    fn = '/var/django/projects/' + name + '.txt'
+    with open(fn, 'r') as file:
+        b_texts = file.readlines()
+        texts = [str(eval(b_text), 'utf-8') if b_text.startswith('b') else b_text for b_text in b_texts]
+        result_text = '\n'.join(texts)
+    # parse log
+    sections = {
+        'Fetch latest code': {'text': ''},
+        'Install Requirements': {'text': ''},
+        'Commit to Docker Container': {'text': ''},
+        'Restart Docker Container': {'text': ''},
+        'Django Migrate': {'text': ''},
+        'Django Collectstatic': {'text': ''},
+        'Restart Docker Container again': {'text': ''}
+    }
+    current = None
+    with open(fn, 'r') as file:
+        while line := file.readline():
+            if line in sections:
+                current = sections[line]
+            elif current is not None:
+                current['text'] += str(eval(line), 'utf-8') if line.startswith('b') else line
+                current['text'] += '\n'
+    return render(request, 'redeploy/result.html',
+                  {'app': app, 'text': result_text, 'sections': sections})
 
 
 @owner_of_app
