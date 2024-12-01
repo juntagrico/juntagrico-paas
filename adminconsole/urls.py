@@ -31,6 +31,7 @@ urlpatterns = [
     path('mailtexts/<int:app_id>/', views.mailtexts),
     path('showlog/<int:app_id>/', views.show_log),
     path('logs/<int:app_id>/', views.logs, name='login'),
+    path('versions/<int:app_id>/', views.versions, name='versions'),
     path('dom/add/<int:pid>/', views.add_domain),
     path('pid/<int:pid>/', views.pidcheck),
     path('reload/<int:app_id>/', views.reload),
