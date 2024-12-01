@@ -63,6 +63,7 @@ def restart(container, timeout=20):
     """
     now = datetime.now()
     container.restart()
+    sleep(1)
     container.reload()
     elapsed_time = 0
     interval = 1
