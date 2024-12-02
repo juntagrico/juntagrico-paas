@@ -407,3 +407,14 @@ td.details-control::before {
 tr.shown td.details-control::before {
     content: "\e114";
 }
+
+/* result view */
+[data-toggle="collapse"] .carret {
+    display: inline-block;
+    font-size: x-small;
+    transform: rotate(90deg);
+    transition: all linear 0.25s;
+}
+[data-toggle="collapse"].collapsed .carret {
+    transform: rotate(0deg);
+}
