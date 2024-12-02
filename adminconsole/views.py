@@ -63,41 +63,9 @@ def reload(request, app_id):
     render_dict = {
         'step': 'install requirements commit image collectstatic and migrate',
         'pid': proc.pid,
-        'next': reverse('redeploy-result', args=[app_id])
+        'next': reverse('show-result', args=[app_id])
     }
     return render(request, 'wait_next.html', render_dict)
-
-
-@owner_of_app
-def redeploy_result(request, app_id):
-    app = get_object_or_404(App, pk=app_id)
-    name = app.name
-    fn = '/var/django/projects/' + name + '.txt'
-    # parse log
-    sections = {
-        'ERROR': {'text': '', 'result': 1},
-        'Fetch latest code': {'text': '', 'result': 1},
-        'Install Requirements': {'text': '', 'result': 1},
-        'Commit to Docker Container': {'text': '', 'result': 1},
-        'Restart Docker Container': {'text': '', 'result': 1},
-        'Django Migrate': {'text': '', 'result': 1},
-        'Django Collectstatic': {'text': '', 'result': 1},
-        'Restart Docker Container again': {'text': '', 'result': 1},
-    }
-    current = sections['ERROR']  # capture error output before the first section
-    with open(fn, 'r') as file:
-        while line := file.readline().strip():
-            if line in sections:
-                current = sections[line]
-            elif line.startswith('Return '):
-                current['result'] = int(line[7:])
-            else:
-                current['text'] += str(eval(line), 'utf-8') if line.startswith('b') else line
-                current['text'] += '\n'
-    if not sections['ERROR']['text']:
-        del sections['ERROR']
-    return render(request, 'redeploy/result.html',
-                  {'app': app, 'sections': sections})
 
 
 @owner_of_app

@@ -10,6 +10,7 @@ def log_after(container, target='running', since=None, timeout=20):
     """
     elapsed_time = 0
     interval = 1
+    sleep(interval)
     while container.status != target and elapsed_time < timeout:
         sleep(interval)
         elapsed_time += interval
