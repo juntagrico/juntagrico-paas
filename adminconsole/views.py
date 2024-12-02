@@ -1,6 +1,7 @@
 import re
 import subprocess
 from datetime import datetime
+from time import sleep
 
 import docker
 import psutil
@@ -135,7 +136,7 @@ def rebuild_image(request, app_id):
     render_dict = {
         'step': 'git pull, rebuild docker image with latest requirements, restart container, migrate and collectstatic',
         'pid': proc.pid,
-        'next': '/showlog/' + str(app_id) + '/'
+        'next': reverse('show-result', args=[app.id])
     }
     return render(request, 'wait_next.html', render_dict)
 
@@ -313,7 +314,7 @@ def logs(request, app_id):
     result_text = container.logs(tail=1000)
     result_text = result_text.decode('utf-8') 
     return render(request, 'show_result.html', {'app': app, 'sections': {
-        'Docker Logs': {'text': result_text, 'result': 1},
+        'Docker Logs': {'text': result_text, 'result': 0},
     }})
 
 
@@ -327,7 +328,7 @@ def versions(request, app_id):
     result2 = container.exec_run(['pip', 'freeze'])
     result_text = result1.output.decode('utf-8') + "\n" + result2.output.decode('utf-8')
     return render(request, 'show_result.html', {'app': app, 'sections': {
-        'Installed App Versions': {'text': result_text, 'result': result1.exit_code + result2.exit_code},
+        'Installierte App Versionen': {'text': result_text, 'result': result1.exit_code + result2.exit_code},
     }})
 
 
@@ -366,6 +367,7 @@ def restart(request, app_id):
     client = docker.from_env()
     container = client.containers.get(name)
     container.restart()
+    sleep(3)
     result_text = container.attrs['State']['StartedAt'].split('.')[0]+' UTC+0000'
     dt = datetime.strptime(result_text, '%Y-%m-%dT%H:%M:%S %Z%z')
     dt = dt.astimezone(timezone('CET'))

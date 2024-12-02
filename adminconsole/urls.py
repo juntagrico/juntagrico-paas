@@ -30,6 +30,7 @@ urlpatterns = [
     path('dom/form/<int:app_id>/', views.domain_form),
     path('mailtexts/<int:app_id>/', views.mailtexts),
     path('showlog/<int:app_id>/', views.show_log),
+    path('show/<int:app_id>/result/', views.show_result, name='show-result'),
     path('logs/<int:app_id>/', views.logs, name='login'),
     path('versions/<int:app_id>/', views.versions, name='versions'),
     path('dom/add/<int:pid>/', views.add_domain),
