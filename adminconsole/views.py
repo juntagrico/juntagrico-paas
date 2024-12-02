@@ -89,7 +89,7 @@ def redeploy_result(request, app_id):
             if line in sections:
                 current = sections[line]
             elif line.startswith('Return '):
-                current['result'] + abs(int(line[7:]))
+                current['result'] += abs(int(line[7:]))
             else:
                 current['text'] += str(eval(line), 'utf-8') if line.startswith('b') else line
                 current['text'] += '\n'
