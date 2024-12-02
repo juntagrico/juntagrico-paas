@@ -58,7 +58,7 @@ class Command(BaseCommand):
             print(result[1])
             print('Return ', result[0], flush=True)
 
-            print('# Docker Restart', flush=True)
+            print('# Docker Restart 2', flush=True)
             start = datetime.now()
             container.restart()
             print(log_after(container, since=start))

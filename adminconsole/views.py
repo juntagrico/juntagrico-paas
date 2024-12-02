@@ -259,7 +259,21 @@ def mailtexts(request, app_id):
     result_text = result.output.decode('utf-8')
     if '(request)' in result_text:
         result_text = result_text.split('(request)')[1]
-    return render(request, 'mailtexts.html', {'app': app, 'text': result_text})
+    # parse output
+    sections = {'Log': {'text': '', 'result': 1}}
+    current = sections['Log']  # capture error output before the first section
+    for line in result_text.split('\n'):
+        line = line.strip()
+        if line.startswith('*** '):
+            line = line.strip(' *')
+            if line not in sections:
+                sections[line] = {'text': '', 'result': 0}
+            current = sections[line]
+        else:
+            current['text'] += line + '\n'
+    if not sections['Log']['text']:
+        del sections['Log']
+    return render(request, 'show_result.html', {'app': app, 'sections': sections})
 
 
 @owner_of_app
