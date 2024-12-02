@@ -111,6 +111,7 @@ def show_result(request, app_id):
     with open(fn, 'r') as file:
         while line := file.readline().strip():
             if line.startswith('# '):
+                line = line[2:]
                 if line not in sections:
                     sections[line] = {'text': '', 'result': 1}
                 current = sections[line]

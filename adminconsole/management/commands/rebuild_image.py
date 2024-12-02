@@ -36,7 +36,7 @@ class Command(BaseCommand):
         client = docker.from_env()
         result = client.images.build(path=bdir + '/', tag=name + ':latest')
         for line in result[1]:
-            print(line.get('stream') or (line + '\n'), sep="")
+            print(line.get('stream') or (str(line) + '\n'), sep="")
         print('Return ', result[0], flush=True)
 
         try:
