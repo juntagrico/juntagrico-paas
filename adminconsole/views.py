@@ -75,13 +75,13 @@ def redeploy_result(request, app_id):
     # parse log
     sections = {
         'ERROR': {'text': '', 'result': 1},
-        'Fetch latest code': {'text': '', 'result': 0},
-        'Install Requirements': {'text': '', 'result': 0},
-        'Commit to Docker Container': {'text': '', 'result': 0},
-        'Restart Docker Container': {'text': '', 'result': 0},
-        'Django Migrate': {'text': '', 'result': 0},
-        'Django Collectstatic': {'text': '', 'result': 0},
-        'Restart Docker Container again': {'text': '', 'result': 0},
+        'Fetch latest code': {'text': '', 'result': 1},
+        'Install Requirements': {'text': '', 'result': 1},
+        'Commit to Docker Container': {'text': '', 'result': 1},
+        'Restart Docker Container': {'text': '', 'result': 1},
+        'Django Migrate': {'text': '', 'result': 1},
+        'Django Collectstatic': {'text': '', 'result': 1},
+        'Restart Docker Container again': {'text': '', 'result': 1},
     }
     current = sections['ERROR']  # capture error output before the first section
     with open(fn, 'r') as file:
@@ -89,7 +89,7 @@ def redeploy_result(request, app_id):
             if line in sections:
                 current = sections[line]
             elif line.startswith('Return '):
-                current['result'] += abs(int(line[7:]))
+                current['result'] = int(line[7:])
             else:
                 current['text'] += str(eval(line), 'utf-8') if line.startswith('b') else line
                 current['text'] += '\n'

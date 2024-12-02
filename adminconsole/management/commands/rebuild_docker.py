@@ -22,10 +22,9 @@ class Command(BaseCommand):
         container = client.containers.get(name)
 
         print('Fetch latest code', flush=True)
-        proc = subprocess.run(['git', 'fetch'], stderr=subprocess.STDOUT, cwd=cdir)
-        print('Return ', proc.returncode, flush=True)
-        proc = subprocess.run(['git', 'reset', '--hard', '@{u}'], stderr=subprocess.STDOUT, cwd=cdir)
-        print('Return ', proc.returncode, flush=True)
+        proc1 = subprocess.run(['git', 'fetch'], stderr=subprocess.STDOUT, cwd=cdir)
+        proc2 = subprocess.run(['git', 'reset', '--hard', '@{u}'], stderr=subprocess.STDOUT, cwd=cdir)
+        print('Return ', proc1.returncode + proc2.returncode, flush=True)
 
         print('Install Requirements', flush=True)
         cmd = 'pip install --upgrade -r requirements.txt'
@@ -37,6 +36,7 @@ class Command(BaseCommand):
             print('Commit to Docker Container', flush=True)
             result = container.commit(repository=name, tag='latest')
             print(result)
+            print('Return 0', flush=True)
 
             print('Restart Docker Container', flush=True)
             restart(container)
@@ -78,3 +78,4 @@ def restart(container, timeout=20):
         container.reload()
         continue
     print(container.logs(since=now))
+    print('Return 0', flush=True)
