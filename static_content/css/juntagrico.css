@@ -420,3 +420,8 @@ tr.shown td.details-control::before {
 [data-toggle="collapse"].collapsed .carret {
     transform: rotate(0deg);
 }
+
+/* progress bar */
+#progress-div {
+    height: 2em;
+}
