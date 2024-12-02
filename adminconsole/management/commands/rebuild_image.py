@@ -37,7 +37,7 @@ class Command(BaseCommand):
         result = client.images.build(path=bdir + '/', tag=name + ':latest')
         for line in result[1]:
             print(line.get('stream') or (str(line) + '\n'), sep="")
-        print('Return ', result[0], flush=True)
+        print('Return 0', flush=True)
 
         try:
             print('# Docker Stop', flush=True)
