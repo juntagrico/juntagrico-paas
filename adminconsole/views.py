@@ -312,7 +312,9 @@ def logs(request, app_id):
     container = client.containers.get(name)
     result_text = container.logs(tail=1000)
     result_text = result_text.decode('utf-8') 
-    return render(request, 'mailtexts.html', {'app': app, 'text': result_text})
+    return render(request, 'show_result.html', {'app': app, 'sections': {
+        'Docker Logs': {'text': result_text, 'result': 1},
+    }})
 
 
 @owner_of_app
@@ -324,7 +326,9 @@ def versions(request, app_id):
     result1 = container.exec_run(['python', '--version'])
     result2 = container.exec_run(['pip', 'freeze'])
     result_text = result1.output.decode('utf-8') + "\n" + result2.output.decode('utf-8')
-    return render(request, 'mailtexts.html', {'app': app, 'text': result_text})
+    return render(request, 'show_result.html', {'app': app, 'sections': {
+        'Installed App Versions': {'text': result_text, 'result': result1.exit_code + result2.exit_code},
+    }})
 
 
 @owner_of_app
@@ -350,7 +354,9 @@ def collectstatic(request, app_id):
     cmd = ['python', '-m', 'manage', 'collectstatic', '--noinput', '-c']
     result = container.exec_run(cmd)
     result_text = result.output.decode('utf-8')
-    return render(request, 'mailtexts.html', {'app': app, 'text': result_text})
+    return render(request, 'show_result.html', {'app': app, 'sections': {
+        'Django Collectstatic': {'text': result_text, 'result': result.exit_code},
+    }})
 
 
 @owner_of_app
@@ -364,7 +370,9 @@ def restart(request, app_id):
     dt = datetime.strptime(result_text, '%Y-%m-%dT%H:%M:%S %Z%z')
     dt = dt.astimezone(timezone('CET'))
     result_text = dt.strftime('%d-%m-%Y %H:%M:%S %Z%z')
-    return render(request, 'mailtexts.html', {'app': app, 'text': result_text})
+    return render(request, 'show_result.html', {'app': app, 'sections': {
+        'Docker Restart': {'text': result_text, 'result': 0},
+    }})
 
 @login_required
 def profile(request):
