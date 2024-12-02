@@ -1,8 +1,11 @@
 import subprocess
+from datetime import datetime
 
 import docker
 
 from django.core.management.base import BaseCommand
+
+from adminconsole.util.commands import log_after
 
 
 class Command(BaseCommand):
@@ -25,7 +28,7 @@ class Command(BaseCommand):
         env = [x.strip() for x in env]
         env = [x for x in env if x]
 
-        print('# Git Fetch & Reset', flush=True)
+        print('# Git Pull', flush=True)
         # get latest requirements.txt
         proc1 = subprocess.run(['git', 'fetch'], cwd=cdir)
         proc2 = subprocess.run(['git', 'reset', '--hard', '@{u}'], cwd=cdir)
@@ -36,20 +39,23 @@ class Command(BaseCommand):
         client = docker.from_env()
         result = client.images.build(path=bdir + '/', tag=name + ':latest')
         for line in result[1]:
-            print(line.get('stream') or (str(line) + '\n'), sep="")
+            print(line.get('stream') or (str(line) + '\n'), end="")
         print('Return 0', flush=True)
 
         try:
             print('# Docker Stop', flush=True)
             container = client.containers.get(name)
+            start = datetime.now()
             container.stop()
+            print(log_after(container, 'exited', start))
             container.remove()
-            print('Stopped ', name)
+            print('Removed', name)
             print('Return 0', flush=True)
         except:
             print('container not found or other error')
 
         print('# Docker Run', flush=True)
+        start = datetime.now()
         container = client.containers.run(
             image=name + ':latest',
             command=runcmd,
@@ -64,8 +70,7 @@ class Command(BaseCommand):
                 dir + '/media': {'bind': '/code/media/', 'mode': 'rw'},
             }
         )
-        container.exec_run(['python', '--version'])  # make sure container is ready
-        print(container.logs())
+        print(log_after(container, since=start))
         print(container.status)
         print('Return 0', flush=True)
 
@@ -81,7 +86,7 @@ class Command(BaseCommand):
         print('Return ', result[0], flush=True)
 
         print('# Docker Restart', flush=True)
+        start = datetime.now()
         container.restart()
-        container.exec_run(['python', '--version'])  # make sure container is ready
-        print(container.logs())
+        print(log_after(container, since=start))
         print('Return 0', flush=True)
