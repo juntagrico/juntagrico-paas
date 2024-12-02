@@ -109,7 +109,8 @@ def show_result(request, app_id):
     sections = {'Log': {'text': '', 'result': 1}}
     current = sections['Log']  # capture error output before the first section
     with open(fn, 'r') as file:
-        while line := file.readline().strip():
+        while line := file.readline():
+            line = line.strip()
             if line.startswith('# '):
                 line = line[2:]
                 if line not in sections:

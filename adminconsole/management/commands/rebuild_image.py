@@ -74,7 +74,7 @@ class Command(BaseCommand):
         result = container.exec_run(cmd)
         print(result[1])
         print('Return ', result[0], flush=True)
-        print('# Django Migrate', flush=True)
+        print('# Django Collectstatic', flush=True)
         cmd = ['python', '-m', 'manage', 'collectstatic', '--noinput', '-c']
         result = container.exec_run(cmd)
         print(result[1])
