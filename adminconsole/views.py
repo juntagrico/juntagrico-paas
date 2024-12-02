@@ -100,6 +100,31 @@ def redeploy_result(request, app_id):
 
 
 @owner_of_app
+def show_result(request, app_id):
+    app = get_object_or_404(App, pk=app_id)
+    name = app.name
+    fn = '/var/django/projects/' + name + '.txt'
+    # parse log
+    sections = {'Log': {'text': '', 'result': 1}}
+    current = sections['Log']  # capture error output before the first section
+    with open(fn, 'r') as file:
+        while line := file.readline().strip():
+            if line.startswith('# '):
+                if line not in sections:
+                    sections[line] = {'text': '', 'result': 1}
+                current = sections[line]
+            elif line.startswith('Return '):
+                current['result'] = int(line[7:])
+            else:
+                current['text'] += str(eval(line), 'utf-8') if line.startswith('b') else line
+                current['text'] += '\n'
+    if not sections['Log']['text']:
+        del sections['Log']
+    return render(request, 'show_result.html',
+                  {'app': app, 'sections': sections})
+
+
+@owner_of_app
 def rebuild_image(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     name = app.name
@@ -311,7 +336,9 @@ def migrate(request, app_id):
     cmd = ['python', '-m', 'manage', 'migrate']
     result = container.exec_run(cmd)
     result_text = result.output.decode('utf-8')
-    return render(request, 'mailtexts.html', {'app': app, 'text': result_text})
+    return render(request, 'show_result.html', {'app': app, 'sections': {
+        'Django Migrate': {'text': result_text, 'result': result.exit_code},
+    }})
 
 
 @owner_of_app
