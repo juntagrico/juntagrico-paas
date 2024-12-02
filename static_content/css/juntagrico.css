@@ -411,7 +411,10 @@ tr.shown td.details-control::before {
 /* result view */
 [data-toggle="collapse"] .carret {
     display: inline-block;
-    font-size: x-small;
+    font-size: small;
+    vertical-align: middle;
+    margin-right: 0.5em;
+    margin-bottom: 0.5em;
     transform: rotate(90deg);
     transition: all linear 0.25s;
 }
