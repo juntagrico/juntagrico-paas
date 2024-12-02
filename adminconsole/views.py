@@ -61,7 +61,7 @@ def reload(request, app_id):
     with open(fn, 'wb') as out:
         proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'rebuild_docker', name], stdout=out, stderr=out)
     render_dict = {
-        'step': 'install requirements commit image collectstatic and migrate',
+        'step': 'Redeploy',
         'pid': proc.pid,
         'next': reverse('show-result', args=[app_id])
     }
@@ -104,7 +104,7 @@ def rebuild_image(request, app_id):
         proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'rebuild_image', name, str(app.port)],
                                 stdout=out, stderr=out)
     render_dict = {
-        'step': 'git pull, rebuild docker image with latest requirements, restart container, migrate and collectstatic',
+        'step': 'Rebuild',
         'pid': proc.pid,
         'next': reverse('show-result', args=[app.id])
     }
@@ -160,7 +160,7 @@ def env_restart(request, app_id):
         proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'reload_env', name, str(app.port)], stdout=out,
                                 stderr=out)
     render_dict = {
-        'step': 'env reload',
+        'step': 'Einstellungen anwenden',
         'pid': proc.pid,
         'next': reverse('overview', args=[app.id])
     }
@@ -211,7 +211,7 @@ def generate_depot_list(request, app_id):
     cmd = ['python', '-m', 'manage', 'generate_depot_list', '--force']
     container.exec_run(cmd)
     render_dict = {
-        'step': 'depot liste generiert ',
+        'step': 'Depotliste generieren',
         'next': reverse('overview', args=[app.id])
     }
     return render(request, 'done_next.html', render_dict)
@@ -241,7 +241,7 @@ def domain_form(request, app_id):
 @login_required
 def add_domain(request, pid):
     render_dict = {
-        'step': 'add domain',
+        'step': 'Domain hinzufügen',
         'pid': pid,
         'next': '/'
     }
