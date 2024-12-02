@@ -3,21 +3,49 @@
 {% block content %}
     <div class="accordion">
         {% for title, section in sections.items %}
-            <div class="card">
-                <div class="card-header" id="heading{{ forloop.counter }}">
-                    <h3 class="mb-0" role="button" data-toggle="collapse" data-target="#collapse{{ forloop.counter }}"
-                        aria-expanded="true" aria-controls="collapse{{ forloop.counter }}">
-                        {{ title }}
-                    </h3>
-                </div>
-
-                <div id="collapse{{ forloop.counter }}" class="collapse show"
-                     aria-labelledby="heading{{ forloop.counter }}">
-                    <div class="card-body">
-                        <pre class="pre-scrollable"><code>{{ section.text }}</code></pre>
+            {% if section.text %}
+                <div class="card">
+                    <div class="card-header" id="heading{{ forloop.counter }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-caret-right-fill" viewBox="0 0 16 16">
+                            <path d="m12.14 8.753-5.482 4.796c-.646.566-1.658.106-1.658-.753V3.204a1 1 0 0 1 1.659-.753l5.48 4.796a1 1 0 0 1 0 1.506z"/>
+                        </svg>
+                        <h3 class="mb-0{% if section.result %} .text-danger{% else %} text-success{% endif %}" 
+                            role="button" data-toggle="collapse" data-target="#collapse{{ forloop.counter }}"
+                            aria-expanded="true" aria-controls="collapse{{ forloop.counter }}">
+                            {% if section.result %}
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-exclamation-circle-fill" viewBox="0 0 16 16">
+                                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4m.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2"/>
+                                </svg>
+                            {% else %}
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-circle" viewBox="0 0 16 16">
+                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+                                    <path d="m10.97 4.97-.02.022-3.473 4.425-2.093-2.094a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05"/>
+                                </svg>
+                            {% endif %}
+                            {{ title }}
+                        </h3>
+                    </div>
+    
+                    <div id="collapse{{ forloop.counter }}" class="collapse show"
+                         aria-labelledby="heading{{ forloop.counter }}">
+                        <div class="card-body">
+                            <pre class="pre-scrollable"><code>{{ section.text }}</code></pre>
+                        </div>
                     </div>
                 </div>
-            </div>
+            {% else %}
+                <div class="card">
+                    <div class="card-header" id="heading{{ forloop.counter }}">
+                        <h3 class="mb-0 disabled">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-slash-circle" viewBox="0 0 16 16">
+                                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+                                <path d="M11.354 4.646a.5.5 0 0 0-.708 0l-6 6a.5.5 0 0 0 .708.708l6-6a.5.5 0 0 0 0-.708"/>
+                            </svg>
+                            {{ title }}
+                        </h3>
+                    </div>
+                </div>
+            {% endif %}
         {% endfor %}
     </div>
 

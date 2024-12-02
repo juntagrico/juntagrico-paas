@@ -74,22 +74,27 @@ def redeploy_result(request, app_id):
     fn = '/var/django/projects/' + name + '.txt'
     # parse log
     sections = {
-        'Fetch latest code': {'text': ''},
-        'Install Requirements': {'text': ''},
-        'Commit to Docker Container': {'text': ''},
-        'Restart Docker Container': {'text': ''},
-        'Django Migrate': {'text': ''},
-        'Django Collectstatic': {'text': ''},
-        'Restart Docker Container again': {'text': ''},
+        'ERROR': {'text': '', 'result': 1},
+        'Fetch latest code': {'text': '', 'result': 0},
+        'Install Requirements': {'text': '', 'result': 0},
+        'Commit to Docker Container': {'text': '', 'result': 0},
+        'Restart Docker Container': {'text': '', 'result': 0},
+        'Django Migrate': {'text': '', 'result': 0},
+        'Django Collectstatic': {'text': '', 'result': 0},
+        'Restart Docker Container again': {'text': '', 'result': 0},
     }
-    current = None
+    current = sections['ERROR']  # capture error output before the first section
     with open(fn, 'r') as file:
         while line := file.readline().strip():
             if line in sections:
                 current = sections[line]
-            elif current is not None:
+            elif line.startswith('Return '):
+                current['result'] + abs(int(line[7:]))
+            else:
                 current['text'] += str(eval(line), 'utf-8') if line.startswith('b') else line
                 current['text'] += '\n'
+    if not sections['ERROR']['text']:
+        del sections['ERROR']
     return render(request, 'redeploy/result.html',
                   {'app': app, 'sections': sections})
 
