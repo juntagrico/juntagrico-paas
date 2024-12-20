@@ -273,7 +273,6 @@ a:hover, a:focus {
 html, body {
     font-family: "Source Sans Pro Light";
     background-color: #fefffa;
-    height: 100%;
 }
 
 h1, h2, h3, h4, h5, h6, .main-menu {
@@ -406,4 +405,23 @@ td.details-control::before {
 
 tr.shown td.details-control::before {
     content: "\e114";
+}
+
+/* result view */
+[data-toggle="collapse"] .carret {
+    display: inline-block;
+    font-size: small;
+    vertical-align: middle;
+    margin-right: 0.5em;
+    margin-bottom: 0.5em;
+    transform: rotate(90deg);
+    transition: all linear 0.25s;
+}
+[data-toggle="collapse"].collapsed .carret {
+    transform: rotate(0deg);
+}
+
+/* progress bar */
+#progress-div {
+    height: 2em;
 }

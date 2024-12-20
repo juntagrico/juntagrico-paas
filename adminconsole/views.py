@@ -1,6 +1,7 @@
 import re
 import subprocess
 from datetime import datetime
+from time import sleep
 
 import docker
 import psutil
@@ -60,11 +61,38 @@ def reload(request, app_id):
     with open(fn, 'wb') as out:
         proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'rebuild_docker', name], stdout=out, stderr=out)
     render_dict = {
-        'step': 'install requirements commit image collectstatic and migrate',
+        'step': 'Redeploy',
         'pid': proc.pid,
-        'next': '/showlog/' + str(app_id) + '/'
+        'next': reverse('show-result', args=[app_id])
     }
     return render(request, 'wait_next.html', render_dict)
+
+
+@owner_of_app
+def show_result(request, app_id):
+    app = get_object_or_404(App, pk=app_id)
+    name = app.name
+    fn = '/var/django/projects/' + name + '.txt'
+    # parse log
+    sections = {'Log': {'text': '', 'result': 1}}
+    current = sections['Log']  # capture error output before the first section
+    with open(fn, 'r') as file:
+        while line := file.readline():
+            line = line.strip()
+            if line.startswith('# '):
+                line = line[2:]
+                if line not in sections:
+                    sections[line] = {'text': '', 'result': 1}
+                current = sections[line]
+            elif line.startswith('Return '):
+                current['result'] = int(line[7:])
+            else:
+                current['text'] += str(eval(line), 'utf-8') if line.startswith('b') else line
+                current['text'] += '\n'
+    if not sections['Log']['text']:
+        del sections['Log']
+    return render(request, 'show_result.html',
+                  {'app': app, 'sections': sections})
 
 
 @owner_of_app
@@ -76,9 +104,9 @@ def rebuild_image(request, app_id):
         proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'rebuild_image', name, str(app.port)],
                                 stdout=out, stderr=out)
     render_dict = {
-        'step': 'git pull, rebuild docker image with latest requirements, restart container, migrate and collectstatic',
+        'step': 'Rebuild',
         'pid': proc.pid,
-        'next': '/showlog/' + str(app_id) + '/'
+        'next': reverse('show-result', args=[app.id])
     }
     return render(request, 'wait_next.html', render_dict)
 
@@ -132,7 +160,7 @@ def env_restart(request, app_id):
         proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'reload_env', name, str(app.port)], stdout=out,
                                 stderr=out)
     render_dict = {
-        'step': 'env reload',
+        'step': 'Einstellungen anwenden',
         'pid': proc.pid,
         'next': reverse('overview', args=[app.id])
     }
@@ -183,7 +211,7 @@ def generate_depot_list(request, app_id):
     cmd = ['python', '-m', 'manage', 'generate_depot_list', '--force']
     container.exec_run(cmd)
     render_dict = {
-        'step': 'depot liste generiert ',
+        'step': 'Depotliste generieren',
         'next': reverse('overview', args=[app.id])
     }
     return render(request, 'done_next.html', render_dict)
@@ -213,7 +241,7 @@ def domain_form(request, app_id):
 @login_required
 def add_domain(request, pid):
     render_dict = {
-        'step': 'add domain',
+        'step': 'Domain hinzufügen',
         'pid': pid,
         'next': '/'
     }
@@ -231,7 +259,21 @@ def mailtexts(request, app_id):
     result_text = result.output.decode('utf-8')
     if '(request)' in result_text:
         result_text = result_text.split('(request)')[1]
-    return render(request, 'mailtexts.html', {'app': app, 'text': result_text})
+    # parse output
+    sections = {'Log': {'text': '', 'result': 1}}
+    current = sections['Log']  # capture error output before the first section
+    for line in result_text.split('\n'):
+        line = line.strip()
+        if line.startswith('*** '):
+            line = line.strip(' *')
+            if line not in sections:
+                sections[line] = {'text': '', 'result': 0}
+            current = sections[line]
+        else:
+            current['text'] += line + '\n'
+    if not sections['Log']['text']:
+        del sections['Log']
+    return render(request, 'show_result.html', {'app': app, 'sections': sections})
 
 
 @owner_of_app
@@ -255,7 +297,9 @@ def logs(request, app_id):
     container = client.containers.get(name)
     result_text = container.logs(tail=1000)
     result_text = result_text.decode('utf-8') 
-    return render(request, 'mailtexts.html', {'app': app, 'text': result_text})
+    return render(request, 'show_result.html', {'app': app, 'sections': {
+        'Docker Logs': {'text': result_text, 'result': 0},
+    }})
 
 
 @owner_of_app
@@ -267,7 +311,9 @@ def versions(request, app_id):
     result1 = container.exec_run(['python', '--version'])
     result2 = container.exec_run(['pip', 'freeze'])
     result_text = result1.output.decode('utf-8') + "\n" + result2.output.decode('utf-8')
-    return render(request, 'mailtexts.html', {'app': app, 'text': result_text})
+    return render(request, 'show_result.html', {'app': app, 'sections': {
+        'Installierte App Versionen': {'text': result_text, 'result': result1.exit_code + result2.exit_code},
+    }})
 
 
 @owner_of_app
@@ -279,7 +325,9 @@ def migrate(request, app_id):
     cmd = ['python', '-m', 'manage', 'migrate']
     result = container.exec_run(cmd)
     result_text = result.output.decode('utf-8')
-    return render(request, 'mailtexts.html', {'app': app, 'text': result_text})
+    return render(request, 'show_result.html', {'app': app, 'sections': {
+        'Django Migrate': {'text': result_text, 'result': result.exit_code},
+    }})
 
 
 @owner_of_app
@@ -291,7 +339,9 @@ def collectstatic(request, app_id):
     cmd = ['python', '-m', 'manage', 'collectstatic', '--noinput', '-c']
     result = container.exec_run(cmd)
     result_text = result.output.decode('utf-8')
-    return render(request, 'mailtexts.html', {'app': app, 'text': result_text})
+    return render(request, 'show_result.html', {'app': app, 'sections': {
+        'Django Collectstatic': {'text': result_text, 'result': result.exit_code},
+    }})
 
 
 @owner_of_app
@@ -301,11 +351,14 @@ def restart(request, app_id):
     client = docker.from_env()
     container = client.containers.get(name)
     container.restart()
+    sleep(3)
     result_text = container.attrs['State']['StartedAt'].split('.')[0]+' UTC+0000'
     dt = datetime.strptime(result_text, '%Y-%m-%dT%H:%M:%S %Z%z')
     dt = dt.astimezone(timezone('CET'))
     result_text = dt.strftime('%d-%m-%Y %H:%M:%S %Z%z')
-    return render(request, 'mailtexts.html', {'app': app, 'text': result_text})
+    return render(request, 'show_result.html', {'app': app, 'sections': {
+        'Docker Restart': {'text': result_text, 'result': 0},
+    }})
 
 @login_required
 def profile(request):

@@ -5,7 +5,7 @@ define([], function () {
         $.getJSON( "/pid/"+pid+"/", function( data ) {
             if(data.status!="zombie"){
                 var num_value = parseInt($("#progress").attr("aria-valuenow"));
-                num_value+=10;
+                num_value+=4;
                 if(num_value>100){
                     num_value=1;
                 }
