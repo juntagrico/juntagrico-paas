@@ -14,14 +14,8 @@ from adminconsole.util.create_app import find_port
 
 
 @login_required
-def import_app(request):
-    request.session['import'] = True
-    return create_app(request)
-
-
-@login_required
-def create_app(request):
-    request.session['import'] = False
+def create_app(request, existing=False):
+    request.session['import'] = existing
     user = request.user
     if Config.test_localhost():
         return redirect('/ca/af')
