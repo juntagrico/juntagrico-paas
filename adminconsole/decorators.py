@@ -10,8 +10,8 @@ def owner_of_app(view):
     def wrapper(request, *args, **kwargs):
         if request.user.is_authenticated:
             user = request.user
-            app = get_object_or_404(
-                App, id=kwargs['app_id'])
+            app_id = kwargs['app_id'] or user.app.first().id
+            app = get_object_or_404(App, id=app_id)
             if app.user.id == user.id or user.is_superuser:
                 return view(request, *args, **kwargs)
             else:

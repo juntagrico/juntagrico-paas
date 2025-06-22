@@ -12,6 +12,7 @@ from django.utils import timezone as django_timezone
 from django.shortcuts import render, redirect, get_object_or_404
 from pytz import timezone
 
+from adminconsole.config import Config
 from adminconsole.decorators import owner_of_app
 from adminconsole.forms import EnvForm, DomainForm, ProfileForm, BranchForm
 from adminconsole.models import App
@@ -65,6 +66,8 @@ def reload(request, app_id):
         'pid': proc.pid,
         'next': reverse('show-result', args=[app_id])
     }
+    # TODO: Do something like this to load tail of log file continuously and display the result with js:
+    # https://github.com/alex2/django_logtail/blob/master/django_logtail/admin.py
     return render(request, 'wait_next.html', render_dict)
 
 
@@ -148,6 +151,8 @@ def env_restart(request, app_id):
     with open(fn, 'w') as out:
         out.write('JUNTAGRICO_DEBUG=False\n ')
         out.write('JUNTAGRICO_DATABASE_ENGINE=django.db.backends.postgresql\n ')
+        if Config.report_email():
+            out.write('JUNTAGRICO_REPORT_EMAIL=' + Config.report_email() + '\n ')
         for field in app_env._meta.get_fields():
             if hasattr(field, 'verbose_name'):
                 if field.verbose_name != 'VARIOUS':

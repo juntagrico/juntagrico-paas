@@ -10,3 +10,9 @@ class Config:
         if hasattr(settings, 'TEST_LOCALHOST'):
             return settings.TEST_LOCALHOST
         return False
+
+    @staticmethod
+    def report_email():
+        if hasattr(settings, 'REPORT_EMAIL'):
+            return settings.REPORT_EMAIL
+        return None
