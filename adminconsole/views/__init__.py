@@ -56,10 +56,8 @@ def pidcheck(request, pid):
 @owner_of_app
 def reload(request, app_id):
     app = get_object_or_404(App, pk=app_id)
-    name = app.name
-    fn = '/var/django/projects/' + name + '.txt'
-    with open(fn, 'wb') as out:
-        proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'rebuild_docker', name], stdout=out, stderr=out)
+    with open(app.dir + '.txt', 'wb') as out:
+        proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'rebuild_docker', app.name], stdout=out, stderr=out)
     render_dict = {
         'step': 'Redeploy',
         'pid': proc.pid,
@@ -71,12 +69,10 @@ def reload(request, app_id):
 @owner_of_app
 def show_result(request, app_id):
     app = get_object_or_404(App, pk=app_id)
-    name = app.name
-    fn = '/var/django/projects/' + name + '.txt'
     # parse log
     sections = {'Log': {'text': '', 'result': 1}}
     current = sections['Log']  # capture error output before the first section
-    with open(fn, 'r') as file:
+    with open(app.dir + '.txt', 'r') as file:
         while line := file.readline():
             line = line.strip()
             if line.startswith('# '):
@@ -98,10 +94,8 @@ def show_result(request, app_id):
 @owner_of_app
 def rebuild_image(request, app_id):
     app = get_object_or_404(App, pk=app_id)
-    name = app.name
-    fn = '/var/django/projects/' + name + '.txt'
-    with open(fn, 'wb') as out:
-        proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'rebuild_image', name, str(app.port)],
+    with open(app.dir + '.txt', 'wb') as out:
+        proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'rebuild_image', app.name, str(app.port)],
                                 stdout=out, stderr=out)
     render_dict = {
         'step': 'Rebuild',
@@ -114,9 +108,7 @@ def rebuild_image(request, app_id):
 @owner_of_app
 def show_log(request, app_id):
     app = get_object_or_404(App, pk=app_id)
-    name = app.name
-    fn = '/var/django/projects/' + name + '.txt'
-    with open(fn, 'r') as file:
+    with open(app.dir + '.txt', 'r') as file:
         b_texts = file.readlines()
         texts = [str(eval(b_text), 'utf-8') if b_text.startswith('b') else b_text for b_text in b_texts]
         result_text = '\n'.join(texts)
@@ -144,7 +136,7 @@ def env_restart(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     name = app.name
     app_env = app.env
-    fn = '/var/django/projects/' + name + '/build/' + name + '.env'
+    fn = app.dir + '/build/' + name + '.env'
     with open(fn, 'w') as out:
         out.write('JUNTAGRICO_DEBUG=False\n ')
         out.write('JUNTAGRICO_DATABASE_ENGINE=django.db.backends.postgresql\n ')
@@ -155,8 +147,7 @@ def env_restart(request, app_id):
                     out.write('=')
                 out.write(str(getattr(app_env, field.name)))
                 out.write('\n')
-    fn = '/var/django/projects/' + name + '.txt'
-    with open(fn, 'wb') as out:
+    with open(app.dir + '.txt', 'wb') as out:
         proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'reload_env', name, str(app.port)], stdout=out,
                                 stderr=out)
     render_dict = {
@@ -170,8 +161,7 @@ def env_restart(request, app_id):
 @owner_of_app
 def change_branch(request, app_id):
     app = get_object_or_404(App, pk=app_id)
-    name = app.name
-    cdir = '/var/django/projects/' + name + '/code'
+    cdir = app.dir + '/code'
     error = ''
     success = False
     if request.method == 'POST':
@@ -220,15 +210,13 @@ def generate_depot_list(request, app_id):
 @owner_of_app
 def domain_form(request, app_id):
     app = get_object_or_404(App, pk=app_id)
-    name = app.name
     port = str(app.port)
     if request.method == 'POST':
         form = DomainForm(request.POST)
         if form.is_valid():
-            fn = '/var/django/projects/' + name + '.txt'
             domain = form.cleaned_data['domain']
-            with open(fn, 'wb') as out:
-                proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'add_domain', name, port, domain],
+            with open(app.dir + '.txt', 'wb') as out:
+                proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'add_domain', app.name, port, domain],
                                         stdout=out,
                                         stderr=out)
             return redirect('/dom/add/' + str(proc.pid) + '/')

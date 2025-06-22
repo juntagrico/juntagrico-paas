@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div>
+        <h4>Das Repo ist nicht leer</h4>
+        <ul>
+            {% for file in files %}
+                <li>{{ file }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <form action="" method="post">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="{{ form.overwrite.id_for_label }}">Soll das Repo überschrieben werden?</label>
+            {{ form.overwrite }}
+        </div>
+        {% if form.overwrite.errors %}
+            <div class="alert alert-danger col-md-12">{{form.overwrite.errors}}</div>
+        {% endif %}
+
+        <button type="submit" class="btn btn-success mt-3">Weiter</button>
+    </form>
+{% endblock %}
+

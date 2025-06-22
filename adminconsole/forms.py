@@ -1,5 +1,5 @@
 from django import forms
-from django.forms import CharField, TextInput, CheckboxInput, Textarea, EmailField
+from django.forms import CharField, TextInput, CheckboxInput, Textarea, EmailField, BooleanField, RadioSelect
 from django.forms import ModelForm
 
 from adminconsole.models import AppEnv, App
@@ -60,6 +60,15 @@ class AppForm(ModelForm):
             'name': TextInput(attrs={'class': 'form-control', 'aria-describedby': 'app_name_help'}),
             'managed': CheckboxInput(attrs={'class': 'switch', 'aria-describedby': 'managed_help'})
         }
+
+
+class OverwriteAppForm(forms.Form):
+    overwrite = BooleanField(label='Überschreiben', initial=False, widget=RadioSelect(
+        choices=[
+            (False, 'Nicht Überschreiben! Das Repo enthält bereits eine Juntagrico app.'),
+            (True, 'Überschreibe alles im Repo mit einer neuen Juntagrico app.'),
+        ]
+    ))
 
 
 class DomainForm(forms.Form):
