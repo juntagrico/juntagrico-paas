@@ -7,20 +7,13 @@ from adminconsole.models import App
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
-
         parser.add_argument('app_name', nargs=1)
-        parser.add_argument('port', nargs='?')
 
     # entry point used by manage.py
     def handle(self, *args, **options):
         name = options['app_name'][0]
-        port = options['port'] or App.objects.get(name=name).port
-        base_dir = '/var/django/projects/'+name
-
-        with open(base_dir+'/build/'+name+'.env') as f:
-            env = f.readlines()
-        env = [x.strip() for x in env]
-        env = [x for x in env if x]
+        app = App.objects.get(name=name)
+        base_dir = app.dir
 
         client = docker.from_env()
 
@@ -34,10 +27,9 @@ class Command(BaseCommand):
         container = client.containers.run(
             image=name + ':latest',
             detach=True,
-            environment=env,
+            environment=list(app.env.get_lines()),
             name=name,
-            ports={'80': ('127.0.0.1', port)},
-            extra_hosts={"host.docker.internal": "172.17.0.1"},
+            network_mode='host',
             restart_policy={'Name': 'always'},
             volumes={
                 base_dir + '/code': {'bind': '/code/', 'mode': 'rw'},

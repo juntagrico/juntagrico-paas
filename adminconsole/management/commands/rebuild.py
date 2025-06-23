@@ -18,3 +18,4 @@ class Command(BaseCommand):
 
         result = client.images.build(path=base_dir, tag=name+':latest', buildargs={'pythonversion': python_version})
         print(*result[1], sep="\n")
+        return 0

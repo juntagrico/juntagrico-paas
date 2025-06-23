@@ -3,7 +3,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from adminconsole import views
-from adminconsole.views import git, create
+from adminconsole.views import git, create, staging
 
 urlpatterns = [
     
@@ -45,4 +45,12 @@ urlpatterns = [
     path('ca/env/form/<int:app_id>/', create.env_form, name='ca-create-env'),
     path('ca/env/dist/<int:app_id>/', create.env_dist2, name='ca-init-env'),
     path('ca/docker/<int:app_id>/', create.docker2, name='ca-build-docker'),
+
+    # Create staging app
+    path('staging/create/<int:app_id>/', staging.create, name='staging-create'),
+    path('staging/git/clone/<int:app_id>/', staging.clone_repo, name='staging-git-clone'),
+    path('staging/db/init/<int:app_id>/', staging.init_db, name='staging-init-db'),
+    path('staging/domain/init/<int:app_id>/', staging.init_domain, name='staging-init-domain'),
+    path('staging/docker/build/<int:app_id>/', staging.rebuild, name='staging-build-docker'),
+    path('staging/docker/run/<int:app_id>/', staging.restart, name='staging-start-app'),
 ]

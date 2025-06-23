@@ -5,7 +5,6 @@ from cookiecutter.main import cookiecutter
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.db import connection
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 
@@ -13,8 +12,7 @@ from adminconsole.config import Config
 from adminconsole.decorators import owner_of_app
 from adminconsole.models import App, AppEnv
 from adminconsole.forms import ProjectForm, EnvForm, AppForm, OverwriteAppForm
-from adminconsole.util import generate_password
-from adminconsole.util.create_app import find_port
+from adminconsole.util.create_app import find_port, create_database
 
 
 @login_required
@@ -83,21 +81,8 @@ def cookiecutter_form(request, app_id):
 def init_db(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     name = app.name
-    password = generate_password()
-    with connection.cursor() as cursor:
-        cursor.execute("CREATE DATABASE " + name)
-        cursor.execute("CREATE USER " + name + " WITH PASSWORD '" + password + "'")
-        cursor.execute("ALTER ROLE " + name + " SET client_encoding TO 'utf8'")
-        cursor.execute("ALTER ROLE " + name + " SET default_transaction_isolation TO 'read committed'")
-        cursor.execute("ALTER ROLE " + name + " SET timezone TO 'CET'")
-        cursor.execute("GRANT ALL PRIVILEGES ON DATABASE " + name + " TO " + name)
     app_env = AppEnv.objects.create(app=app)
-    app_env.juntagrico_database_host = 'localhost'
-    app_env.juntagrico_database_name = name
-    app_env.juntagrico_database_password = password
-    app_env.juntagrico_database_port = '5432'
-    app_env.juntagrico_database_user = name
-    app_env.save()
+    create_database(app_env, name, name)
     return redirect('ca-admin-pw', app_id=app_id)
 
 
@@ -132,7 +117,7 @@ def env_form(request, app_id):
                 'port': app.port,
             })
             cookiecutter(url, no_input=True, extra_context=data, output_dir=app.dir, overwrite_if_exists=True)
-            return redirect('/ca/env/dist')
+            return redirect('ca-init-env', app_id=app_id)
     else:
         form = EnvForm()
     return render(request, 'env.html', {'form': form})

@@ -21,6 +21,7 @@ class App(models.Model):
     name = models.CharField('name', max_length=100, unique=True, validators=[RegexValidator(regex='^[a-z0-9]+$')])
     port = models.IntegerField('port', unique=True)
     managed = models.BooleanField('Managed', default=True)
+    staging_of = models.ForeignKey('App', null=True, on_delete=models.CASCADE, related_name='stagings')
 
     def __str__(self):
         return self.name
@@ -50,8 +51,12 @@ class AppEnv(models.Model):
     def __str__(self):
         return self.app.name
 
-    
-
-
-
-
+    def get_lines(self):
+        yield 'JUNTAGRICO_DEBUG=False'
+        yield 'JUNTAGRICO_DATABASE_ENGINE=django.db.backends.postgresql'
+        for field in self._meta.get_fields():
+            if field.name.startswith('juntagrico'):
+                yield f'{field.verbose_name}={getattr(self, field.name)}'
+        for line in self.various.splitlines():
+            if clean_line := line.strip():
+                yield clean_line
