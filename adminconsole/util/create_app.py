@@ -77,5 +77,5 @@ def clone_database(staging_app, output=None):
 
 
 def create_docker_file(app):
-    with open(app.dir, "w") as docker_file:
+    with open(app.dir / 'Dockerfile', "w") as docker_file:
         docker_file.write(get_template('build/Dockerfile').render({'app': app}))

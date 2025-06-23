@@ -30,6 +30,10 @@ class App(models.Model):
     def dir(self):
         return Path('/var/django/projects') / self.name
 
+    @property
+    def log_file(self):
+        return str(self.dir) + '.txt'
+
 
 class AppEnv(models.Model):
     app = models.OneToOneField(App, related_name='env', on_delete=models.CASCADE)

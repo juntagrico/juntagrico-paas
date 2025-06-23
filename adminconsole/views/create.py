@@ -126,7 +126,7 @@ def env_form(request, app_id):
 @owner_of_app
 def env_dist2(request, app_id):
     app = get_object_or_404(App, pk=app_id)
-    with open(app.dir + '.txt', 'wb') as out:
+    with open(app.log_file, 'wb') as out:
         proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'dist_infra', app.name],
                                 stdout=out, stderr=out)
 
@@ -144,7 +144,7 @@ def docker2(request, app_id):
     port = str(app.port)
     env = app.env
     passw = env.juntagrico_database_password
-    with open(app.dir + '.txt', 'wb') as out:
+    with open(app.log_file, 'wb') as out:
         proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'build_docker2', app.name, passw, port],
                                 stdout=out, stderr=out)
     render_dict = {

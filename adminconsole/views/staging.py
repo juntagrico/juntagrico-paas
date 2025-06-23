@@ -61,7 +61,7 @@ def init_db(request, app_id):
 def init_domain(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     domain = f'{app.name}.juntagrico.science'
-    with open(app.dir + '.txt', 'wb') as out:
+    with open(app.log_file, 'wb') as out:
         proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'add_domain', app.name, app.port, domain],
                                 stdout=out, stderr=out)
 
@@ -79,7 +79,7 @@ def rebuild(request, app_id):
 
     create_docker_file(app)
 
-    with open(app.dir + '.txt', 'wb') as out:
+    with open(app.log_file, 'wb') as out:
         proc = subprocess.Popen(
             ['venv/bin/python', '-m', 'manage', 'rebuild', app.name] +
             ['&&', 'venv/bin/python', '-m', 'manage', 'restart', app.name],
@@ -98,7 +98,7 @@ def rebuild(request, app_id):
 def restart(request, app_id):
     app = get_object_or_404(App, pk=app_id)
 
-    with open(app.dir + '.txt', 'wb') as out:
+    with open(app.log_file, 'wb') as out:
         proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'restart', app.name],
                                 stdout=out, stderr=out)
 
