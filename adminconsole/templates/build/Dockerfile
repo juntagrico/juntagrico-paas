@@ -16,4 +16,4 @@ RUN pip install --upgrade -r requirements.txt
 
 WORKDIR /code/
 
-CMD ["gunicorn","--bind","127.0.0.1:{{ app.port }}","-t", "6000","{{ app.name }}.wsgi","&"]
+CMD ["gunicorn","--bind","127.0.0.1:{{ app.port }}","-t", "6000","{{ app.wsgi_path }}","&"]

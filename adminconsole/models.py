@@ -34,6 +34,11 @@ class App(models.Model):
     def log_file(self):
         return str(self.dir) + '.txt'
 
+    @property
+    def wsgi_path(self):
+        # TODO: Use configurable path instead of guessing it
+        return self.name.partition('-')[0] + '.wsgi'
+
 
 class AppEnv(models.Model):
     app = models.OneToOneField(App, related_name='env', on_delete=models.CASCADE)

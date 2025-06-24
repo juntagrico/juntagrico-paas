@@ -32,9 +32,9 @@ class Command(BaseCommand):
             network_mode='host',
             restart_policy={'Name': 'always'},
             volumes={
-                base_dir + '/code': {'bind': '/code/', 'mode': 'rw'},
-                base_dir + '/static': {'bind': '/code/static/', 'mode': 'rw'},
-                base_dir + '/media': {'bind': '/code/media/', 'mode': 'rw'},
+                base_dir / 'code': {'bind': '/code/', 'mode': 'rw'},
+                base_dir / 'static': {'bind': '/code/static/', 'mode': 'rw'},
+                base_dir / 'media': {'bind': '/code/media/', 'mode': 'rw'},
             }
         )
         print(container.status)

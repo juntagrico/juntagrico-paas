@@ -1,4 +1,5 @@
 import docker
+from django.core.management import call_command
 
 from django.core.management.base import BaseCommand
 
@@ -7,6 +8,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('app_name', nargs=1)
         parser.add_argument('python_version', nargs='?', default='3.9')
+        parser.add_argument('--restart', action='store_true')
 
     # entry point used by manage.py
     def handle(self, *args, **options):
@@ -18,4 +20,6 @@ class Command(BaseCommand):
 
         result = client.images.build(path=base_dir, tag=name+':latest', buildargs={'pythonversion': python_version})
         print(*result[1], sep="\n")
+        if options['restart']:
+            return call_command('restart', name)
         return 0

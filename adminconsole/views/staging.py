@@ -11,7 +11,7 @@ from adminconsole.util.create_app import make_dirs, git_clone, create_database, 
 @owner_of_app
 def create(request, app_id):
     prod_app = App.objects.get(id=app_id)
-    if prod_app.stagings:
+    if prod_app.stagings.exists():
         return redirect(reverse('overview', args=[prod_app.stagings.first().id]))
     staging_app = App.objects.create(
         name=prod_app.name + '-staging',
@@ -45,6 +45,7 @@ def init_db(request, app_id):
     name = app.name
     app_env = AppEnv.objects.get(app=app.staging_of)
     app_env.pk = None
+    app_env.app = app
     # TODO: disable email in env?
     create_database(app_env, name, name)
     errors = []
@@ -62,7 +63,7 @@ def init_domain(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     domain = f'{app.name}.juntagrico.science'
     with open(app.log_file, 'wb') as out:
-        proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'add_domain', app.name, app.port, domain],
+        proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'add_domain', app.name, str(app.port), domain],
                                 stdout=out, stderr=out)
 
     render_dict = {
@@ -81,8 +82,7 @@ def rebuild(request, app_id):
 
     with open(app.log_file, 'wb') as out:
         proc = subprocess.Popen(
-            ['venv/bin/python', '-m', 'manage', 'rebuild', app.name] +
-            ['&&', 'venv/bin/python', '-m', 'manage', 'restart', app.name],
+            ['venv/bin/python', '-m', 'manage', 'rebuild', '--restart', app.name],
             stdout=out, stderr=out
         )
 
