@@ -4,8 +4,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 
 from adminconsole.decorators import owner_of_app
-from adminconsole.models import App, AppEnv
-from adminconsole.util.create_app import make_dirs, git_clone, create_database, clone_database, create_docker_file
+from adminconsole.models import App
+from adminconsole.util.create_app import make_dirs, git_clone, create_docker_file, \
+    staging_database
 
 
 @owner_of_app
@@ -42,19 +43,12 @@ def clone_repo(request, app_id):
 @owner_of_app
 def init_db(request, app_id):
     app = get_object_or_404(App, pk=app_id)
-    name = app.name
-    app_env = AppEnv.objects.get(app=app.staging_of)
-    app_env.pk = None
-    app_env.app = app
-    # TODO: disable email in env?
-    create_database(app_env, name, name)
-    errors = []
-    success = clone_database(app, errors)
+    proc = staging_database(app)
 
-    return render(request, 'done_next.html', {
-        'errors': '' if success else errors,
+    return render(request, 'wait_next.html', {
         'step': 'Datenbank initiieren und kopieren',
-        'next': reverse('staging-init-domain', args=[app_id]),
+        'pid': proc.pid,
+        'next': reverse('staging-init-domain', args=[app_id])
     })
 
 
@@ -66,12 +60,11 @@ def init_domain(request, app_id):
         proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'add_domain', app.name, str(app.port), domain],
                                 stdout=out, stderr=out)
 
-    render_dict = {
+    return render(request, 'wait_next.html', {
         'step': 'Domain einrichten',
         'pid': proc.pid,
         'next': reverse('staging-build-docker', args=[app_id])
-    }
-    return render(request, 'wait_next.html', render_dict)
+    })
 
 
 @owner_of_app
@@ -108,3 +101,15 @@ def restart(request, app_id):
         'next': reverse('show-result', args=[app.id])
     }
     return render(request, 'wait_next.html', render_dict)
+
+
+@owner_of_app
+def clone_db(request, app_id):
+    app = get_object_or_404(App, pk=app_id)
+    proc = staging_database(app)
+
+    return render(request, 'wait_next.html', {
+        'step': 'Datenbank neu erstellen und kopieren',
+        'pid': proc.pid,
+        'next': reverse('show-result', args=[app.id])
+    })

@@ -5,6 +5,22 @@
 {% endblock %}
 
 {% block content %}
+    {% if staging %}
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="alert alert-warning">
+                    <h5>Staging</h5>
+                    <p>
+                        Dies ist deine Staging-App.
+                    </p>
+                    <p>
+                        Die App wird in ... automatisch gestoppt.
+                        <a href="#" class="btn btn-danger">Verlängern</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
     <div class="row mb-4">
         <div class="col-md-12">
             <h3>Status</h3>
@@ -17,51 +33,102 @@
         <div class="col-md-12">
             <h3>Deploy</h3>
             <div class="row">
-                <div class="col-md-6">
-                    <div class="card border-primary mb-3">
-                        <h4 class="card-header">Redeploy</h4>
-                        <div class="card-body">
-                            <p class="card-text">
-                                Lädt den aktuellen Code von Github, installiert requirements.txt,
-                                lässt migrate and collectstatic laufen und startet den Docker-Container neu.
-                            </p>
-                            <a href="/reload/{{ app.id }}/" class="btn btn-primary btn-lg">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-box-arrow-in-down" viewBox="0 0 16 16">
-                                    <path fill-rule="evenodd" d="M3.5 6a.5.5 0 0 0-.5.5v8a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-8a.5.5 0 0 0-.5-.5h-2a.5.5 0 0 1 0-1h2A1.5 1.5 0 0 1 14 6.5v8a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 14.5v-8A1.5 1.5 0 0 1 3.5 5h2a.5.5 0 0 1 0 1z"/>
-                                    <path fill-rule="evenodd" d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/>
-                                </svg>
-                                Redeploy
-                            </a>
-                            <p class="card-text mt-3">
-                                Erneute manuelle Ausführung der letzten 3 Schritte:
-                            </p>
-                            <div class="btn-group" role="group">
-                                <a href="/migrate/{{ app.id }}/" class="btn btn-outline-primary">Migrate</a>
-                                <a href="/collectstatic/{{ app.id }}/" class="btn btn-outline-primary">Collectstatic</a>
-                                <a href="/crestart/{{ app.id }}/" class="btn btn-outline-primary">Neustart</a>
+                {% if app.version == 1 %}
+                    <div class="col-md-6">
+                        <div class="card border-primary mb-3">
+                            <h4 class="card-header">Redeploy</h4>
+                            <div class="card-body">
+                                <p class="card-text">
+                                    Lädt den aktuellen Code von Github, installiert requirements.txt,
+                                    lässt migrate and collectstatic laufen und startet den Docker-Container neu.
+                                </p>
+                                <a href="/reload/{{ app.id }}/" class="btn btn-primary btn-lg">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-box-arrow-in-down" viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd" d="M3.5 6a.5.5 0 0 0-.5.5v8a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-8a.5.5 0 0 0-.5-.5h-2a.5.5 0 0 1 0-1h2A1.5 1.5 0 0 1 14 6.5v8a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 14.5v-8A1.5 1.5 0 0 1 3.5 5h2a.5.5 0 0 1 0 1z"/>
+                                        <path fill-rule="evenodd" d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/>
+                                    </svg>
+                                    Redeploy
+                                </a>
+                                <p class="card-text mt-3">
+                                    Erneute manuelle Ausführung der letzten 3 Schritte:
+                                </p>
+                                <div class="btn-group" role="group">
+                                    <a href="/migrate/{{ app.id }}/" class="btn btn-outline-primary">Migrate</a>
+                                    <a href="/collectstatic/{{ app.id }}/" class="btn btn-outline-primary">Collectstatic</a>
+                                    <a href="/crestart/{{ app.id }}/" class="btn btn-outline-primary">Neustart</a>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="card mb-3">
-                        <h4 class="card-header">Rebuild</h4>
-                        <div class="card-body">
-                            <p class="card-text">
-                                Verwende diese Funktion, falls die Instanz nicht mehr starten will und
-                                einen 502 Error zeigt.
-                                Dies erstellt das Docker-Image neu mit deinen neusten requirements, wie bei der
-                                ersten Installation. Die Datenbankdaten bleiben erhalten.
-                            </p>
-                            <a href="{% url "rebuild-image" app.id %}" class="btn btn-outline-danger">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-boxes" viewBox="0 0 16 16">
-                                    <path d="M7.752.066a.5.5 0 0 1 .496 0l3.75 2.143a.5.5 0 0 1 .252.434v3.995l3.498 2A.5.5 0 0 1 16 9.07v4.286a.5.5 0 0 1-.252.434l-3.75 2.143a.5.5 0 0 1-.496 0l-3.502-2-3.502 2.001a.5.5 0 0 1-.496 0l-3.75-2.143A.5.5 0 0 1 0 13.357V9.071a.5.5 0 0 1 .252-.434L3.75 6.638V2.643a.5.5 0 0 1 .252-.434zM4.25 7.504 1.508 9.071l2.742 1.567 2.742-1.567zM7.5 9.933l-2.75 1.571v3.134l2.75-1.571zm1 3.134 2.75 1.571v-3.134L8.5 9.933zm.508-3.996 2.742 1.567 2.742-1.567-2.742-1.567zm2.242-2.433V3.504L8.5 5.076V8.21zM7.5 8.21V5.076L4.75 3.504v3.134zM5.258 2.643 8 4.21l2.742-1.567L8 1.076zM15 9.933l-2.75 1.571v3.134L15 13.067zM3.75 14.638v-3.134L1 9.933v3.134z"/>
-                                </svg>
-                                Rebuild
-                            </a>
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <h4 class="card-header">Rebuild</h4>
+                            <div class="card-body">
+                                <p class="card-text">
+                                    Verwende diese Funktion, falls die Instanz nicht mehr starten will und
+                                    einen 502 Error zeigt.
+                                    Dies erstellt das Docker-Image neu mit deinen neusten requirements, wie bei der
+                                    ersten Installation. Die Datenbankdaten bleiben erhalten.
+                                </p>
+                                <a href="{% url "rebuild-image" app.id %}" class="btn btn-outline-danger">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-boxes" viewBox="0 0 16 16">
+                                        <path d="M7.752.066a.5.5 0 0 1 .496 0l3.75 2.143a.5.5 0 0 1 .252.434v3.995l3.498 2A.5.5 0 0 1 16 9.07v4.286a.5.5 0 0 1-.252.434l-3.75 2.143a.5.5 0 0 1-.496 0l-3.502-2-3.502 2.001a.5.5 0 0 1-.496 0l-3.75-2.143A.5.5 0 0 1 0 13.357V9.071a.5.5 0 0 1 .252-.434L3.75 6.638V2.643a.5.5 0 0 1 .252-.434zM4.25 7.504 1.508 9.071l2.742 1.567 2.742-1.567zM7.5 9.933l-2.75 1.571v3.134l2.75-1.571zm1 3.134 2.75 1.571v-3.134L8.5 9.933zm.508-3.996 2.742 1.567 2.742-1.567-2.742-1.567zm2.242-2.433V3.504L8.5 5.076V8.21zM7.5 8.21V5.076L4.75 3.504v3.134zM5.258 2.643 8 4.21l2.742-1.567L8 1.076zM15 9.933l-2.75 1.571v3.134L15 13.067zM3.75 14.638v-3.134L1 9.933v3.134z"/>
+                                    </svg>
+                                    Rebuild
+                                </a>
+                            </div>
                         </div>
                     </div>
-                </div>
+                {% elif app.version == 2 %}
+                    <div class="col-md-6">
+                        <div class="card border-primary mb-3">
+                            <h4 class="card-header">Redeploy</h4>
+                            <div class="card-body">
+                                <p class="card-text">
+                                    Lädt den aktuellen Code von Github, installiert Änderungen vom requirements.txt,
+                                    lässt migrate and collectstatic laufen und startet den Docker-Container neu.
+                                </p>
+                                <a href="{% url 'redeploy-v2' app.id %}" class="btn btn-primary btn-lg">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-box-arrow-in-down" viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd" d="M3.5 6a.5.5 0 0 0-.5.5v8a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-8a.5.5 0 0 0-.5-.5h-2a.5.5 0 0 1 0-1h2A1.5 1.5 0 0 1 14 6.5v8a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 14.5v-8A1.5 1.5 0 0 1 3.5 5h2a.5.5 0 0 1 0 1z"/>
+                                        <path fill-rule="evenodd" d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/>
+                                    </svg>
+                                    Redeploy
+                                </a>
+                                <p class="card-text mt-3">
+                                    Erzwinge die erneute installation der requirements.txt, auch wenn sich
+                                    darin nichts geändert hat.
+                                </p>
+                                <a href="{% url "upgrade-v2" app.id %}" class="btn btn-outline-primary">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                         class="bi bi-arrow-up-circle" viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd" d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8m15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-7.5 3.5a.5.5 0 0 1-1 0V5.707L5.354 7.854a.5.5 0 1 1-.708-.708l3-3a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 5.707z"/>
+                                    </svg>
+                                    Upgrade
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if not staging and not app.stagings.exists and app.version == 2 %}
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <h4 class="card-header">Staging</h4>
+                            <div class="card-body">
+                                <p class="card-text">
+                                    Erstelle eine Kopie deiner Instanz zum Testen.
+                                </p>
+                                <a href="{% url "rebuild-image" app.id %}" class="btn btn-warning">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-cone-striped" viewBox="0 0 16 16">
+                                        <path d="m9.97 4.88.953 3.811C10.159 8.878 9.14 9 8 9s-2.158-.122-2.923-.309L6.03 4.88C6.635 4.957 7.3 5 8 5s1.365-.043 1.97-.12m-.245-.978L8.97.88C8.718-.13 7.282-.13 7.03.88L6.275 3.9C6.8 3.965 7.382 4 8 4s1.2-.036 1.725-.098m4.396 8.613a.5.5 0 0 1 .037.96l-6 2a.5.5 0 0 1-.316 0l-6-2a.5.5 0 0 1 .037-.96l2.391-.598.565-2.257c.862.212 1.964.339 3.165.339s2.303-.127 3.165-.339l.565 2.257z"/>
+                                    </svg>
+                                    Staging einrichten
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -69,6 +136,26 @@
         <div class="col-md-12">
             <h3>Setup</h3>
             <div class="row">
+                {% if staging %}
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <h4 class="card-header">Daten Kopieren</h4>
+                            <div class="card-body">
+                                <p class="card-text">
+                                    Überschreibe die Staging-Datenbank mit den Daten der Produktions-Datenbank.
+                                </p>
+                                <a href="{% url 'clone_db' app.id %}" class="btn btn-warning">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                         class="bi bi-database-down" viewBox="0 0 16 16">
+                                        <path d="M12.5 9a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7m.354 5.854 1.5-1.5a.5.5 0 0 0-.708-.708l-.646.647V10.5a.5.5 0 0 0-1 0v2.793l-.646-.647a.5.5 0 0 0-.708.708l1.5 1.5a.5.5 0 0 0 .708 0"/>
+                                        <path d="M12.096 6.223A5 5 0 0 0 13 5.698V7c0 .289-.213.654-.753 1.007a4.5 4.5 0 0 1 1.753.25V4c0-1.007-.875-1.755-1.904-2.223C11.022 1.289 9.573 1 8 1s-3.022.289-4.096.777C2.875 2.245 2 2.993 2 4v9c0 1.007.875 1.755 1.904 2.223C4.978 15.71 6.427 16 8 16c.536 0 1.058-.034 1.555-.097a4.5 4.5 0 0 1-.813-.927Q8.378 15 8 15c-1.464 0-2.766-.27-3.682-.687C3.356 13.875 3 13.373 3 13v-1.302c.271.202.58.378.904.525C4.978 12.71 6.427 13 8 13h.027a4.6 4.6 0 0 1 0-1H8c-1.464 0-2.766-.27-3.682-.687C3.356 10.875 3 10.373 3 10V8.698c.271.202.58.378.904.525C4.978 9.71 6.427 10 8 10q.393 0 .774-.024a4.5 4.5 0 0 1 1.102-1.132C9.298 8.944 8.666 9 8 9c-1.464 0-2.766-.27-3.682-.687C3.356 7.875 3 7.373 3 7V5.698c.271.202.58.378.904.525C4.978 6.711 6.427 7 8 7s3.022-.289 4.096-.777M3 4c0-.374.356-.875 1.318-1.313C5.234 2.271 6.536 2 8 2s2.766.27 3.682.687C12.644 3.125 13 3.627 13 4c0 .374-.356.875-1.318 1.313C10.766 5.729 9.464 6 8 6s-2.766-.27-3.682-.687C3.356 4.875 3 4.373 3 4"/>
+                                    </svg>
+                                    Datenbank neu kopieren
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
                 <div class="col-md-6">
                     <div class="card mb-3">
                         <h4 class="card-header">Einstellungen</h4>

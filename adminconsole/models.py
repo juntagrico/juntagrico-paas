@@ -16,12 +16,23 @@ class GitHubKey(models.Model):
 
 
 class App(models.Model):
+    PYTHON_VERSION = [
+        ("3.9", "3.9 (Nur mit Juntagrico < 2.0)"),
+        ("3.10", "3.10"),
+        ("3.11", "3.11"),
+        ("3.12", "3.12"),
+        ("3.13", "3.13 (Nur mit Juntagrico >= 2.0)"),
+    ]
+
     user = models.ForeignKey(User, related_name='app', null=True, blank=True, on_delete=models.CASCADE)
     git_clone_url = models.CharField('github', max_length=100, blank=True)
     name = models.CharField('name', max_length=100, unique=True, validators=[RegexValidator(regex='^[a-z0-9]+$')])
     port = models.IntegerField('port', unique=True)
+    wsgi = models.CharField('wsgi', max_length=100, blank=True)
+    python_version = models.CharField('python', max_length=100, blank=True, choices=PYTHON_VERSION)
     managed = models.BooleanField('Managed', default=True)
-    staging_of = models.ForeignKey('App', null=True, on_delete=models.CASCADE, related_name='stagings')
+    version = models.PositiveIntegerField('version', default=1)
+    staging_of = models.ForeignKey('App', null=True, blank=True, on_delete=models.CASCADE, related_name='stagings')
 
     def __str__(self):
         return self.name
@@ -36,8 +47,7 @@ class App(models.Model):
 
     @property
     def wsgi_path(self):
-        # TODO: Use configurable path instead of guessing it
-        return self.name.partition('-')[0] + '.wsgi'
+        return self.wsgi or self.name.partition('-')[0] + '.wsgi'
 
 
 class AppEnv(models.Model):

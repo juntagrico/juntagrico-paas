@@ -40,6 +40,7 @@ def overview(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     renderdict = {
         'app': app,
+        'staging': app.staging_of is not None
     }
     return render(request, 'overview.html', renderdict)
 

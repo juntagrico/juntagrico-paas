@@ -3,23 +3,29 @@ from django.core.management import call_command
 
 from django.core.management.base import BaseCommand
 
+from adminconsole.models import App
+
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('app_name', nargs=1)
-        parser.add_argument('python_version', nargs='?', default='3.9')
-        parser.add_argument('--restart', action='store_true')
+        parser.add_argument('python_version', nargs='?')
+        parser.add_argument('--restart', action='store_true', help="Restart instance after rebuilding")
 
     # entry point used by manage.py
     def handle(self, *args, **options):
-        name = options['app_name'][0]
-        python_version = options['python_version']
-        base_dir = '/var/django/projects/'+name
+        app = App.objects.get(name=options['app_name'][0])
+        python_version = options['python_version'] or app.python_version
 
         client = docker.from_env()
 
-        result = client.images.build(path=base_dir, tag=name+':latest', buildargs={'pythonversion': python_version})
+        build_args = {}
+        if python_version:
+            build_args['pythonversion'] = python_version
+
+        result = client.images.build(path=app.dir, tag=app.name+':latest', buildargs=build_args)
         print(*result[1], sep="\n")
+
         if options['restart']:
-            return call_command('restart', name)
+            return call_command('restart', app.name)
         return 0

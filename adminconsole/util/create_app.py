@@ -1,11 +1,11 @@
 import subprocess
 
 from django.conf import settings
-from django.db import connection
+from django.db import connection, transaction
 from django.template.loader import get_template
 
 from adminconsole.config import Config
-from adminconsole.models import App
+from adminconsole.models import App, AppEnv
 from adminconsole.util import generate_password
 
 
@@ -47,11 +47,15 @@ def git_clone(key, app, output=None):
     return True
 
 
-def create_database(app_env, db_name, user_name):
+@transaction.atomic
+def create_database(app_env, db_name, user_name, replace=False):
     password = generate_password()
     db_name = db_name.replace('-', '_')
     user_name = user_name.replace('-', '_')
     with connection.cursor() as cursor:
+        if replace:
+            cursor.execute("DROP DATABASE IF EXISTS " + db_name)
+            cursor.execute("DROP USER IF EXISTS " + user_name)
         cursor.execute("CREATE DATABASE " + db_name)
         cursor.execute("CREATE USER " + user_name + " WITH PASSWORD '" + password + "'")
         cursor.execute("ALTER ROLE " + user_name + " SET client_encoding TO 'utf8'")
@@ -69,22 +73,33 @@ def create_database(app_env, db_name, user_name):
 def clone_database(staging_app, output=None):
     if not staging_app.staging_of:
         if output is not None:
-            output.append(f'{staging_app.name} is not a staging app')
+            print(f'{staging_app.name} is not a staging app', file=output)
         return False
     db_user = settings.DATABASES['default']['USER']
     db_pw = settings.DATABASES['default']['PASSWORD']
-    dump = subprocess.Popen(['pg_dump', '-U', db_user, '--no-password', staging_app.staging_of.env.juntagrico_database_name],
-                            stdout=subprocess.PIPE, stderr=subprocess.PIPE, env={'PGPASSWORD': db_pw})
-    proc = subprocess.run(['psql', '-U', db_user, '--no-password', staging_app.env.juntagrico_database_name],
-                          stdin=dump.stdout, stderr=subprocess.PIPE, env={'PGPASSWORD': db_pw})
-    dump.wait()
-    if output is not None:
-        dump_err = dump.communicate()[1]
-        if dump_err:
-            output.append(dump_err.decode())
-        if proc.stderr:
-            output.append(proc.stderr.decode())
-    return dump.returncode == 0 and proc.returncode == 0
+    load = subprocess.Popen(
+        ['psql', '-U', db_user, '--no-password', staging_app.env.juntagrico_database_name],
+        stdin=subprocess.PIPE, stderr=output, env={'PGPASSWORD': db_pw}
+    )
+    subprocess.Popen(
+        ['pg_dump', '-U', db_user, '--no-password', staging_app.staging_of.env.juntagrico_database_name],
+        stdout=load.stdin, stderr=output, env={'PGPASSWORD': db_pw}
+    )
+    return load
+
+
+def staging_database(app):
+    if not app.staging_of:
+        raise ValueError(f'{app} is not a staging app')
+    name = app.name
+    if not app.env:
+        app_env = AppEnv.objects.get(app=app.staging_of)
+        app_env.pk = None
+        app_env.app = app
+    # TODO: disable email in env?
+    create_database(app.env, name, name, replace=True)
+    with open(app.log_file, 'wb') as out:
+        return clone_database(app, out)
 
 
 def create_docker_file(app):
