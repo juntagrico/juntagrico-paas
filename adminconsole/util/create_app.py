@@ -1,11 +1,10 @@
 import subprocess
 
-from django.conf import settings
 from django.db import connection
 from django.template.loader import get_template
 
 from adminconsole.config import Config
-from adminconsole.models import App, AppEnv
+from adminconsole.models import App
 from adminconsole.util import generate_password
 
 
@@ -67,40 +66,6 @@ def create_database(app_env, db_name, user_name, replace=False):
     app_env.juntagrico_database_port = '5432'
     app_env.juntagrico_database_user = user_name
     app_env.save()
-
-
-def clone_database(staging_app, output=None):
-    if not staging_app.staging_of:
-        if output is not None:
-            print(f'{staging_app.name} is not a staging app', file=output)
-        return False
-    db_user = settings.DATABASES['default']['USER']
-    db_pw = settings.DATABASES['default']['PASSWORD']
-    load = subprocess.Popen(
-        ['psql', '-U', db_user, '--no-password', staging_app.env.juntagrico_database_name],
-        stdin=subprocess.PIPE, stderr=output, env={'PGPASSWORD': db_pw}
-    )
-    subprocess.Popen(
-        ['pg_dump', '-U', db_user, '--no-password', staging_app.staging_of.env.juntagrico_database_name],
-        stdout=load.stdin, stderr=output, env={'PGPASSWORD': db_pw}
-    )
-    return load
-
-
-def staging_database(app):
-    if not app.staging_of:
-        raise ValueError(f'{app} is not a staging app')
-    name = app.name
-    if not app.env:
-        app_env = AppEnv.objects.get(app=app.staging_of)
-        app_env.pk = None
-        app_env.app = app
-    # TODO: disable email in env?
-    create_database(app.env, name, name, replace=True)
-    with open(app.log_file, 'wb') as out:
-        return subprocess.Popen(
-            ['venv/bin/python', '-m', 'manage', 'clone_db', name], stdout=out, stderr=out
-        )
 
 
 def create_docker_file(app):

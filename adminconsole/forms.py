@@ -1,4 +1,6 @@
 from django import forms
+from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
 from django.forms import CharField, TextInput, CheckboxInput, Textarea, EmailField, BooleanField, RadioSelect
 from django.forms import ModelForm
 
@@ -6,25 +8,39 @@ from adminconsole.models import AppEnv, App
 
 
 class ProjectForm(forms.Form):
-    project_slug = CharField(label='App Name', max_length=100,
-                                   widget=TextInput(attrs={'readonly': 'readonly', 'class': 'form-control'}))
-    organisation_name = CharField(label='Name der Genossenschaft', max_length=100,
-                                        widget=TextInput(attrs={'class': 'form-control'}))
+    project_slug = CharField(
+        label='App Name', max_length=100,
+        validators=[RegexValidator(regex='^[a-z0-9]+$')],
+        widget=TextInput(attrs={'readonly': 'readonly', 'class': 'form-control'})
+    )
+    organisation_name = CharField(
+        label='Name der Genossenschaft', max_length=100,
+        widget=TextInput(attrs={'class': 'form-control'})
+    )
     street = CharField(label='Strasse', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))
     number = CharField(label='Nummer', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))
     zip = CharField(label='PLZ', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))
     city = CharField(label='Stadt', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))
-    extra = CharField(label='AdressZusatz', max_length=100, widget=TextInput(attrs={'class': 'form-control'}), required=False)
+    extra = CharField(
+        label='AdressZusatz', max_length=100, required=False,
+        widget=TextInput(attrs={'class': 'form-control'})
+    )
     PC = CharField(label='PC Kontonummer', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))
     IBAN = CharField(label='IBAN', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))
     BIC = CharField(label='BIC', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))
     NAME = CharField(label='Name der Bank', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))
-    ESR = CharField(label='ESR falls vorhanden', max_length=100,
-                          widget=TextInput(attrs={'class': 'form-control'}), required=False)
-    info_email = CharField(label='info email adresse', max_length=100,
-                                 widget=TextInput(attrs={'class': 'form-control'}))
-    share_price = CharField(label='Preis eines Anteilscheines', max_length=100,
-                                  widget=TextInput(attrs={'class': 'form-control'}))
+    ESR = CharField(
+        label='ESR falls vorhanden', max_length=100, required=False,
+        widget=TextInput(attrs={'class': 'form-control'})
+    )
+    info_email = CharField(
+        label='info email adresse', max_length=100,
+        widget=TextInput(attrs={'class': 'form-control'})
+    )
+    share_price = CharField(
+        label='Preis eines Anteilscheines', max_length=100,
+        widget=TextInput(attrs={'class': 'form-control'})
+    )
 
 
 class EnvForm(ModelForm):
@@ -53,6 +69,12 @@ class EnvForm(ModelForm):
 
 
 class AppForm(ModelForm):
+    def clean_name(self):
+        name = self.cleaned_data["name"]
+        if '-' in name:
+            raise ValidationError("Name darf nur Kleinbuchstaben und Zahlen enthalten.")
+        return name
+
     class Meta:
         model = App
         fields = ['name', 'managed']

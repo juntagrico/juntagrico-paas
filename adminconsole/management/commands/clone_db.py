@@ -1,24 +1,36 @@
 import subprocess
 
 from django.conf import settings
+from django.core.management import call_command
 
 from django.core.management.base import BaseCommand
 
-from adminconsole.models import App
+from adminconsole.models import App, AppEnv
+from adminconsole.util.create_app import create_database
 
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('app_name', nargs=1)
+        parser.add_argument('--no-restart', action='store_true', help="Don't restart container")
 
     # entry point used by manage.py
     def handle(self, *args, **options):
         app = App.objects.get(name=options['app_name'][0])
         if not app.staging_of:
             raise ValueError(f'{app} must be a staging app')
+
+        # re-create db
+        if not app.env:
+            app_env = AppEnv.objects.get(app=app.staging_of)
+            app_env.pk = None
+            app_env.app = app
+        # TODO: disable email in env?
+        create_database(app.env, app.name, app.name, replace=True)
+
+        # copy tables from prod app
         db_user = settings.DATABASES['default']['USER']
         db_pw = settings.DATABASES['default']['PASSWORD']
-
         load = subprocess.Popen(
             ['psql', '-U', db_user, '--no-password', app.env.juntagrico_database_name],
             stdin=subprocess.PIPE, stderr=subprocess.STDOUT, env={'PGPASSWORD': db_pw}
@@ -34,3 +46,8 @@ class Command(BaseCommand):
         dump.communicate()
         change_owner.communicate()
         print(load.communicate(b'\q'))
+
+        if not options['no-restart']:
+            # restart docker (to pass new db pw to env)
+            return call_command('restart', app.name)
+        return 0

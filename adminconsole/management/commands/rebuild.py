@@ -4,6 +4,7 @@ from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
 from adminconsole.models import App
+from adminconsole.util.create_app import create_docker_file
 
 
 class Command(BaseCommand):
@@ -22,6 +23,8 @@ class Command(BaseCommand):
         build_args = {}
         if python_version:
             build_args['pythonversion'] = python_version
+
+        create_docker_file(app)
 
         result = client.images.build(path=str(app.dir), tag=app.name+':latest', buildargs=build_args)
         print(*result[1], sep="\n")

@@ -1,3 +1,4 @@
+import datetime
 from pathlib import Path
 
 from django.db import models
@@ -26,7 +27,7 @@ class App(models.Model):
 
     user = models.ForeignKey(User, related_name='app', null=True, blank=True, on_delete=models.CASCADE)
     git_clone_url = models.CharField('github', max_length=100, blank=True)
-    name = models.CharField('name', max_length=100, unique=True, validators=[RegexValidator(regex='^[a-z0-9]+$')])
+    name = models.CharField('name', max_length=100, unique=True, validators=[RegexValidator(regex='^[a-z0-9-]+$')])
     port = models.IntegerField('port', unique=True)
     wsgi = models.CharField('wsgi', max_length=100, blank=True)
     python_version = models.CharField('python', max_length=100, blank=True, choices=PYTHON_VERSION)
@@ -48,6 +49,13 @@ class App(models.Model):
     @property
     def wsgi_path(self):
         return self.wsgi or self.name.partition('-')[0] + '.wsgi'
+
+    def run_until(self):
+        if self.staging_of:
+            file = self.dir / 'Dockerfile'
+            modified_time = datetime.datetime.fromtimestamp(file.stat().st_mtime, tz=datetime.timezone.utc)
+            return modified_time + datetime.timedelta(1)
+        return None
 
 
 class AppEnv(models.Model):
@@ -73,6 +81,8 @@ class AppEnv(models.Model):
     def get_lines(self):
         yield 'JUNTAGRICO_DEBUG=False'
         yield 'JUNTAGRICO_DATABASE_ENGINE=django.db.backends.postgresql'
+        if self.app.staging_of:
+            yield 'JUNTAGRICO_STAGING=1'
         for field in self._meta.get_fields():
             if field.name.startswith('juntagrico'):
                 yield f'{field.verbose_name}={getattr(self, field.name)}'

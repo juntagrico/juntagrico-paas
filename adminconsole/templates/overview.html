@@ -12,10 +12,17 @@
                     <h5>Staging</h5>
                     <p>
                         Dies ist deine Staging-App.
+                        <a href="{% url 'overview' app.staging_of.id %}">Zur Produktions-App.</a>
                     </p>
                     <p>
-                        Die App wird in ... automatisch gestoppt.
+                        Die App wird in {{ app.run_until|timeuntil }} automatisch gestoppt.
+                        {# TODO: implement this function #}
                         <a href="#" class="btn btn-danger">Verlängern</a>
+                    </p>
+                    <p>
+                        Um die app zu öffnen muss {{ app.name }}.juntagrico.science zu den
+                        <code>ALLOWED_HOSTS</code> hinzugefügt werden.<br>
+                        Die staging app wird mit der Umgebungsvariable <code>JUNTAGRICO_STAGING=1</code> ausgeführt.
                     </p>
                 </div>
             </div>

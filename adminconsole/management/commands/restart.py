@@ -24,11 +24,16 @@ class Command(BaseCommand):
         except:
             print('container not found or other error')
 
+        labels = []
+        if app.staging_of:
+            labels.append('staging')
+
         container = client.containers.run(
             image=name + ':latest',
             detach=True,
             environment=list(app.env.get_lines()),
             name=name,
+            labels=labels,
             network_mode='host',
             restart_policy={'Name': 'always'},
             volumes={

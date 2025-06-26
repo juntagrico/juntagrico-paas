@@ -5,8 +5,7 @@ from django.urls import reverse
 
 from adminconsole.decorators import owner_of_app
 from adminconsole.models import App
-from adminconsole.util.create_app import make_dirs, git_clone, create_docker_file, \
-    staging_database
+from adminconsole.util.create_app import make_dirs, git_clone
 
 
 @owner_of_app
@@ -43,7 +42,11 @@ def clone_repo(request, app_id):
 @owner_of_app
 def init_db(request, app_id):
     app = get_object_or_404(App, pk=app_id)
-    proc = staging_database(app)
+
+    with open(app.log_file, 'wb') as out:
+        proc = subprocess.Popen(
+            ['venv/bin/python', '-m', 'manage', 'clone_db', '--no-restart', app.name], stdout=out, stderr=out
+        )
 
     return render(request, 'wait_next.html', {
         'step': 'Datenbank initiieren und kopieren',
@@ -70,8 +73,6 @@ def init_domain(request, app_id):
 @owner_of_app
 def rebuild(request, app_id):
     app = get_object_or_404(App, pk=app_id)
-
-    create_docker_file(app)
 
     with open(app.log_file, 'wb') as out:
         proc = subprocess.Popen(
@@ -106,7 +107,11 @@ def restart(request, app_id):
 @owner_of_app
 def clone_db(request, app_id):
     app = get_object_or_404(App, pk=app_id)
-    proc = staging_database(app)
+
+    with open(app.log_file, 'wb') as out:
+        proc = subprocess.Popen(
+            ['venv/bin/python', '-m', 'manage', 'clone_db', app.name], stdout=out, stderr=out
+        )
 
     return render(request, 'wait_next.html', {
         'step': 'Datenbank neu erstellen und kopieren',
