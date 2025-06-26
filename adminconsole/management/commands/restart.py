@@ -45,4 +45,4 @@ class Command(BaseCommand):
             }
         )
         print(container.status)
-        print('Return 1', flush=True)
+        print('Return 0', flush=True)
