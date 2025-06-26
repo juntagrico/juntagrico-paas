@@ -6,6 +6,8 @@ from adminconsole.models import App
 
 
 class Command(BaseCommand):
+    """ v2 app command
+    """
     def add_arguments(self, parser):
         parser.add_argument('app_name', nargs=1)
 
@@ -43,3 +45,4 @@ class Command(BaseCommand):
             }
         )
         print(container.status)
+        print('Return 1', flush=True)

@@ -8,6 +8,8 @@ from adminconsole.util.create_app import create_docker_file
 
 
 class Command(BaseCommand):
+    """ v2 app command
+    """
     def add_arguments(self, parser):
         parser.add_argument('app_name', nargs=1)
         parser.add_argument('python_version', nargs='?')
@@ -28,7 +30,8 @@ class Command(BaseCommand):
 
         result = client.images.build(path=str(app.dir), tag=app.name+':latest', buildargs=build_args)
         print(*result[1], sep="\n")
+        print('Return ', result[0], flush=True)
 
-        if options['restart']:
+        if options.get('restart'):
             return call_command('restart', app.name)
         return 0

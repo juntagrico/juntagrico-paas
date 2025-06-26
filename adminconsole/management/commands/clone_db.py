@@ -47,7 +47,9 @@ class Command(BaseCommand):
         change_owner.communicate()
         print(load.communicate(b'\q'))
 
-        if not options['no-restart']:
+        if not options.get('no-restart'):
             # restart docker (to pass new db pw to env)
             return call_command('restart', app.name)
+
+        print('Return 0', flush=True)
         return 0
