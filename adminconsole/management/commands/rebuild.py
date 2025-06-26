@@ -29,8 +29,9 @@ class Command(BaseCommand):
         create_docker_file(app)
 
         result = client.images.build(path=str(app.dir), tag=app.name+':latest', buildargs=build_args)
-        print(*result[1], sep="\n")
-        print('Return ', result[0], flush=True)
+        for line in result[1]:
+            print(line.get('stream') or (str(line) + '\n'), end="")
+        print('Return 0', flush=True)
 
         if options.get('restart'):
             return call_command('restart', app.name)

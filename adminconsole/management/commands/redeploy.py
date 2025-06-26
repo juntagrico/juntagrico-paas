@@ -24,7 +24,7 @@ class Command(BaseCommand):
 
         print('# Git Pull', flush=True)
         result = git_pull(app)
-        print('Return ', result, flush=True)
+        print('Return', result, flush=True)
 
         if options['upgrade']:
             # primitive method, because docker API doesn't seem to support --no-cache-filter option
@@ -40,13 +40,13 @@ class Command(BaseCommand):
         cmd = ['python', '-m', 'manage', 'migrate']
         result = container.exec_run(cmd)
         print(result[1])
-        print('Return ', result[0], flush=True)
+        print('Return', result[0], flush=True)
 
         print('# Django Collectstatic', flush=True)
         cmd = ['python', '-m', 'manage', 'collectstatic', '--noinput', '-c']
         result = container.exec_run(cmd)
         print(result[1])
-        print('Return ', result[0], flush=True)
+        print('Return', result[0], flush=True)
 
         print('# Docker Restart', flush=True)
         start = datetime.now()
