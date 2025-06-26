@@ -23,7 +23,7 @@ class Command(BaseCommand):
         if python_version:
             build_args['pythonversion'] = python_version
 
-        result = client.images.build(path=app.dir, tag=app.name+':latest', buildargs=build_args)
+        result = client.images.build(path=str(app.dir), tag=app.name+':latest', buildargs=build_args)
         print(*result[1], sep="\n")
 
         if options['restart']:

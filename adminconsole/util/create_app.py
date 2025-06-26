@@ -1,7 +1,7 @@
 import subprocess
 
 from django.conf import settings
-from django.db import connection, transaction
+from django.db import connection
 from django.template.loader import get_template
 
 from adminconsole.config import Config
@@ -47,7 +47,6 @@ def git_clone(key, app, output=None):
     return True
 
 
-@transaction.atomic
 def create_database(app_env, db_name, user_name, replace=False):
     password = generate_password()
     db_name = db_name.replace('-', '_')
@@ -99,7 +98,9 @@ def staging_database(app):
     # TODO: disable email in env?
     create_database(app.env, name, name, replace=True)
     with open(app.log_file, 'wb') as out:
-        return clone_database(app, out)
+        return subprocess.Popen(
+            ['venv/bin/python', '-m', 'manage', 'clone_db', name], stdout=out, stderr=out
+        )
 
 
 def create_docker_file(app):
