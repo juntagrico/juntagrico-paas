@@ -169,7 +169,7 @@ def change_branch(request, app_id):
         form = BranchForm(request.POST)
         if form.is_valid():
             branch = re.sub('[?*[@#$;&~^: ]', '', form.cleaned_data['branch'])
-            proc = subprocess.run(['git', 'fetch', 'origin', branch],
+            proc = subprocess.run(['git', 'fetch', '--depth=1', 'origin', branch],
                                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
             if proc.returncode != 0:
                 error += proc.stdout.decode()
