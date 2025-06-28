@@ -1,7 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
-from django.forms import CharField, TextInput, CheckboxInput, Textarea, EmailField, BooleanField, RadioSelect
+from django.forms import CharField, TextInput, CheckboxInput, Textarea, EmailField, BooleanField, RadioSelect, Select
 from django.forms import ModelForm
 
 from adminconsole.models import AppEnv, App
@@ -100,6 +100,14 @@ class DomainForm(forms.Form):
 class BranchForm(forms.Form):
     branch = CharField(label='Branch', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))
 
+
+class PythonVersionForm(ModelForm):
+    class Meta:
+        model = App
+        fields = ['python_version']
+        widgets = {
+            'python_version': Select(attrs={'class': 'custom-select'}),
+        }
 
 class ProfileForm(forms.Form):
     email = EmailField(label='email adresse', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))

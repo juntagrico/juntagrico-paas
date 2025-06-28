@@ -12,6 +12,8 @@ from adminconsole.util.git import git_pull
 
 
 class Command(BaseCommand):
+    """ v2 app command
+    """
     def add_arguments(self, parser):
         parser.add_argument('app_name', nargs=1)
         parser.add_argument('--upgrade', action='store_true', help="Force upgrade of requirements.txt")

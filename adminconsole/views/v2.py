@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
 from adminconsole.decorators import owner_of_app
+from adminconsole.forms import PythonVersionForm
 from adminconsole.models import App
 
 
@@ -24,4 +25,24 @@ def redeploy(request, app_id, upgrade=False):
         'step': 'Upgrade' if upgrade else 'Redeploy',
         'pid': proc.pid,
         'next': reverse('show-result', args=[app_id])
+    })
+
+
+@owner_of_app
+def set_python_version(request, app_id):
+    app = get_object_or_404(App, pk=app_id)
+    if app.version != 2:
+        raise Http404
+
+    success = False
+    if request.method == 'POST':
+        form = PythonVersionForm(request.POST, instance=app)
+        if form.is_valid():
+            form.save()
+            success = True
+    else:
+        form = PythonVersionForm(instance=app)
+
+    return render(request, 'python_version_form.html', {
+        'form': form, 'success': success, 'app': app,
     })
