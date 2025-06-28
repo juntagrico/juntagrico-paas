@@ -1,6 +1,7 @@
 import datetime
 from pathlib import Path
 
+import docker
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
@@ -49,6 +50,10 @@ class App(models.Model):
     @property
     def wsgi_path(self):
         return self.wsgi or self.name.partition('-')[0] + '.wsgi'
+
+    @property
+    def container(self):
+        return docker.from_env().containers.get(self.name)
 
     def run_until(self):
         if self.staging_of:

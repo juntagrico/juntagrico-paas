@@ -5,11 +5,13 @@ from time import sleep
 
 import docker
 import psutil
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse
 from django.urls import reverse
 from django.utils import timezone as django_timezone
 from django.shortcuts import render, redirect, get_object_or_404
+from docker.errors import APIError, DockerException
 from pytz import timezone
 
 from adminconsole.decorators import owner_of_app
@@ -38,8 +40,16 @@ def home(request):
 @owner_of_app
 def overview(request, app_id):
     app = get_object_or_404(App, pk=app_id)
+
+    status = 'unknown'
+    try:
+        status = app.container.status
+    except (DockerException, APIError) as e:
+        messages.error(request, str(e))
+
     renderdict = {
         'app': app,
+        'status': status,
         'staging': app.staging_of is not None
     }
     return render(request, 'overview.html', renderdict)

@@ -2,10 +2,11 @@ import subprocess
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
+from django.views.decorators.http import require_POST
 
 from adminconsole.decorators import owner_of_app
 from adminconsole.models import App
-from adminconsole.util.create_app import make_dirs, git_clone
+from adminconsole.util.create_app import make_dirs, git_clone, create_docker_file
 
 
 @owner_of_app
@@ -118,3 +119,13 @@ def clone_db(request, app_id):
         'pid': proc.pid,
         'next': reverse('show-result', args=[app.id])
     })
+
+
+@require_POST
+@owner_of_app
+def renew(request, app_id):
+    app = get_object_or_404(App, pk=app_id)
+
+    create_docker_file(app)
+
+    return redirect('overview', app.id)

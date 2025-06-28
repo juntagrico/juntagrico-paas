@@ -14,16 +14,47 @@
                         Dies ist deine Staging-App.
                         <a href="{% url 'overview' app.staging_of.id %}">Zur Produktions-App.</a>
                     </p>
-                    <p>
+                    <div>
                         Die App wird in {{ app.run_until|timeuntil }} automatisch gestoppt.
-                        {# TODO: implement this function #}
-                        <a href="#" class="btn btn-danger">Verlängern</a>
-                    </p>
+                        <form action="{% url 'staging-renew' app.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-warning">Verlängern</button>
+                        </form>
+                    </div>
                     <p>
                         Um die app zu öffnen muss {{ app.name }}.juntagrico.science zu den
                         <code>ALLOWED_HOSTS</code> hinzugefügt werden.<br>
                         Die staging app wird mit der Umgebungsvariable <code>JUNTAGRICO_STAGING=1</code> ausgeführt.
                     </p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    {% if status == 'running' %}
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="alert alert-success">
+                    <p>
+                        Die Instanz läuft.
+                    </p>
+                    <form action="{% url 'app-stop' app.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Stoppen</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% elif status == 'stopped' %}
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="alert alert-danger">
+                    <p>
+                        Die Instanz ist gestoppt.
+                    </p>
+                    <form action="{% url 'app-start' app.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success">Starten</button>
+                    </form>
                 </div>
             </div>
         </div>

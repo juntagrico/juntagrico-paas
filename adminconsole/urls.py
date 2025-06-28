@@ -3,7 +3,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from adminconsole import views
-from adminconsole.views import git, create, staging, v2
+from adminconsole.views import git, create, staging, v2, app
 
 urlpatterns = [
     
@@ -12,6 +12,8 @@ urlpatterns = [
     path('profile', views.profile, name='profile'),
     path('', views.home, name='home'),
     path('overview/<int:app_id>/', views.overview, name='overview'),
+    path('app/<int:app_id>/start/', app.start, name='app-start'),
+    path('app/<int:app_id>/stop/', app.stop, name='app-stop'),
     path('dom/form/<int:app_id>/', views.domain_form),
     path('mailtexts/<int:app_id>/', views.mailtexts),
     path('showlog/<int:app_id>/', views.show_log),
@@ -54,9 +56,10 @@ urlpatterns = [
     path('staging/docker/build/<int:app_id>/', staging.rebuild, name='staging-build-docker'),
     path('staging/docker/run/<int:app_id>/', staging.restart, name='staging-start-app'),
     path('staging/db/clone/<int:app_id>/', staging.clone_db, name='staging-clone-db'),
+    path('staging/renew/<int:app_id>/', staging.renew, name='staging-renew'),
 
     # v2 apps
     path('v2/redeploy/<int:app_id>/', v2.redeploy, name='redeploy-v2'),
     path('v2/upgrade/<int:app_id>/', v2.redeploy, {'upgrade': True}, name='upgrade-v2'),
-    path('v2/python/version/set/<int:app_id>/', v2.set_python_version, name='set-python-version'),
+    path('v2/python/version/set/<int:app_id>/', v2.set_python_version, name='set-python-version')
 ]
