@@ -130,15 +130,27 @@ def show_log(request, app_id):
 def env(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     app_env = app.env
+
     if request.method == 'POST':
         form = EnvForm(request.POST, instance=app_env)
         if form.is_valid():
             form.save()
-            data = form.cleaned_data
-            data.update(app_env.__dict__)
+            if app.version == 2:
+                with open(app.log_file, 'wb') as out:
+                    proc = subprocess.Popen(
+                        ['venv/bin/python', '-m', 'manage', 'restart', app.name],
+                        stdout=out, stderr=out
+                    )
+                return render(request, 'wait_next.html', {
+                    'step': 'Einstellungen anwenden',
+                    'pid': proc.pid,
+                    'next': reverse('overview', args=[app.id])
+                })
+
             return redirect('/env/restart/' + str(app_id) + '/')
     else:
         form = EnvForm(instance=app_env)
+
     return render(request, 'env.html', {'form': form})
 
 
@@ -227,9 +239,10 @@ def domain_form(request, app_id):
         if form.is_valid():
             domain = form.cleaned_data['domain']
             with open(app.log_file, 'wb') as out:
-                proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'add_domain', app.name, port, domain],
-                                        stdout=out,
-                                        stderr=out)
+                proc = subprocess.Popen(
+                    ['venv/bin/python', '-m', 'manage', 'add_domain', app.name, port, domain],
+                    stdout=out, stderr=out
+                )
             return redirect('/dom/add/' + str(proc.pid) + '/')
     else:
         form = DomainForm()
