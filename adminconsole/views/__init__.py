@@ -2,6 +2,7 @@ import re
 import subprocess
 from datetime import datetime
 from time import sleep
+from zoneinfo import ZoneInfo
 
 import docker
 import psutil
@@ -9,10 +10,9 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse
 from django.urls import reverse
-from django.utils import timezone as django_timezone
+from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
 from docker.errors import APIError, DockerException
-from pytz import timezone
 
 from adminconsole.decorators import owner_of_app
 from adminconsole.forms import EnvForm, DomainForm, ProfileForm, BranchForm
@@ -298,7 +298,7 @@ def dumpdata(request, app_id):
     cmd = ['python', '-m', 'manage', 'dumpdata', '--natural-foreign', '--natural-primary', '-e', 'sessions']
     result = container.exec_run(cmd, stderr=False)
     response = HttpResponse(result.output.decode('utf-8'), content_type="application/json")
-    response['Content-Disposition'] = f'attachment; filename={name}-{django_timezone.now().strftime("%y_%m_%d_%H_%M")}.json'
+    response['Content-Disposition'] = f'attachment; filename={name}-{timezone.now().strftime("%y_%m_%d_%H_%M")}.json'
     return response
 
 
@@ -367,7 +367,7 @@ def restart(request, app_id):
     sleep(3)
     result_text = container.attrs['State']['StartedAt'].split('.')[0]+' UTC+0000'
     dt = datetime.strptime(result_text, '%Y-%m-%dT%H:%M:%S %Z%z')
-    dt = dt.astimezone(timezone('CET'))
+    dt = dt.astimezone(ZoneInfo('Europe/Zurich'))
     result_text = dt.strftime('%d-%m-%Y %H:%M:%S %Z%z')
     return render(request, 'show_result.html', {'app': app, 'sections': {
         'Docker Restart': {'text': result_text, 'result': 0},
