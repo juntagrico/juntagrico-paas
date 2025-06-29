@@ -62,6 +62,11 @@ class App(models.Model):
             return modified_time + datetime.timedelta(1)
         return None
 
+    def min_version(self):
+        if (self.dir / 'build').is_dir():
+            return 1
+        return 2
+
 
 class AppEnv(models.Model):
     app = models.OneToOneField(App, related_name='env', on_delete=models.CASCADE)

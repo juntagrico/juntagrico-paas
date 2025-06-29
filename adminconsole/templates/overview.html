@@ -9,56 +9,59 @@
         <div class="col-md-12">
             <h3>Status</h3>
                 {% if status == 'running' or status == 'created' or status == 'restarting' %}
-                    <div class="row mb-4">
-                        <div class="col-md-12">
-                            <div class="alert alert-success">
-                                <p>
-                                    Die Instanz läuft.
-                                </p>
-                                <form action="{% url 'app-stop' app.id %}" method="POST">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-danger">Stoppen</button>
-                                </form>
-                            </div>
-                        </div>
+                    <div class="alert alert-success">
+                        <p>
+                            Die Instanz läuft.
+                        </p>
+                        <form action="{% url 'app-stop' app.id %}" method="POST">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">Stoppen</button>
+                        </form>
                     </div>
                 {% elif status == 'paused' or status == 'removing' or status == 'exited' or status == 'dead' %}
-                    <div class="row mb-4">
-                        <div class="col-md-12">
-                            <div class="alert alert-danger">
-                                <p>
-                                    Die Instanz ist gestoppt.
-                                </p>
-                                <form action="{% url 'app-start' app.id %}" method="POST">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-success">Starten</button>
-                                </form>
-                            </div>
-                        </div>
+                    <div class="alert alert-danger">
+                        <p>
+                            Die Instanz ist gestoppt.
+                        </p>
+                        <form action="{% url 'app-start' app.id %}" method="POST">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success">Starten</button>
+                        </form>
                     </div>
                 {% endif %}
             {% if staging %}
-                <div class="row mb-4">
-                    <div class="col-md-12">
-                        <div class="alert alert-warning">
-                            <h5>Staging</h5>
-                            <p>
-                                Dies ist deine Staging-App.
-                                <a href="{% url 'overview' app.staging_of.id %}">Zur Produktions-App.</a>
-                            </p>
-                            <div>
-                                Die App wird in {{ app.run_until|timeuntil }} automatisch gestoppt.
-                                <form action="{% url 'staging-renew' app.id %}" method="POST">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-warning">Verlängern</button>
-                                </form>
-                            </div>
-                            <p>
-                                Um die app zu öffnen muss {{ app.name }}.juntagrico.science zu den
-                                <code>ALLOWED_HOSTS</code> hinzugefügt werden.<br>
-                                Die staging app wird mit der Umgebungsvariable <code>JUNTAGRICO_STAGING=1</code> ausgeführt.
-                            </p>
-                        </div>
+                <div class="alert alert-warning">
+                    <h5>Staging</h5>
+                    <p>
+                        Dies ist deine Staging-App.
+                        <a href="{% url 'overview' app.staging_of.id %}">Zur Produktions-App.</a>
+                    </p>
+                    <div>
+                        Die App wird in {{ app.run_until|timeuntil }} automatisch gestoppt.
+                        <form action="{% url 'staging-renew' app.id %}" method="POST">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-warning">Verlängern</button>
+                        </form>
+                    </div>
+                    <p>
+                        Um die app zu öffnen muss {{ app.name }}.juntagrico.science zu den
+                        <code>ALLOWED_HOSTS</code> hinzugefügt werden.<br>
+                        Die staging app wird mit der Umgebungsvariable <code>JUNTAGRICO_STAGING=1</code> ausgeführt.
+                    </p>
+                </div>
+            {% endif %}
+            {% if app.version == 2 and app.min_version == 1 %}
+                <div class="alert alert-info">
+                    <h5>Die App verwendet die V2-Umgebung</h5>
+                    <div>
+                        Falls du ein Problem mit dieser Umgebung feststellst,
+                        kannst du wieder zur V1-Umgebung wechseln.
+                        <form action="{% url 'set-version' app.id %}" method="POST">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-warning" name="version" value="1">
+                                Zurück zu V1 umschalten
+                            </button>
+                        </form>
                     </div>
                 </div>
             {% endif %}

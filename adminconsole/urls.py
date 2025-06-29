@@ -59,5 +59,6 @@ urlpatterns = [
     # v2 apps
     path('v2/redeploy/<int:app_id>/', v2.redeploy, name='redeploy-v2'),
     path('v2/upgrade/<int:app_id>/', v2.redeploy, {'upgrade': True}, name='upgrade-v2'),
-    path('v2/python/version/set/<int:app_id>/', v2.set_python_version, name='set-python-version')
+    path('v2/python/version/set/<int:app_id>/', v2.set_python_version, name='set-python-version'),
+    path('v2/version/set/<int:app_id>/', v2.set_version, name='set-version'),
 ]
