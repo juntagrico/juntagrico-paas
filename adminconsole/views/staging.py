@@ -1,5 +1,6 @@
 import subprocess
 
+from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.views.decorators.http import require_POST
@@ -13,8 +14,12 @@ from adminconsole.util.git import git_clone, git_status
 @owner_of_app
 def create(request, app_id):
     prod_app = App.objects.get(id=app_id)
+    if prod_app.staging_of:
+        messages.error(request, f'{prod_app} already is a staging app.')
+        return redirect('overview', app_id)
     if prod_app.stagings.exists():
-        return redirect(reverse('staging-git-clone', args=[prod_app.stagings.first().id]))
+        # resume staging creation process
+        return redirect('staging-git-clone', prod_app.stagings.first().id)
 
     if request.method == 'POST':
         staging_app = App.objects.create(
