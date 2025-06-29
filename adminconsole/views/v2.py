@@ -35,6 +35,9 @@ def redeploy(request, app_id, upgrade=False):
         raise Http404
 
     if request.method == 'POST':
+        if app.staging_of:
+            app.renew()
+
         command = ['venv/bin/python', '-m', 'manage', 'redeploy', app.name]
         if upgrade:
             command.insert(-1, '--upgrade')

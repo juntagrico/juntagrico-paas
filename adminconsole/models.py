@@ -5,6 +5,7 @@ import docker
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
+from django.utils import timezone
 
 from adminconsole.util import generate_secret_key
 
@@ -35,6 +36,7 @@ class App(models.Model):
     managed = models.BooleanField('Managed', default=True)
     version = models.PositiveIntegerField('version', default=1)
     staging_of = models.ForeignKey('App', null=True, blank=True, on_delete=models.CASCADE, related_name='stagings')
+    run_until = models.DateTimeField('run until', null=True, blank=True, default=None)
 
     def __str__(self):
         return self.name
@@ -55,17 +57,14 @@ class App(models.Model):
     def container(self):
         return docker.from_env().containers.get(self.name)
 
-    def run_until(self):
-        if self.staging_of:
-            file = self.dir / 'Dockerfile'
-            modified_time = datetime.datetime.fromtimestamp(file.stat().st_mtime, tz=datetime.timezone.utc)
-            return modified_time + datetime.timedelta(1)
-        return None
-
     def min_version(self):
         if (self.dir / 'build').is_dir():
             return 1
         return 2
+
+    def renew(self):
+        self.run_until = timezone.now() + datetime.timedelta(days=1)
+        self.save()
 
 
 class AppEnv(models.Model):

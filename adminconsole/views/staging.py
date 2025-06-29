@@ -7,7 +7,7 @@ from django.views.decorators.http import require_POST
 
 from adminconsole.decorators import owner_of_app
 from adminconsole.models import App
-from adminconsole.util.create_app import make_dirs, create_docker_file
+from adminconsole.util.create_app import make_dirs
 from adminconsole.util.git import git_clone, git_status
 
 
@@ -131,6 +131,6 @@ def clone_db(request, app_id):
 def renew(request, app_id):
     app = get_object_or_404(App, pk=app_id)
 
-    create_docker_file(app)
+    app.renew()
 
     return redirect('overview', app.id)

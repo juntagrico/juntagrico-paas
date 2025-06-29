@@ -58,7 +58,7 @@
                         kannst du wieder zur V1-Umgebung wechseln.
                         <form action="{% url 'set-version' app.id %}" method="POST">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-warning" name="version" value="1">
+                            <button type="submit" class="btn btn-info" name="version" value="1">
                                 Zurück zu V1 umschalten
                             </button>
                         </form>
