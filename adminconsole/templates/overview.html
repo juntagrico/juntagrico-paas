@@ -30,7 +30,7 @@
             </div>
         </div>
     {% endif %}
-    {% if status == 'running' %}
+    {% if status == 'running' or status == 'created' or status == 'restarting' %}
         <div class="row mb-4">
             <div class="col-md-12">
                 <div class="alert alert-success">
@@ -44,7 +44,7 @@
                 </div>
             </div>
         </div>
-    {% elif status == 'stopped' %}
+    {% elif status == 'paused' or status == 'removing' or status == 'exited' or status == 'dead' %}
         <div class="row mb-4">
             <div class="col-md-12">
                 <div class="alert alert-danger">
