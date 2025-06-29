@@ -36,13 +36,15 @@
                         Dies ist deine Staging-App.
                         <a href="{% url 'overview' app.staging_of.id %}">Zur Produktions-App.</a>
                     </p>
-                    <div>
-                        Die App wird in {{ app.run_until|timeuntil }} automatisch gestoppt.
-                        <form action="{% url 'staging-renew' app.id %}" method="POST">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-warning">Verlängern</button>
-                        </form>
-                    </div>
+                    {% if status != 'exited' %}
+                        <div>
+                            Die App wird in {{ app.run_until|timeuntil }} automatisch gestoppt.
+                            <form action="{% url 'staging-renew' app.id %}" method="POST">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-warning">Verlängern</button>
+                            </form>
+                        </div>
+                    {% endif %}
                     <p>
                         Um die app zu öffnen muss {{ app.name }}.juntagrico.science zu den
                         <code>ALLOWED_HOSTS</code> hinzugefügt werden.<br>

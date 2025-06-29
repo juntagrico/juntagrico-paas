@@ -12,6 +12,9 @@ from adminconsole.models import App
 def start(request, app_id):
     app = get_object_or_404(App, pk=app_id)
 
+    if app.staging_of:
+        app.renew()
+
     try:
         app.container.start()
     except APIError as e:
