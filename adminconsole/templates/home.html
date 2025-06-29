@@ -24,6 +24,20 @@
             </div>
         </div>
     {% endif %}
+    {% if staging_apps %}
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <h2>Staging-Apps</h2>
+                <ol>
+                    {% for app in staging_apps %}
+                        <li>
+                            <a href="{% url "overview" app.id %}">{{ app.name }}</a>
+                        </li>
+                    {% endfor %}
+                </ol>
+            </div>
+        </div>
+    {% endif %}
 {% endblock %}
 
 

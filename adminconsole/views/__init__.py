@@ -23,15 +23,16 @@ from adminconsole.models import App
 def home(request):
     superuser = request.user.is_superuser
     if superuser:
-        apps = App.objects.all()
+        available_apps = App.objects.all()
     else:
-        apps = request.user.app.all()
-    number_of_apps = apps.count()
+        available_apps = request.user.app.all()
+    number_of_apps = available_apps.count()
     if number_of_apps == 1 and not superuser:
-        return redirect('overview', app_id=apps[0].id)
+        return redirect('overview', app_id=available_apps[0].id)
     can_add_apps = number_of_apps < 1 or superuser
     renderdict = {
-        'apps': apps,
+        'apps': available_apps.filter(staging_of__isnull=True),
+        'staging_apps': available_apps.filter(staging_of__isnull=False),
         'can_add_app': can_add_apps,
     }
     return render(request, 'home.html', renderdict)
