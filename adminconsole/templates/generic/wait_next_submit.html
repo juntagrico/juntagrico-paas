@@ -1,0 +1,8 @@
+{% extends "wait_next.html" %}
+
+{% block next_link %}
+    <form action="{{ next }}" method="POST">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary disabled" id="next">weiter</button>
+    </form>
+{% endblock %}

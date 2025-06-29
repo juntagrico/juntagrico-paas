@@ -3,7 +3,6 @@ import subprocess
 from django.db import connection
 from django.template.loader import get_template
 
-from adminconsole.config import Config
 from adminconsole.models import App
 from adminconsole.util import generate_password
 
@@ -33,17 +32,6 @@ def make_dirs(directory, output=None):
     if output is not None:
         output.append(proc.stdout.decode())
     return result
-
-
-def git_clone(key, app, output=None):
-    if not Config.test_localhost():
-        url = 'https://' + key + ':x-oauth-basic@' + app.git_clone_url[8:]
-        proc = subprocess.run(['git', 'clone', '--depth=1', url, 'code'],
-                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=app.dir)
-        if output is not None:
-            output.append(proc.stdout.decode())
-        return proc.returncode == 0
-    return True
 
 
 def create_database(app_env, db_name, user_name, replace=False):

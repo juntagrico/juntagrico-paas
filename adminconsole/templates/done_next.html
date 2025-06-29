@@ -9,7 +9,9 @@
         {% endfor %}
     {% else %}
         <p>Schritt {{step}} erfolgreich abgeschlossen!</p>
-        <a href="{{ next }}" class="btn btn-success">weiter</a>
+        {% block next_link %}
+            <a href="{{ next }}" class="btn btn-success">weiter</a>
+        {% endblock %}
     {% endif %}
 {% endblock %}
 

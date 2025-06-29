@@ -53,8 +53,6 @@ urlpatterns = [
     path('staging/git/clone/<int:app_id>/', staging.clone_repo, name='staging-git-clone'),
     path('staging/db/init/<int:app_id>/', staging.init_db, name='staging-init-db'),
     path('staging/domain/init/<int:app_id>/', staging.init_domain, name='staging-init-domain'),
-    path('staging/docker/build/<int:app_id>/', staging.rebuild, name='staging-build-docker'),
-    path('staging/docker/run/<int:app_id>/', staging.restart, name='staging-start-app'),
     path('staging/db/clone/<int:app_id>/', staging.clone_db, name='staging-clone-db'),
     path('staging/renew/<int:app_id>/', staging.renew, name='staging-renew'),
 

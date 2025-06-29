@@ -10,7 +10,8 @@ from django.contrib.auth.decorators import login_required
 
 from adminconsole.decorators import owner_of_app
 from adminconsole.models import GitHubKey, App
-from adminconsole.util.create_app import make_dirs, git_clone
+from adminconsole.util.create_app import make_dirs
+from adminconsole.util.git import git_clone
 
 
 @login_required

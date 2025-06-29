@@ -15,16 +15,22 @@ def redeploy(request, app_id, upgrade=False):
     if app.version != 2:
         raise Http404
 
-    command = ['venv/bin/python', '-m', 'manage', 'redeploy', app.name]
-    if upgrade:
-        command.insert(-1, '--upgrade')
-    with open(app.log_file, 'wb') as out:
-        proc = subprocess.Popen(command, stdout=out, stderr=out)
+    if request.method == 'POST':
+        command = ['venv/bin/python', '-m', 'manage', 'redeploy', app.name]
+        if upgrade:
+            command.insert(-1, '--upgrade')
+        with open(app.log_file, 'wb') as out:
+            proc = subprocess.Popen(command, stdout=out, stderr=out)
 
-    return render(request, 'wait_next.html', {
-        'step': 'Upgrade' if upgrade else 'Redeploy',
-        'pid': proc.pid,
-        'next': reverse('show-result', args=[app_id])
+        return render(request, 'wait_next.html', {
+            'step': 'Upgrade' if upgrade else 'Redeploy',
+            'pid': proc.pid,
+            'next': reverse('show-result', args=[app_id])
+        })
+
+    return render(request, 'generic/submit.html', {
+        'page_title': f'Redeploy {app.name}',
+        'button_text': 'Redeploy starten',
     })
 
 
