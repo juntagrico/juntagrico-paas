@@ -21,7 +21,7 @@ class Command(BaseCommand):
             raise ValueError(f'{app} must be a staging app')
 
         # re-create db
-        if not app.env:
+        if not hasattr(app, 'env'):
             app_env = AppEnv.objects.get(app=app.staging_of)
             app_env.pk = None
             app_env.app = app
