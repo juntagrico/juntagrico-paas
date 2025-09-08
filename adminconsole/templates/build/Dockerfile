@@ -3,8 +3,8 @@ FROM python:$pythonversion-alpine AS django
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 RUN pip install --upgrade pip
-# install psycopg for postgres
-RUN apk add --update --virtual .build-deps gcc musl-dev postgresql-dev \
+# install psycopg for postgres & git to enable pip install from repos
+RUN apk add --update --virtual .build-deps gcc musl-dev postgresql-dev git \
     && pip install psycopg[c] --no-cache-dir
 
 FROM django AS app
