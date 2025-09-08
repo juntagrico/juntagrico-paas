@@ -22,8 +22,13 @@ def git_pull(app):
 
 
 def git_status(app, errors=None):
+    cdir = app.dir / 'code'
+    if not cdir.is_dir():
+        if errors is not None:
+            errors.append('folder not found: ' + str(cdir))
+        return False
     proc = subprocess.run(['git', 'status'],
-                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=app.dir / 'code')
+                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
     if errors is not None:
         errors.append(proc.stdout.decode())
     return proc.returncode == 0
