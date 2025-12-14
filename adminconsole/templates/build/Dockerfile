@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 ARG pythonversion=3.9
 FROM python:$pythonversion-alpine AS django
 ENV PYTHONDONTWRITEBYTECODE 1
