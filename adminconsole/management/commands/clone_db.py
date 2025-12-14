@@ -1,11 +1,14 @@
 import subprocess
+from datetime import datetime
 
+import docker
 from django.conf import settings
 from django.core.management import call_command
 
 from django.core.management.base import BaseCommand
 
 from adminconsole.models import App, AppEnv
+from adminconsole.util.commands import log_after
 from adminconsole.util.create_app import create_database
 
 
@@ -45,11 +48,27 @@ class Command(BaseCommand):
         )
         dump.communicate()
         change_owner.communicate()
+        print('# Clone Database', flush=True)
         print(load.communicate(b'\q'))
+        print('Return 0', flush=True)
 
         if not options.get('no-restart'):
             # restart docker (to pass new db pw to env)
-            return call_command('restart', app.name)
+            print('# Docker Restart', flush=True)
+            call_command('restart', app.name)
 
-        print('Return 0', flush=True)
+            # apply migrations, because staging may use newer version of code
+            print('# Django Migrate', flush=True)
+            container = docker.from_env().containers.get(app.name)
+            cmd = ['python', '-m', 'manage', 'migrate']
+            result = container.exec_run(cmd)
+            print(result[1])
+            print('Return', result[0], flush=True)
+
+            print('# Docker Restart2', flush=True)
+            start = datetime.now()
+            container.restart()
+            print(log_after(container, since=start))
+            print('Return 0', flush=True)
+
         return 0
