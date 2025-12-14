@@ -32,6 +32,7 @@ class Command(BaseCommand):
         create_database(app.env, app.name, app.name, replace=True)
 
         # copy tables from prod app
+        print('# Clone Database', flush=True)
         db_user = settings.DATABASES['default']['USER']
         db_pw = settings.DATABASES['default']['PASSWORD']
         load = subprocess.Popen(
@@ -48,7 +49,6 @@ class Command(BaseCommand):
         )
         dump.communicate()
         change_owner.communicate()
-        print('# Clone Database', flush=True)
         print(load.communicate(b'\q'))
         print('Return 0', flush=True)
 

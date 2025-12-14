@@ -14,6 +14,7 @@ class Command(BaseCommand):
         parser.add_argument('app_name', nargs=1)
         parser.add_argument('python_version', nargs='?')
         parser.add_argument('--restart', action='store_true', help="Restart instance after rebuilding")
+        parser.add_argument('--nocache', action='store_true', help="Build without using cache")
 
     # entry point used by manage.py
     def handle(self, *args, **options):
@@ -28,7 +29,9 @@ class Command(BaseCommand):
 
         create_docker_file(app)
 
-        result = client.images.build(path=str(app.dir), tag=app.name+':latest', buildargs=build_args)
+        result = client.images.build(
+            path=str(app.dir), tag=app.name + ':latest', buildargs=build_args, nocache=options.get('nocache')
+        )
         for line in result[1]:
             print(line.get('stream') or (str(line) + '\n'), end="")
         print('Return 0', flush=True)

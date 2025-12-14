@@ -28,13 +28,13 @@ class Command(BaseCommand):
         result = git_pull(app)
         print('Return', result, flush=True)
 
+        args=[]
         if options['upgrade']:
-            # primitive method, because docker API doesn't seem to support --no-cache-filter option
-            with open(app.dir / 'code' / 'requirements.txt', 'a') as f:
-                f.write(f'\n# force-rebuild {timezone.now()}')
+            # ignore entire cache, because docker API doesn't seem to support --no-cache-filter option
+            args.append('--nocache')
 
         print('# Docker Rebuild', flush=True)
-        call_command('rebuild', '--restart', app.name)
+        call_command('rebuild', '--restart', *args, app.name)
 
         container = docker.from_env().containers.get(name)
 
