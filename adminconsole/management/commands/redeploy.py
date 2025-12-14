@@ -48,7 +48,9 @@ class Command(BaseCommand):
             f.write(f'\n{self.FORCE_REBUILD_SEP}{upgrade_nonce}')
 
         print('# Docker Rebuild', flush=True)
-        call_command('rebuild', '--restart', app.name)
+        result = call_command('rebuild', '--restart', app.name)
+        if result != 0:
+            return
 
         container = docker.from_env().containers.get(name)
 
