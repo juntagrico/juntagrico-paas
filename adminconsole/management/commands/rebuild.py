@@ -2,6 +2,7 @@ import docker
 from django.core.management import call_command
 
 from django.core.management.base import BaseCommand
+from docker.errors import BuildError
 
 from adminconsole.models import App
 from adminconsole.util.create_app import create_docker_file
@@ -29,12 +30,20 @@ class Command(BaseCommand):
 
         create_docker_file(app)
 
-        result = client.images.build(
-            path=str(app.dir), tag=app.name + ':latest', buildargs=build_args, nocache=options.get('nocache')
-        )
-        for line in result[1]:
+        try:
+            result = client.images.build(
+                path=str(app.dir), tag=app.name + ':latest', buildargs=build_args, nocache=options.get('nocache')
+            )
+            result = result[1]
+            code = 0
+        except BuildError as e:
+            result = e.build_log
+            code = 1
+
+        for line in result:
             print(line.get('stream') or (str(line) + '\n'), end="")
-        print('Return 0', flush=True)
+        print(f'Return {code}', flush=True)
+
 
         if options.get('restart'):
             return call_command('restart', app.name)
