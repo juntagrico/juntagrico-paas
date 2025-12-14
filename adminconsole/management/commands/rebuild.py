@@ -43,7 +43,8 @@ class Command(BaseCommand):
         for line in result:
             print(line.get('stream') or (str(line) + '\n'), end="")
         print(f'Return {code}', flush=True)
-
+        if code == 1:
+            return 1
 
         if options.get('restart'):
             return call_command('restart', app.name)
