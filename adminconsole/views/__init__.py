@@ -1,4 +1,3 @@
-import re
 import subprocess
 from datetime import datetime
 from time import sleep
@@ -17,6 +16,7 @@ from docker.errors import APIError, DockerException
 from adminconsole.decorators import owner_of_app
 from adminconsole.forms import EnvForm, DomainForm, ProfileForm, BranchForm
 from adminconsole.models import App
+from adminconsole.util.git import git_switch, git_current_branch
 
 
 @login_required
@@ -185,34 +185,15 @@ def env_restart(request, app_id):
 @owner_of_app
 def change_branch(request, app_id):
     app = get_object_or_404(App, pk=app_id)
-    cdir = app.dir / 'code'
     error = ''
-    success = False
     if request.method == 'POST':
         form = BranchForm(request.POST)
         if form.is_valid():
-            branch = re.sub('[?*[@#$;&~^: ]', '', form.cleaned_data['branch'])
-            proc = subprocess.run(['git', 'fetch', '--depth=1', 'origin', branch],
-                                  stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
-            if proc.returncode != 0:
-                error += proc.stdout.decode()
-            else:
-                proc = subprocess.run(['git', 'checkout', '-B', branch],
-                                      stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
-                if proc.returncode != 0:
-                    error += proc.stdout.decode()
-                else:
-                    proc = subprocess.run(['git', 'branch', '-u', 'origin/' + branch, branch],
-                                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
-                    if proc.returncode != 0:
-                        error += proc.stdout.decode()
-                    else:
-                        success = True
-    proc = subprocess.Popen(['git', 'branch', '--show-current'], stdout=subprocess.PIPE, cwd=cdir)
-    branch = proc.stdout.read().decode().strip()
-    form = BranchForm(initial={'branch': branch})
+            error = git_switch(app, form.cleaned_data['branch'])
+
+    form = BranchForm(initial={'branch': git_current_branch(app)})
     return render(request, 'branch_form.html', {
-        'form': form, 'success': success, 'error': error, 'app': app
+        'form': form, 'success': not error, 'error': error, 'app': app
     })
 
 

@@ -1,3 +1,4 @@
+import re
 import subprocess
 
 from adminconsole.config import Config
@@ -21,6 +22,32 @@ def git_pull(app):
     return proc1.returncode + proc2.returncode
 
 
+def git_switch(app, branch):
+    cdir = app.dir / 'code'
+    branch = re.sub('[?*[@#$;&~^: ]', '', branch)
+
+    proc = subprocess.run(['git', 'remote', 'set-branches', '--add', 'origin', branch],
+                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
+    if proc.returncode != 0:
+        return proc.stdout.decode()
+
+    proc = subprocess.run(['git', 'fetch', '--depth=1', 'origin', branch],
+                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
+    if proc.returncode != 0:
+        return proc.stdout.decode()
+
+    proc = subprocess.run(['git', 'checkout', '-B', branch],
+                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
+    if proc.returncode != 0:
+        return proc.stdout.decode()
+
+    proc = subprocess.run(['git', 'branch', '-u', 'origin/' + branch, branch],
+                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
+    if proc.returncode != 0:
+        return proc.stdout.decode()
+    return ''
+
+
 def git_status(app, errors=None):
     cdir = app.dir / 'code'
     if not cdir.is_dir():
@@ -32,3 +59,9 @@ def git_status(app, errors=None):
     if errors is not None:
         errors.append(proc.stdout.decode())
     return proc.returncode == 0
+
+
+def git_current_branch(app):
+    cdir = app.dir / 'code'
+    proc = subprocess.Popen(['git', 'branch', '--show-current'], stdout=subprocess.PIPE, cwd=cdir)
+    return proc.stdout.read().decode().strip()
