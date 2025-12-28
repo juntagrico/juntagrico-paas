@@ -186,14 +186,16 @@ def env_restart(request, app_id):
 def change_branch(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     error = ''
+    success = False
     if request.method == 'POST':
         form = BranchForm(request.POST)
         if form.is_valid():
             error = git_switch(app, form.cleaned_data['branch'])
+            success = not error
 
     form = BranchForm(initial={'branch': git_current_branch(app)})
     return render(request, 'branch_form.html', {
-        'form': form, 'success': not error, 'error': error, 'app': app
+        'form': form, 'success': success, 'error': error, 'app': app
     })
 
 
