@@ -46,3 +46,4 @@ class Command(BaseCommand):
         )
         print(container.status)
         print('Return 0', flush=True)
+        return 0
