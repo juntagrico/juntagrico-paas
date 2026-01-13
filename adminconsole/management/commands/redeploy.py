@@ -45,6 +45,7 @@ class Command(BaseCommand):
         # force cache invalidation
         # primitive method to enforce upgrade, because docker API doesn't seem to support --no-cache-filter option
         with open(app.dir / 'code' / 'requirements.txt', 'a') as f:
+            f.write('\nsvglib<1.6.0')  # force fix. 1.6. requires cairo
             f.write(f'\n{self.FORCE_REBUILD_SEP}{upgrade_nonce}')
 
         print('# Docker Rebuild', flush=True)
