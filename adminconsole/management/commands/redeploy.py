@@ -32,7 +32,7 @@ class Command(BaseCommand):
             # using the same nonce as in the last build will ensure that the right cache is used.
             try:
                 with open(app.dir / 'code' / 'requirements.txt', 'r') as f:
-                    upgrade_nonce = f.readlines()[-1].split(self.FORCE_REBUILD_SEP)[-1]
+                    upgrade_nonce = f.readlines()[-1].split(self.FORCE_REBUILD_SEP)[1]
             except FileNotFoundError:
                 pass
             except IndexError:
