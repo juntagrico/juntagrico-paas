@@ -31,7 +31,7 @@ class Command(BaseCommand):
             labels.append('staging')
 
         container = client.containers.run(
-            image=name + ':latest',
+            image=app.image_tag,
             detach=True,
             environment=list(app.env.get_lines()),
             name=name,

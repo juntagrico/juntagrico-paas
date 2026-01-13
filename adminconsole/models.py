@@ -54,6 +54,11 @@ class App(models.Model):
         return self.wsgi or self.name.partition('-')[0] + '.wsgi'
 
     @property
+    def image_tag(self):
+        version = self.version if self.version >= 2 else 'latest'
+        return f'{self.name}:{version}'
+
+    @property
     def container(self):
         return docker.from_env().containers.get(self.name)
 

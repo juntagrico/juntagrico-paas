@@ -32,7 +32,7 @@ class Command(BaseCommand):
 
         try:
             result = client.images.build(
-                path=str(app.dir), tag=app.name + ':latest', buildargs=build_args, nocache=options.get('nocache')
+                path=str(app.dir), tag=app.image_tag, buildargs=build_args, nocache=options.get('nocache')
             )
             result = result[1]
             code = 0
