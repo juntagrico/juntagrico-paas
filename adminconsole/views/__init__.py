@@ -95,7 +95,7 @@ def show_result(request, app_id):
             elif line.startswith('Return '):
                 current['result'] = int(line[7:])
             else:
-                current['text'] += str(eval(line), 'utf-8') if line.startswith('b') else line
+                current['text'] += line
                 current['text'] += '\n'
     if not sections['Log']['text']:
         del sections['Log']
