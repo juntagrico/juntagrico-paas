@@ -1,3 +1,4 @@
+import ast
 import subprocess
 from datetime import datetime
 from time import sleep
@@ -95,7 +96,10 @@ def show_result(request, app_id):
             elif line.startswith('Return '):
                 current['result'] = int(line[7:])
             else:
-                current['text'] += line
+                if line[:2] in ['b"', "b'"]:
+                    current['text'] += str(ast.literal_eval(line), 'utf-8')
+                else:
+                    current['text'] += line
                 current['text'] += '\n'
     if not sections['Log']['text']:
         del sections['Log']
