@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo
 
 import docker
 import psutil
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse
@@ -286,6 +287,21 @@ def dumpdata(request, app_id):
     result = container.exec_run(cmd, stderr=False)
     response = HttpResponse(result.output.decode('utf-8'), content_type="application/json")
     response['Content-Disposition'] = f'attachment; filename={name}-{timezone.now().strftime("%y_%m_%d_%H_%M")}.json'
+    return response
+
+
+@owner_of_app
+def pgdump(request, app_id):
+    app = get_object_or_404(App, pk=app_id)
+    db_user = settings.DATABASES['default']['USER']
+    db_pw = settings.DATABASES['default']['PASSWORD']
+
+    dump = subprocess.run(
+        ['pg_dump', '-U', db_user, '--no-password', app.env.juntagrico_database_name],
+        stdout=subprocess.PIPE, env={'PGPASSWORD': db_pw}
+    )
+    response = HttpResponse(dump.stdout.decode('utf-8'), content_type="application/sql")
+    response['Content-Disposition'] = f'attachment; filename={app.name}-{timezone.now().strftime("%y_%m_%d_%H_%M")}.sql'
     return response
 
 

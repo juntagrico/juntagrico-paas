@@ -32,6 +32,7 @@ urlpatterns = [
     path('rebuild/<int:app_id>/', views.rebuild_image, name='rebuild-image'),
     path('branch/change/<int:app_id>/', views.change_branch, name='change-branch'),
     path('dumpdata/<int:app_id>/', views.dumpdata, name='dumpdata'),
+    path('pgdump/<int:app_id>/', views.pgdump, name='pgdump'),
 
     # create application urls in the right order how they flow
     path('ca/af', create.app_form, name='create-app'),
