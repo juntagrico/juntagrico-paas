@@ -323,7 +323,11 @@
                                 <a href="https://docs.djangoproject.com/en/4.2/ref/django-admin/#loaddata">loaddata</a>
                                 importiert werden.
                             </p>
-                            <a href="{% url "dumpdata" app.id %}" class="btn btn-outline-primary">Exportieren</a>
+                            <a href="{% url "dumpdata" app.id %}" class="btn btn-outline-primary">Exportieren als JSON</a>
+                            <p class="card-text">
+                                Exportiert die Datenbankdaten mit pg_dump.
+                            </p>
+                            <a href="{% url "pgdump" app.id %}" class="btn btn-outline-primary">Exportieren als SQL</a>
                         </div>
                     </div>
                 </div>
