@@ -53,7 +53,7 @@ class Command(BaseCommand):
         print(load.communicate(b'\q'))
         print('Return 0', flush=True)
 
-        if not options.get('no-restart'):
+        if not options.get('no_restart'):
             # restart docker (to pass new db pw to env)
             print('# Docker Restart', flush=True)
             call_command('restart', app.name)

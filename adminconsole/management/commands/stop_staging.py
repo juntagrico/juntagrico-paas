@@ -15,7 +15,7 @@ class Command(BaseCommand):
     # entry point used by manage.py
     def handle(self, *args, **options):
         client = docker.from_env()
-        dry_run = options.get('dry-run')
+        dry_run = options.get('dry_run')
         for app in App.objects.filter(run_until__isnull=False, run_until__lte=timezone.now()):
             if dry_run:
                 print(f'Would stop {app}')
