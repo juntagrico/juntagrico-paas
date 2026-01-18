@@ -16,14 +16,14 @@ def git_clone(key, app, output=None):
 
 
 def git_pull(app):
-    cdir = app.dir / 'code'
+    cdir = app.code_dir
     proc1 = subprocess.run(['git', 'fetch', '--depth=1'], stderr=subprocess.STDOUT, cwd=cdir)
     proc2 = subprocess.run(['git', 'reset', '--hard', '@{u}'], stderr=subprocess.STDOUT, cwd=cdir)
     return proc1.returncode + proc2.returncode
 
 
 def git_switch(app, branch):
-    cdir = app.dir / 'code'
+    cdir = app.code_dir
     branch = re.sub('[?*[@#$;&~^: ]', '', branch)
 
     proc = subprocess.run(['git', 'remote', 'set-branches', '--add', 'origin', branch],
@@ -49,7 +49,7 @@ def git_switch(app, branch):
 
 
 def git_status(app, errors=None):
-    cdir = app.dir / 'code'
+    cdir = app.code_dir
     if not cdir.is_dir():
         if errors is not None:
             errors.append('folder not found: ' + str(cdir))
@@ -62,6 +62,5 @@ def git_status(app, errors=None):
 
 
 def git_current_branch(app):
-    cdir = app.dir / 'code'
-    proc = subprocess.Popen(['git', 'branch', '--show-current'], stdout=subprocess.PIPE, cwd=cdir)
+    proc = subprocess.Popen(['git', 'branch', '--show-current'], stdout=subprocess.PIPE, cwd=app.code_dir)
     return proc.stdout.read().decode().strip()

@@ -46,6 +46,10 @@ class App(models.Model):
         return Path('/var/django/projects') / self.name
 
     @property
+    def code_dir(self):
+        return self.dir / 'code'
+
+    @property
     def log_file(self):
         return str(self.dir) + '.txt'
 

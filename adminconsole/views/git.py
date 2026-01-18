@@ -83,7 +83,7 @@ def clone_repo(request, app_id):
 @owner_of_app
 def git_push(request, app_id):
     app = get_object_or_404(App, pk=app_id)
-    directory = app.dir / 'code'
+    directory = app.code_dir
     output = []
     proc = subprocess.run(['git', 'add', '.', '--all'], stdout=subprocess.PIPE, cwd=directory)
     output.append(str(proc.stdout))

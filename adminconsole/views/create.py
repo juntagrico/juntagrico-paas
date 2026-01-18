@@ -43,7 +43,7 @@ def overwrite_app(request, app_id):
     else:
         form = OverwriteAppForm()
 
-    files = os.listdir(app.dir / 'code')
+    files = os.listdir(app.code_dir)
     if '.git' in files:
         files.remove('.git')
 

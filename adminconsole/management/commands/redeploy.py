@@ -31,7 +31,7 @@ class Command(BaseCommand):
             # if we don't want to force an upgrade, store the current nonce to use again.
             # using the same nonce as in the last build will ensure that the right cache is used.
             try:
-                with open(app.dir / 'code' / 'requirements.txt', 'r') as f:
+                with open(app.code_dir / 'requirements.txt', 'r') as f:
                     upgrade_nonce = f.readlines()[-1].split(self.FORCE_REBUILD_SEP)[1]
             except FileNotFoundError:
                 pass
@@ -44,7 +44,7 @@ class Command(BaseCommand):
 
         # force cache invalidation
         # primitive method to enforce upgrade, because docker API doesn't seem to support --no-cache-filter option
-        with open(app.dir / 'code' / 'requirements.txt', 'a') as f:
+        with open(app.code_dir / 'requirements.txt', 'a') as f:
             f.write('\nsvglib<1.6.0')  # force fix. 1.6. requires cairo
             f.write(f'\n{self.FORCE_REBUILD_SEP}{upgrade_nonce}')
 
