@@ -50,10 +50,15 @@ def overview(request, app_id):
     except (DockerException, APIError) as e:
         messages.error(request, str(e))
 
+    staging = app.staging_of is not None
+    if staging and not app.code_dir.is_dir():
+        # resume staging creation process
+        return redirect('staging-git-clone', app_id=app.id)
+
     renderdict = {
         'app': app,
         'status': status,
-        'staging': app.staging_of is not None
+        'staging': staging
     }
     return render(request, 'overview.html', renderdict)
 
