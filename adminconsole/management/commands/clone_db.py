@@ -28,7 +28,8 @@ class Command(BaseCommand):
             app_env = AppEnv.objects.get(app=app.staging_of)
             app_env.pk = None
             app_env.app = app
-        # TODO: disable email in env?
+            app_env.juntagrico_email_user = ''
+            app_env.juntagrico_email_password = ''
         create_database(app.env, app.name, app.name, replace=True)
 
         # copy tables from prod app
