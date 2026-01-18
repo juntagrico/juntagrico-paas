@@ -134,7 +134,7 @@
                             <h4 class="card-header">Redeploy</h4>
                             <div class="card-body">
                                 <p class="card-text">
-                                    Lädt den aktuellen Code von Github, installiert Änderungen vom requirements.txt,
+                                    Lädt den aktuellen Code von Github, installiert requirements.txt nur wenn es verändert wurde,
                                     lässt migrate and collectstatic laufen und startet den Docker-Container neu.
                                 </p>
                                 <form action="{% url 'redeploy-v2' app.id %}" method="POST">
@@ -149,8 +149,8 @@
                                     </button>
                                 </form>
                                 <p class="card-text mt-3">
-                                    Erzwinge die erneute installation der requirements.txt, auch wenn sich
-                                    darin nichts geändert hat.
+                                    Erzwinge die erneute installation der requirements.txt, auch wenn die Datei nicht geändert wurde.
+                                    Verwende diese Option, um die neusten Bugfix-Releases anzuwenden.
                                 </p>
                                 <form action="{% url 'upgrade-v2' app.id %}" method="POST">
                                     {% csrf_token %}
@@ -324,7 +324,7 @@
                                 importiert werden.
                             </p>
                             <a href="{% url "dumpdata" app.id %}" class="btn btn-outline-primary">Exportieren als JSON</a>
-                            <p class="card-text">
+                            <p class="card-text mt-3">
                                 Exportiert die Datenbankdaten mit pg_dump.
                             </p>
                             <a href="{% url "pgdump" app.id %}" class="btn btn-outline-primary">Exportieren als SQL</a>
