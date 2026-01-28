@@ -26,25 +26,30 @@ def git_switch(app, branch):
     cdir = app.code_dir
     branch = re.sub('[?*[@#$;&~^: ]', '', branch)
 
-    proc = subprocess.run(['git', 'remote', 'set-branches', '--add', 'origin', branch],
+    proc = subprocess.run(['git', 'check-ref-format', '--branch',  branch],
                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
     if proc.returncode != 0:
         return proc.stdout.decode()
+
+    proc = subprocess.run(['git', 'remote', 'set-branches', '--add', 'origin', branch],
+                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
+    if proc.returncode != 0:
+        return 'git remote: ' + proc.stdout.decode()
 
     proc = subprocess.run(['git', 'fetch', '--depth=1', 'origin', branch],
                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
     if proc.returncode != 0:
-        return proc.stdout.decode()
+        return 'git fetch: ' + proc.stdout.decode()
 
     proc = subprocess.run(['git', 'checkout', '-B', branch],
                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
     if proc.returncode != 0:
-        return proc.stdout.decode()
+        return 'git checkout:' + proc.stdout.decode()
 
     proc = subprocess.run(['git', 'branch', '-u', 'origin/' + branch, branch],
                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
     if proc.returncode != 0:
-        return proc.stdout.decode()
+        return 'git branch: ' + proc.stdout.decode()
     return ''
 
 
