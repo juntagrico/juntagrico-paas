@@ -34,7 +34,7 @@ class App(models.Model):
     wsgi = models.CharField('wsgi', max_length=100, blank=True)
     python_version = models.CharField('python', max_length=100, blank=True, choices=PYTHON_VERSION)
     managed = models.BooleanField('Managed', default=True)
-    version = models.PositiveIntegerField('version', default=1)
+    version = models.PositiveIntegerField('version', default=2)
     staging_of = models.ForeignKey('App', null=True, blank=True, on_delete=models.CASCADE, related_name='stagings')
     run_until = models.DateTimeField('run until', null=True, blank=True, default=None)
 
