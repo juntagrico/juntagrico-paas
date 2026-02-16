@@ -46,8 +46,8 @@ urlpatterns = [
     path('ca/db/<int:app_id>/', create.init_db, name='ca-init-db'),
     path('ca/ap/<int:app_id>/', create.admin_password, name='ca-admin-pw'),
     path('ca/env/form/<int:app_id>/', create.env_form, name='ca-create-env'),
-    path('ca/env/dist/<int:app_id>/', create.env_dist2, name='ca-init-env'),
-    path('ca/docker/<int:app_id>/', create.docker2, name='ca-build-docker'),
+    path('ca/infra/<int:app_id>/', create.init_infra, name='ca-init-infra'),
+    path('ca/build/<int:app_id>/', create.build, name='ca-build'),
 
     # staging app
     path('staging/create/<int:app_id>/', staging.create, name='staging-create'),
