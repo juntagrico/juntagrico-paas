@@ -85,7 +85,7 @@ class AppForm(ModelForm):
 
 
 class OverwriteAppForm(forms.Form):
-    overwrite = BooleanField(label='Überschreiben', initial=False, widget=RadioSelect(
+    overwrite = BooleanField(label='Überschreiben', required=False, initial=False, widget=RadioSelect(
         choices=[
             (False, 'Nicht Überschreiben! Das Repo enthält bereits eine Juntagrico app.'),
             (True, 'Überschreibe alles im Repo mit einer neuen Juntagrico app.'),
