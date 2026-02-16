@@ -44,10 +44,11 @@ urlpatterns = [
     path('ck/form/<int:app_id>/', create.cookiecutter_form, name='ca-cookiecutter'),
     path('git/push/<int:app_id>/', git.git_push, name='ca-git-push'),
     path('ca/db/<int:app_id>/', create.init_db, name='ca-init-db'),
-    path('ca/ap/<int:app_id>/', create.admin_password, name='ca-admin-pw'),
     path('ca/env/form/<int:app_id>/', create.env_form, name='ca-create-env'),
-    path('ca/infra/<int:app_id>/', create.init_infra, name='ca-init-infra'),
+    path('ca/domain/<int:app_id>/', create.init_domain, name='ca-init-domain'),
+    path('ca/cronjob/<int:app_id>/', create.init_cronjob, name='ca-init-cronjob'),
     path('ca/build/<int:app_id>/', create.build, name='ca-build'),
+    path('ca/createadmin/<int:app_id>/', create.create_admin, name='ca-create-admin'),
 
     # staging app
     path('staging/create/<int:app_id>/', staging.create, name='staging-create'),

@@ -83,17 +83,7 @@ def init_db(request, app_id):
     name = app.name
     app_env = AppEnv.objects.create(app=app)
     create_database(app_env, name, name)
-    return redirect('ca-admin-pw', app_id=app_id)
-
-
-@owner_of_app
-def admin_password(request, app_id):
-    app = get_object_or_404(App, pk=app_id)
-    render_dict = {
-        'step': mark_safe('Admin Passwort<br/>' + app.env.juntagrico_database_password + '<br/>Unbedingt aufschreiben!'),
-        'next': reverse('ca-create-env', args=[app_id])
-    }
-    return render(request, 'done_next.html', render_dict)
+    return redirect('ca-create-env', app_id=app_id)
 
 
 @owner_of_app
@@ -103,14 +93,14 @@ def env_form(request, app_id):
         form = EnvForm(request.POST, instance=app.env)
         if form.is_valid():
             form.save()
-            return redirect('ca-init-infra', app_id=app_id)
+            return redirect('ca-init-domain', app_id=app_id)
     else:
         form = EnvForm()
     return render(request, 'env.html', {'form': form})
 
 
 @owner_of_app
-def init_infra(request, app_id):
+def init_domain(request, app_id):
     app = get_object_or_404(App, pk=app_id)
 
     domain = f'{app.name}.juntagrico.science'
@@ -120,6 +110,17 @@ def init_infra(request, app_id):
             stdout=out, stderr=out
         )
 
+    return render(request, 'generic/wait_next_submit.html', {
+        'step': 'Domain einrichten',
+        'pid': proc.pid,
+        'next': reverse('ca-init-cronjob', args=[app_id])
+    })
+
+
+@owner_of_app
+def init_cronjob(request, app_id):
+    app = get_object_or_404(App, pk=app_id)
+
     with open(app.log_file, 'wb') as out:
         proc = subprocess.Popen(
             ['venv/bin/python', '-m', 'manage', 'install_cronjob', app.name],
@@ -127,7 +128,7 @@ def init_infra(request, app_id):
         )
 
     render_dict = {
-        'step': 'domain und cron jobs einrichten',
+        'step': 'Cronjob einrichten',
         'pid': proc.pid,
         'next': reverse('ca-build', args=[app_id])
     }
@@ -137,19 +138,34 @@ def init_infra(request, app_id):
 @owner_of_app
 def build(request, app_id):
     app = get_object_or_404(App, pk=app_id)
-    password = app.env.juntagrico_database_password
 
     with open(app.log_file, 'wb') as out:
         proc = subprocess.Popen(
-            [
-                'venv/bin/python', '-m', 'manage', 'redeploy', app.name, ' & ',
-                'venv/bin/python', '-m', 'manage', 'create_admin', app.name, password
-            ],
+            ['venv/bin/python', '-m', 'manage', 'redeploy', app.name],
             stdout=out, stderr=out
         )
 
     render_dict = {
-        'step': 'docker build und start',
+        'step': 'docker build und starten',
+        'pid': proc.pid,
+        'next': reverse('ca-create-admin', args=[app.id])
+    }
+    return render(request, 'wait_next.html', render_dict)
+
+
+@owner_of_app
+def create_admin(request, app_id):
+    app = get_object_or_404(App, pk=app_id)
+    password = app.env.juntagrico_database_password
+
+    with open(app.log_file, 'wb') as out:
+        proc = subprocess.Popen(
+            ['venv/bin/python', '-m', 'manage', 'create_admin', app.name, password],
+            stdout=out, stderr=out
+        )
+
+    render_dict = {
+        'step': 'Admin erstellen - Notiere dieses Passwort: ' + password,
         'pid': proc.pid,
         'next': reverse('overview', args=[app.id])
     }
