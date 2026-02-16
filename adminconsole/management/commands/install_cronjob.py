@@ -10,11 +10,10 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         app_name = options['app_name'][0]
 
-        new_command = 'docker exec ' + app_name + ' python -m manage generate_depot_list'
         cron = CronTab(user='root')
-        job = cron.new(command=new_command)
-        job.minute.on(59)
-        job.hour.on(23)
+        depot_list = cron.new(command=f'docker exec {app_name} python -m manage generate_depot_list --future')
+        depot_list.minute.on(59)
+        depot_list.hour.on(23)
+        reminder = cron.new(command=f'docker exec {app_name} python manage.py remind_members')
+        reminder.minute.every(10)
         cron.write()
-
-        print(new_command)
