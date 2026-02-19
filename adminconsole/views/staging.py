@@ -49,7 +49,7 @@ def clone_repo(request, app_id):
         errors = []
         success = make_dirs(app.dir, errors)
         if success:
-            success &= git_clone(request.user.githubkey.key, app, errors)
+            success &= git_clone(app, request.user.githubkey.key, errors)
 
         return render(request, 'generic/done_next_submit.html', {
             'errors': '' if success else errors,

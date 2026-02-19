@@ -4,9 +4,13 @@ import subprocess
 from adminconsole.config import Config
 
 
-def git_clone(key, app, output=None):
+def git_clone(app, key=None, output=None):
     if not Config.test_localhost():
-        url = 'https://' + key + ':x-oauth-basic@' + app.git_clone_url[8:]
+        if key:
+            protocol, clone_path = app.git_clone_url.split('://')
+            url = protocol + '://' + key + ':x-oauth-basic@' + clone_path
+        else:
+            url = app.git_clone_url
         proc = subprocess.run(['git', 'clone', '--depth=1', url, 'code'],
                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=app.dir)
         if output is not None:
@@ -50,6 +54,8 @@ def git_switch(app, branch):
                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
     if proc.returncode != 0:
         return 'git branch: ' + proc.stdout.decode()
+
+    app.set_branch(branch)  # save current branch in db
     return ''
 
 

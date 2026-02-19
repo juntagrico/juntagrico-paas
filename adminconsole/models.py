@@ -71,6 +71,9 @@ class App(models.Model):
             return 1
         return 2
 
+    def set_branch(self, branch_name):
+        self.git_clone_url = self.git_clone_url.split('@')[0] + '@' + branch_name
+
     def renew(self):
         self.run_until = timezone.now() + datetime.timedelta(days=1)
         self.save()
