@@ -6,12 +6,13 @@ from adminconsole.config import Config
 
 def git_clone(app, key=None, output=None):
     if not Config.test_localhost():
+        clone_url, _, branch = app.git_clone_url.partition('@')
         if key:
-            protocol, clone_path = app.git_clone_url.split('://')
-            url = protocol + '://' + key + ':x-oauth-basic@' + clone_path
-        else:
-            url = app.git_clone_url
-        proc = subprocess.run(['git', 'clone', '--depth=1', url, 'code'],
+            protocol, clone_path = clone_url.split('://')
+            clone_url = protocol + '://' + key + ':x-oauth-basic@' + clone_path
+        if branch:
+            branch = ['-b', branch]
+        proc = subprocess.run(['git', 'clone', *branch, '--depth=1', clone_url, 'code'],
                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=app.dir)
         if output is not None:
             output.append(proc.stdout.decode())
