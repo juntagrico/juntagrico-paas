@@ -25,6 +25,7 @@ class App(models.Model):
         ("3.11", "3.11"),
         ("3.12", "3.12"),
         ("3.13", "3.13 (Nur mit Juntagrico >= 2.0)"),
+        ("3.14", "3.14 (Nur mit Juntagrico >= 2.0)"),
     ]
 
     user = models.ForeignKey(User, related_name='app', null=True, blank=True, on_delete=models.CASCADE)
