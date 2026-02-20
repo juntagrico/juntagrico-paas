@@ -1,7 +1,7 @@
 $(function () {
     let current_url = url
     let current_step = 0
-    let expected_steps = 5
+    let expected_steps = 5.1
 
     function wait_for_pid() {
         $.getJSON(current_url, function( data ) {

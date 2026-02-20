@@ -78,8 +78,11 @@ def show_progress(request, app_id, pid):
                 current_section += 1
                 current_title = line[2:].rstrip()
             if line.startswith('Step '):
+                debug = line
+                step, current_title = line[5:].split(' : ')
+                current_title = current_title.rstrip()
                 try:
-                    num, den = [int(num) for num in line.split(' : ')[0].split('/')]
+                    num, den = [int(num) for num in step.split('/')]
                     current_section_progress = num / den
                 except ValueError:
                     pass
@@ -91,6 +94,7 @@ def show_progress(request, app_id, pid):
         'section_progress': current_section_progress,
         'title': current_title,
         'read': read_until,
+        'debug': debug,
     })
 
 
