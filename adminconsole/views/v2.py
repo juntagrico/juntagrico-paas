@@ -48,6 +48,7 @@ def redeploy(request, app_id, upgrade=False):
         return render(request, 'wait_redeploy.html', {
             'step': 'Upgrade' if upgrade else 'Redeploy',
             'url': reverse('progress', args=[app_id, proc.pid]),
+            'pid': proc.pid,
             'next': reverse('show-result', args=[app_id])
         })
 
@@ -70,6 +71,7 @@ def show_progress(request, app_id, pid):
     current_section = 0
     current_section_progress = 0
     current_title = None
+    debug = None
     with open(app.log_file, 'r') as file:
         file.seek(start)
         while line := file.readline():
