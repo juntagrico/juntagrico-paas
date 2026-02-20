@@ -61,7 +61,10 @@ def redeploy(request, app_id, upgrade=False):
 def show_progress(request, app_id, pid):
     app = get_object_or_404(App, pk=app_id)
     process = psutil.Process(int(pid))
-    start = request.GET.get('s', 0)
+    try:
+        start = int(request.GET.get('s', 0))
+    except ValueError:
+        start = 0
 
     # parse log
     current_section = 0
