@@ -7,7 +7,9 @@ $(function () {
         $.getJSON(current_url, function( data ) {
             if(data.status!="zombie"){
                 // update title
-                $("#progress-text").text(data.title)
+                if (data.title!==null) {
+                    $("#progress-text").text(data.title)
+                }
                 // calculate progress
                 current_step += data.section
                 let num_value = (current_step + data.section_progress) / expected_steps * 100
@@ -20,7 +22,9 @@ $(function () {
                 setTimeout(wait_for_pid,1000);
             }
             else{
-                $("#progress-div").hide();
+                $("#progress-title").text("Fertig!")
+                $("#progress-text").text("")
+                $("#progress").removeClass("progress-bar-animated")
                 $( "#next" ).removeClass( "disabled" );
             }
         }).fail(function() {
