@@ -8,6 +8,7 @@ from django.utils import timezone
 
 from adminconsole.models import App
 from adminconsole.util.commands import log_after
+from adminconsole.util.docker import exec_run
 from adminconsole.util.git import git_pull
 
 
@@ -57,17 +58,17 @@ class Command(BaseCommand):
 
         print('# Django Migrate', flush=True)
         cmd = ['python', '-m', 'manage', 'migrate']
-        result = container.exec_run(cmd, stream=True)
+        result = exec_run(container, cmd, stream=True)
         for line in result[1]:
             print(line.decode(), end="", flush=True)
-        print('Return', result[0], flush=True)
+        print('Return', result[0](), flush=True)
 
         print('# Django Collectstatic', flush=True)
         cmd = ['python', '-m', 'manage', 'collectstatic', '--noinput', '-c']
-        result = container.exec_run(cmd, stream=True)
+        result = exec_run(cmd, stream=True)
         for line in result[1]:
             print(line.decode(), end="", flush=True)
-        print('Return', result[0], flush=True)
+        print('Return', result[0](), flush=True)
 
         print('# Docker Restart', flush=True)
         start = datetime.now()
