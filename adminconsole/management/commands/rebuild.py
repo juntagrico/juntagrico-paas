@@ -45,7 +45,7 @@ class Command(BaseCommand):
                 stream = error
                 code = 1
             if stream:
-                print(stream, flush=True)
+                print(stream, end='', flush=True)
 
         print(f'Return {code}', flush=True)
         if code == 1:
