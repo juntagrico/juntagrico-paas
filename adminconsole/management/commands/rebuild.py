@@ -39,13 +39,13 @@ class Command(BaseCommand):
         )
         code = 0
         for line in response:
-            key = line.keys()[0]
-            if key in ('stream', 'error'):
-                if key == 'error':
-                    code = 1
-                value = line.values()[0].strip()
-                if value:
-                    print(value, flush=True)
+            error = line.get('error')
+            stream = line.get('stream')
+            if error:
+                stream = error
+                code = 1
+            if stream:
+                print(stream, flush=True)
 
         print(f'Return {code}', flush=True)
         if code == 1:
