@@ -1,6 +1,7 @@
 $(function () {
     let current_url = url
     let current_step = 0
+    let last_section_progress = 0
     let expected_steps = 5.1
 
     function wait_for_pid() {
@@ -12,7 +13,10 @@ $(function () {
                 }
                 // calculate progress
                 current_step += data.section
-                let num_value = (current_step + data.section_progress) / expected_steps * 100
+                if (data.section_progress!==null) {
+                    last_section_progress = data.section_progress
+                }
+                let num_value = (current_step + last_section_progress) / expected_steps * 100
                 // set progress
                 $("#progress").attr("aria-valuenow", num_value);
                 var perc=num_value+"%";

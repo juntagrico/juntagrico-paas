@@ -69,18 +69,17 @@ def show_progress(request, app_id, pid):
 
     # parse log
     current_section = 0
-    current_section_progress = 0
+    current_section_progress = None
     current_title = None
-    debug = None
     with open(app.log_file, 'r') as file:
         file.seek(start)
         while line := file.readline():
             line = line.lstrip()
             if line.startswith('# '):
                 current_section += 1
+                current_section_progress = 0
                 current_title = line[2:].rstrip()
             if line.startswith('Step '):
-                debug = line
                 step, current_title = line[5:].split(' : ')
                 current_title = current_title.rstrip()
                 try:
@@ -96,7 +95,6 @@ def show_progress(request, app_id, pid):
         'section_progress': current_section_progress,
         'title': current_title,
         'read': read_until,
-        'debug': debug,
     })
 
 
