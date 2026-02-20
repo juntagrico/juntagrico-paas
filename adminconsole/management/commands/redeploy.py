@@ -65,7 +65,7 @@ class Command(BaseCommand):
 
         print('# Django Collectstatic', flush=True)
         cmd = ['python', '-m', 'manage', 'collectstatic', '--noinput', '-c']
-        result = exec_run(cmd, stream=True)
+        result = exec_run(container, cmd, stream=True)
         for line in result[1]:
             print(line.decode(), end="", flush=True)
         print('Return', result[0](), flush=True)
