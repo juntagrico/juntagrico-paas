@@ -1,0 +1,9 @@
+{% extends "wait_next.html" %}
+{% load static %}
+    
+{% block scripts %}
+    <script type="text/javascript">
+        var url = '{{ url }}';
+    </script>
+    <script type="text/javascript" src="{% static 'js/progress.js' %}"></script>
+{% endblock %}
