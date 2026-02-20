@@ -76,7 +76,7 @@ def show_progress(request, app_id, pid):
             line = line.lstrip()
             if line.startswith('# '):
                 current_section += 1
-                current_title = line[2:]
+                current_title = line[2:].rstrip()
             if line.startswith('Step '):
                 try:
                     num, den = [int(num) for num in line.split(' : ')[0].split('/')]

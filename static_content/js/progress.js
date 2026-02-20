@@ -7,10 +7,10 @@ $(function () {
         $.getJSON(current_url, function( data ) {
             if(data.status!="zombie"){
                 // update title
-                $("#progress-text").text(data.current_title)
+                $("#progress-text").text(data.title)
                 // calculate progress
                 current_step += data.section
-                let num_value = (current_step + data.section_progress) / expected_steps
+                let num_value = (current_step + data.section_progress) / expected_steps * 100
                 // set progress
                 $("#progress").attr("aria-valuenow", num_value);
                 var perc=num_value+"%";
