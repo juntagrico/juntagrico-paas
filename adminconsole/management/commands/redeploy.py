@@ -57,14 +57,16 @@ class Command(BaseCommand):
 
         print('# Django Migrate', flush=True)
         cmd = ['python', '-m', 'manage', 'migrate']
-        result = container.exec_run(cmd)
-        print(result[1])
+        result = container.exec_run(cmd, stream=True)
+        for line in result[1]:
+            print(line.decode(), end="", flush=True)
         print('Return', result[0], flush=True)
 
         print('# Django Collectstatic', flush=True)
         cmd = ['python', '-m', 'manage', 'collectstatic', '--noinput', '-c']
-        result = container.exec_run(cmd)
-        print(result[1])
+        result = container.exec_run(cmd, stream=True)
+        for line in result[1]:
+            print(line.decode(), end="", flush=True)
         print('Return', result[0], flush=True)
 
         print('# Docker Restart', flush=True)

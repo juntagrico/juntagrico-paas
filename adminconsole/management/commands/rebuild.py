@@ -30,18 +30,23 @@ class Command(BaseCommand):
 
         create_docker_file(app)
 
-        try:
-            result = client.images.build(
-                path=str(app.dir), tag=app.image_tag, buildargs=build_args, nocache=options.get('nocache')
-            )
-            result = result[1]
-            code = 0
-        except BuildError as e:
-            result = e.build_log
-            code = 1
+        response = client.api.build(
+            path=str(app.dir),
+            tag=app.image_tag,
+            buildargs=build_args,
+            nocache=options.get('nocache'),
+            decode=True
+        )
+        code = 0
+        for line in response:
+            key = line.keys()[0]
+            if key in ('stream', 'error'):
+                if key == 'error':
+                    code = 1
+                value = line.values()[0].strip()
+                if value:
+                    print(value, flush=True)
 
-        for line in result:
-            print(line.get('stream') or (str(line) + '\n'), end="")
         print(f'Return {code}', flush=True)
         if code == 1:
             return None
