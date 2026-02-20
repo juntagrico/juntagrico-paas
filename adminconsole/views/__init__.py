@@ -100,7 +100,10 @@ def show_result(request, app_id):
                     sections[line] = {'text': '', 'result': 1}
                 current = sections[line]
             elif line.startswith('Return '):
-                current['result'] = int(line[7:])
+                try:
+                    current['result'] = int(line[7:])
+                except ValueError:
+                    pass
             else:
                 if line[:2] in ['b"', "b'"]:
                     current['text'] += str(ast.literal_eval(line), 'utf-8')
