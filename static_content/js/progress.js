@@ -4,6 +4,15 @@ $(function () {
     let last_section_progress = 0
     let expected_steps = 5.1
 
+    function set_progress(value) {
+        let bar = $("#progress")
+        bar.attr("aria-valuenow", value);
+        bar.css("width", value + "%")
+        if (value>=100) {
+            bar.removeClass("progress-bar-animated")
+        }
+    }
+
     function wait_for_pid() {
         $.getJSON(current_url, function( data ) {
             if(data.status!="zombie"){
@@ -18,9 +27,7 @@ $(function () {
                 }
                 let num_value = (current_step + last_section_progress) / expected_steps * 100
                 // set progress
-                $("#progress").attr("aria-valuenow", num_value);
-                var perc=num_value+"%";
-                $("#progress").css("width",perc)
+                set_progress(num_value)
                 // poll progress
                 current_url = url + '?s=' + data.read
                 setTimeout(wait_for_pid,1000);
@@ -28,7 +35,7 @@ $(function () {
             else{
                 $("#progress-title").text("Fertig!")
                 $("#progress-text").text("")
-                $("#progress").removeClass("progress-bar-animated")
+                set_progress(100)
                 $( "#next" ).removeClass( "disabled" );
             }
         }).fail(function() {
