@@ -145,12 +145,12 @@ def build(request, app_id):
             stdout=out, stderr=out
         )
 
-    render_dict = {
+    return render(request, 'wait_redeploy.html', {
         'step': 'docker build und starten',
+        'url': reverse('progress', args=[app_id, proc.pid]),
         'pid': proc.pid,
         'next': reverse('ca-create-admin', args=[app.id])
-    }
-    return render(request, 'wait_next.html', render_dict)
+    })
 
 
 @owner_of_app
