@@ -1,10 +1,18 @@
 {% extends "base.html" %}
 
 {% block content %}
-    
-Schritt {{step}} erfolgreich abgeschlossen!<p/>
-
-<a href="{{ next }}" class="btn btn-success">weiter</a>
+    {% if errors %}
+        {% for error in errors %}
+            <div>
+                <pre>{{ error }}</pre>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>Schritt {{step}} erfolgreich abgeschlossen!</p>
+        {% block next_link %}
+            <a href="{{ next }}" class="btn btn-success">weiter</a>
+        {% endblock %}
+    {% endif %}
 {% endblock %}
 
 

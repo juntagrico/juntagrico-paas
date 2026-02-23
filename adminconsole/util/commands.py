@@ -15,4 +15,4 @@ def log_after(container, target='running', since=None, timeout=20):
         sleep(interval)
         elapsed_time += interval
         container.reload()
-    return container.logs(since=since)
+    return container.logs(since=since).decode()

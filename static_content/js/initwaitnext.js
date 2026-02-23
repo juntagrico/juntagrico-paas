@@ -1,7 +1,6 @@
-/*global define*/
-define([], function () {
+$(function () {
 
-    function wait_for_pid(){
+    function wait_for_pid() {
         $.getJSON( "/pid/"+pid+"/", function( data ) {
             if(data.status!="zombie"){
                 var num_value = parseInt($("#progress").attr("aria-valuenow"));

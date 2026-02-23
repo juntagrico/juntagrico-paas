@@ -16,22 +16,18 @@ class Command(BaseCommand):
         port = options['port'][0]
         domain = options['domain'][0]
 
-        rdir = '/root'
-
-        template = get_template('env/domain.txt')
-        d = {
-            'name': name,
-            'port': port,
-            'domain': domain,
-        }
-        content = template.render(d)
-
         with open('/etc/nginx/sites-available/' + domain, "w") as domain_file:
-            domain_file.write(content)
+            domain_file.write(get_template('infra/domain.txt').render({
+                'name': name,
+                'port': port,
+                'domain': domain,
+            }))
 
-        proc = subprocess.run(['ln', '-s', '/etc/nginx/sites-available/' + domain, '/etc/nginx/sites-enabled'],
+        # activate site
+        proc = subprocess.run(['ln', '-sf', '/etc/nginx/sites-available/' + domain, '/etc/nginx/sites-enabled'],
                               stdout=subprocess.PIPE)
         print(str(proc.stdout))
+        # install ssl
         proc = subprocess.run(['certbot', '--nginx', '--redirect', '--keep', '-n', '-d', domain],
-                              stdout=subprocess.PIPE, cwd=rdir)
+                              stdout=subprocess.PIPE)
         print(str(proc.stdout))

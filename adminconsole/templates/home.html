@@ -5,8 +5,7 @@
         <div class="row mb-3">
             <div class="col-md-12">
                 <div role="group">
-                    <a href="/ca/start" class="btn btn-success mb-1">neue Applikation</a>
-                    <a href="/ca/import" class="btn btn-outline-success mb-1">bestehende Applikation importieren</a>
+                    <a href="{% url 'create-app' %}" class="btn btn-success mb-1">Applikation erstellen</a>
                 </div>
             </div>
         </div>
@@ -17,6 +16,20 @@
                 <h2>Apps</h2>
                 <ol>
                     {% for app in apps %}
+                        <li>
+                            <a href="{% url "overview" app.id %}">{{ app.name }}</a>
+                        </li>
+                    {% endfor %}
+                </ol>
+            </div>
+        </div>
+    {% endif %}
+    {% if staging_apps %}
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <h2>Staging-Apps</h2>
+                <ol>
+                    {% for app in staging_apps %}
                         <li>
                             <a href="{% url "overview" app.id %}">{{ app.name }}</a>
                         </li>

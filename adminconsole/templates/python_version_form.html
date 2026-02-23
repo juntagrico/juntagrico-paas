@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+    {% if success %}
+        <div class="alert alert-success">
+            Python Version wurde erfolgreich geändert.<br>
+            <strong>Mache einen Redeploy um die Änderung anzuwenden.</strong><br>
+            <a href="{% url "overview" app.id %}" class="btn btn-success">Zurück</a>
+        </div>
+    {% else %}
+        <div>
+            Wähle die Python-Version, mit welcher deine Instanz laufen soll.
+        </div>
+    {% endif %}
+    <form action="" method="post">
+        {% csrf_token %}
+
+        <div class="form-group row">
+            <label class="col-form-label col-md-3" for="{{ form.python_version.id_for_label }}">Python Version</label>
+
+            <div class="col-md-9">
+                {{ form.python_version }}
+            </div>
+        </div>
+        {% if form.python_version.errors %}
+            <div class="alert alert-danger col-md-12">{{form.python_version.errors}}</div>
+        {% endif %}
+
+        <div class="form-group row">
+            <div class="offset-md-3 col-md-9">
+                <button type="submit" class="btn btn-success">ändern</button>
+            </div>
+        </div>
+    </form>
+{% endblock %}
+

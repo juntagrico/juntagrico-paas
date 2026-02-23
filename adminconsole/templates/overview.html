@@ -8,60 +8,200 @@
     <div class="row mb-4">
         <div class="col-md-12">
             <h3>Status</h3>
+                {% if status == 'running' or status == 'created' or status == 'restarting' %}
+                    <div class="alert alert-success">
+                        <p>
+                            Die Instanz läuft.
+                        </p>
+                        <form action="{% url 'app-stop' app.id %}" method="POST">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">Stoppen</button>
+                        </form>
+                    </div>
+                {% elif status == 'paused' or status == 'removing' or status == 'exited' or status == 'dead' %}
+                    <div class="alert alert-danger">
+                        <p>
+                            Die Instanz ist gestoppt.
+                        </p>
+                        <form action="{% url 'app-start' app.id %}" method="POST">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success">Starten</button>
+                        </form>
+                    </div>
+                {% endif %}
+            {% if staging %}
+                <div class="alert alert-warning">
+                    <h5>Staging</h5>
+                    <p>
+                        Dies ist deine Staging-App.
+                        <a href="{% url 'overview' app.staging_of.id %}">Zur Produktions-App.</a>
+                    </p>
+                    {% if status != 'exited' %}
+                        <div>
+                            Die App wird in {{ app.run_until|timeuntil }} automatisch gestoppt.
+                            <form action="{% url 'staging-renew' app.id %}" method="POST">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-warning">Verlängern</button>
+                            </form>
+                        </div>
+                    {% endif %}
+                    <p>
+                        Um die app zu öffnen muss {{ app.name }}.juntagrico.science zu den
+                        <code>ALLOWED_HOSTS</code> hinzugefügt werden.<br>
+                        Die staging app wird mit der Umgebungsvariable <code>JUNTAGRICO_STAGING=1</code> ausgeführt.
+                    </p>
+                </div>
+            {% endif %}
+            {% if app.version == 2 and app.min_version == 1 %}
+                <div class="alert alert-info">
+                    <h5>Die App verwendet die V2-Umgebung</h5>
+                    <div>
+                        Falls du ein Problem mit dieser Umgebung feststellst,
+                        kannst du wieder zur V1-Umgebung wechseln.
+                        <form action="{% url 'set-version' app.id %}" method="POST">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-info" name="version" value="1">
+                                Zurück zu V1 umschalten
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            {% endif %}
             <a href="/logs/{{ app.id }}/" class="btn btn-outline-primary mb-1">Logs anzeigen</a>
             <a href="{% url "versions" app.id %}" class="btn btn-outline-primary mb-1">Versionen anzeigen</a>
-            <a href="https://{{ app.name}}.juntagrico.science/" class="btn btn-primary mb-1" target="_blank">Seite öffnen</a>
+            <a href="https://{{ app.name }}.juntagrico.science/" class="btn btn-primary mb-1" target="_blank">
+                Seite öffnen
+            </a>
         </div>
     </div>
     <div class="row mb-4">
         <div class="col-md-12">
             <h3>Deploy</h3>
             <div class="row">
-                <div class="col-md-6">
-                    <div class="card border-primary mb-3">
-                        <h4 class="card-header">Redeploy</h4>
-                        <div class="card-body">
-                            <p class="card-text">
-                                Lädt den aktuellen Code von Github, installiert requirements.txt,
-                                lässt migrate and collectstatic laufen und startet den Docker-Container neu.
-                            </p>
-                            <a href="/reload/{{ app.id }}/" class="btn btn-primary btn-lg">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-box-arrow-in-down" viewBox="0 0 16 16">
-                                    <path fill-rule="evenodd" d="M3.5 6a.5.5 0 0 0-.5.5v8a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-8a.5.5 0 0 0-.5-.5h-2a.5.5 0 0 1 0-1h2A1.5 1.5 0 0 1 14 6.5v8a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 14.5v-8A1.5 1.5 0 0 1 3.5 5h2a.5.5 0 0 1 0 1z"/>
-                                    <path fill-rule="evenodd" d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/>
-                                </svg>
-                                Redeploy
-                            </a>
-                            <p class="card-text mt-3">
-                                Erneute manuelle Ausführung der letzten 3 Schritte:
-                            </p>
-                            <div class="btn-group" role="group">
-                                <a href="/migrate/{{ app.id }}/" class="btn btn-outline-primary">Migrate</a>
-                                <a href="/collectstatic/{{ app.id }}/" class="btn btn-outline-primary">Collectstatic</a>
-                                <a href="/crestart/{{ app.id }}/" class="btn btn-outline-primary">Neustart</a>
+                {% if app.version == 1 %}
+                    <div class="col-md-6">
+                        <div class="card border-primary mb-3">
+                            <h4 class="card-header">Redeploy</h4>
+                            <div class="card-body">
+                                <p class="card-text">
+                                    Lädt den aktuellen Code von Github, installiert requirements.txt,
+                                    lässt migrate and collectstatic laufen und startet den Docker-Container neu.
+                                </p>
+                                <a href="/reload/{{ app.id }}/" class="btn btn-primary btn-lg">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                                         class="bi bi-box-arrow-in-down" viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd"
+                                              d="M3.5 6a.5.5 0 0 0-.5.5v8a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-8a.5.5 0 0 0-.5-.5h-2a.5.5 0 0 1 0-1h2A1.5 1.5 0 0 1 14 6.5v8a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 14.5v-8A1.5 1.5 0 0 1 3.5 5h2a.5.5 0 0 1 0 1z"/>
+                                        <path fill-rule="evenodd"
+                                              d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/>
+                                    </svg>
+                                    Redeploy
+                                </a>
+                                <p class="card-text mt-3">
+                                    Erneute manuelle Ausführung der letzten 3 Schritte:
+                                </p>
+                                <div class="btn-group" role="group">
+                                    <a href="/migrate/{{ app.id }}/" class="btn btn-outline-primary">Migrate</a>
+                                    <a href="/collectstatic/{{ app.id }}/" class="btn btn-outline-primary">Collectstatic</a>
+                                    <a href="/crestart/{{ app.id }}/" class="btn btn-outline-primary">Neustart</a>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="card mb-3">
-                        <h4 class="card-header">Rebuild</h4>
-                        <div class="card-body">
-                            <p class="card-text">
-                                Verwende diese Funktion, falls die Instanz nicht mehr starten will und
-                                einen 502 Error zeigt.
-                                Dies erstellt das Docker-Image neu mit deinen neusten requirements, wie bei der
-                                ersten Installation. Die Datenbankdaten bleiben erhalten.
-                            </p>
-                            <a href="{% url "rebuild-image" app.id %}" class="btn btn-outline-danger">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-boxes" viewBox="0 0 16 16">
-                                    <path d="M7.752.066a.5.5 0 0 1 .496 0l3.75 2.143a.5.5 0 0 1 .252.434v3.995l3.498 2A.5.5 0 0 1 16 9.07v4.286a.5.5 0 0 1-.252.434l-3.75 2.143a.5.5 0 0 1-.496 0l-3.502-2-3.502 2.001a.5.5 0 0 1-.496 0l-3.75-2.143A.5.5 0 0 1 0 13.357V9.071a.5.5 0 0 1 .252-.434L3.75 6.638V2.643a.5.5 0 0 1 .252-.434zM4.25 7.504 1.508 9.071l2.742 1.567 2.742-1.567zM7.5 9.933l-2.75 1.571v3.134l2.75-1.571zm1 3.134 2.75 1.571v-3.134L8.5 9.933zm.508-3.996 2.742 1.567 2.742-1.567-2.742-1.567zm2.242-2.433V3.504L8.5 5.076V8.21zM7.5 8.21V5.076L4.75 3.504v3.134zM5.258 2.643 8 4.21l2.742-1.567L8 1.076zM15 9.933l-2.75 1.571v3.134L15 13.067zM3.75 14.638v-3.134L1 9.933v3.134z"/>
-                                </svg>
-                                Rebuild
-                            </a>
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <h4 class="card-header">Rebuild</h4>
+                            <div class="card-body">
+                                <p class="card-text">
+                                    Verwende diese Funktion, falls die Instanz nicht mehr starten will und
+                                    einen 502 Error zeigt.
+                                    Dies erstellt das Docker-Image neu mit deinen neusten requirements, wie bei der
+                                    ersten Installation. Die Datenbankdaten bleiben erhalten.
+                                </p>
+                                <a href="{% url "rebuild-image" app.id %}" class="btn btn-outline-danger">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                         class="bi bi-boxes" viewBox="0 0 16 16">
+                                        <path d="M7.752.066a.5.5 0 0 1 .496 0l3.75 2.143a.5.5 0 0 1 .252.434v3.995l3.498 2A.5.5 0 0 1 16 9.07v4.286a.5.5 0 0 1-.252.434l-3.75 2.143a.5.5 0 0 1-.496 0l-3.502-2-3.502 2.001a.5.5 0 0 1-.496 0l-3.75-2.143A.5.5 0 0 1 0 13.357V9.071a.5.5 0 0 1 .252-.434L3.75 6.638V2.643a.5.5 0 0 1 .252-.434zM4.25 7.504 1.508 9.071l2.742 1.567 2.742-1.567zM7.5 9.933l-2.75 1.571v3.134l2.75-1.571zm1 3.134 2.75 1.571v-3.134L8.5 9.933zm.508-3.996 2.742 1.567 2.742-1.567-2.742-1.567zm2.242-2.433V3.504L8.5 5.076V8.21zM7.5 8.21V5.076L4.75 3.504v3.134zM5.258 2.643 8 4.21l2.742-1.567L8 1.076zM15 9.933l-2.75 1.571v3.134L15 13.067zM3.75 14.638v-3.134L1 9.933v3.134z"/>
+                                    </svg>
+                                    Rebuild
+                                </a>
+                            </div>
                         </div>
                     </div>
-                </div>
+                {% elif app.version == 2 %}
+                    <div class="col-md-6">
+                        <div class="card border-primary mb-3">
+                            <h4 class="card-header">Redeploy</h4>
+                            <div class="card-body">
+                                <p class="card-text">
+                                    Lädt den aktuellen Code von Github, installiert requirements.txt nur wenn es verändert wurde,
+                                    lässt migrate and collectstatic laufen und startet den Docker-Container neu.
+                                </p>
+                                <form action="{% url 'redeploy-v2' app.id %}" method="POST">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-primary btn-lg">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                                             class="bi bi-box-arrow-in-down" viewBox="0 0 16 16">
+                                            <path fill-rule="evenodd" d="M3.5 6a.5.5 0 0 0-.5.5v8a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-8a.5.5 0 0 0-.5-.5h-2a.5.5 0 0 1 0-1h2A1.5 1.5 0 0 1 14 6.5v8a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 14.5v-8A1.5 1.5 0 0 1 3.5 5h2a.5.5 0 0 1 0 1z"/>
+                                            <path fill-rule="evenodd" d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/>
+                                        </svg>
+                                        Redeploy
+                                    </button>
+                                </form>
+                                <p class="card-text mt-3">
+                                    Erzwinge die erneute installation der requirements.txt, auch wenn die Datei nicht geändert wurde.
+                                    Verwende diese Option, um die neusten Bugfix-Releases anzuwenden.
+                                </p>
+                                <form action="{% url 'upgrade-v2' app.id %}" method="POST">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-outline-primary">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                             class="bi bi-arrow-up-circle" viewBox="0 0 16 16">
+                                            <path fill-rule="evenodd" d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8m15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-7.5 3.5a.5.5 0 0 1-1 0V5.707L5.354 7.854a.5.5 0 1 1-.708-.708l3-3a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 5.707z"/>
+                                        </svg>
+                                        Upgrade
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if not staging and app.version == 2 %}
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <h4 class="card-header">Staging</h4>
+                            <div class="card-body">
+                                {% if app.stagings.exists %}
+                                    <p class="card-text">
+                                        Staging-App existiert bereits.
+                                    </p>
+                                    <a href="{% url 'overview' app.stagings.first.id %}" class="btn btn-warning">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                             class="bi bi-cone-striped" viewBox="0 0 16 16">
+                                            <path d="m9.97 4.88.953 3.811C10.159 8.878 9.14 9 8 9s-2.158-.122-2.923-.309L6.03 4.88C6.635 4.957 7.3 5 8 5s1.365-.043 1.97-.12m-.245-.978L8.97.88C8.718-.13 7.282-.13 7.03.88L6.275 3.9C6.8 3.965 7.382 4 8 4s1.2-.036 1.725-.098m4.396 8.613a.5.5 0 0 1 .037.96l-6 2a.5.5 0 0 1-.316 0l-6-2a.5.5 0 0 1 .037-.96l2.391-.598.565-2.257c.862.212 1.964.339 3.165.339s2.303-.127 3.165-.339l.565 2.257z"/>
+                                        </svg>
+                                        Staging-App verwalten
+                                    </a>
+                                {% else %}
+                                    <p class="card-text">
+                                        Erstelle eine Kopie deiner Instanz zum Testen.
+                                    </p>
+                                    <form action="{% url 'staging-create' app.id %}" method="POST">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-warning">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                                 class="bi bi-cone-striped" viewBox="0 0 16 16">
+                                                <path d="m9.97 4.88.953 3.811C10.159 8.878 9.14 9 8 9s-2.158-.122-2.923-.309L6.03 4.88C6.635 4.957 7.3 5 8 5s1.365-.043 1.97-.12m-.245-.978L8.97.88C8.718-.13 7.282-.13 7.03.88L6.275 3.9C6.8 3.965 7.382 4 8 4s1.2-.036 1.725-.098m4.396 8.613a.5.5 0 0 1 .037.96l-6 2a.5.5 0 0 1-.316 0l-6-2a.5.5 0 0 1 .037-.96l2.391-.598.565-2.257c.862.212 1.964.339 3.165.339s2.303-.127 3.165-.339l.565 2.257z"/>
+                                            </svg>
+                                            Staging-App einrichten
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -69,6 +209,29 @@
         <div class="col-md-12">
             <h3>Setup</h3>
             <div class="row">
+                {% if staging %}
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <h4 class="card-header">Daten Kopieren</h4>
+                            <div class="card-body">
+                                <p class="card-text">
+                                    Überschreibe die Staging-Datenbank mit den Daten der Produktions-Datenbank.
+                                </p>
+                                <form action="{% url 'staging-clone-db' app.id %}" method="POST">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-warning">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                             class="bi bi-database-down" viewBox="0 0 16 16">
+                                            <path d="M12.5 9a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7m.354 5.854 1.5-1.5a.5.5 0 0 0-.708-.708l-.646.647V10.5a.5.5 0 0 0-1 0v2.793l-.646-.647a.5.5 0 0 0-.708.708l1.5 1.5a.5.5 0 0 0 .708 0"/>
+                                            <path d="M12.096 6.223A5 5 0 0 0 13 5.698V7c0 .289-.213.654-.753 1.007a4.5 4.5 0 0 1 1.753.25V4c0-1.007-.875-1.755-1.904-2.223C11.022 1.289 9.573 1 8 1s-3.022.289-4.096.777C2.875 2.245 2 2.993 2 4v9c0 1.007.875 1.755 1.904 2.223C4.978 15.71 6.427 16 8 16c.536 0 1.058-.034 1.555-.097a4.5 4.5 0 0 1-.813-.927Q8.378 15 8 15c-1.464 0-2.766-.27-3.682-.687C3.356 13.875 3 13.373 3 13v-1.302c.271.202.58.378.904.525C4.978 12.71 6.427 13 8 13h.027a4.6 4.6 0 0 1 0-1H8c-1.464 0-2.766-.27-3.682-.687C3.356 10.875 3 10.373 3 10V8.698c.271.202.58.378.904.525C4.978 9.71 6.427 10 8 10q.393 0 .774-.024a4.5 4.5 0 0 1 1.102-1.132C9.298 8.944 8.666 9 8 9c-1.464 0-2.766-.27-3.682-.687C3.356 7.875 3 7.373 3 7V5.698c.271.202.58.378.904.525C4.978 6.711 6.427 7 8 7s3.022-.289 4.096-.777M3 4c0-.374.356-.875 1.318-1.313C5.234 2.271 6.536 2 8 2s2.766.27 3.682.687C12.644 3.125 13 3.627 13 4c0 .374-.356.875-1.318 1.313C10.766 5.729 9.464 6 8 6s-2.766-.27-3.682-.687C3.356 4.875 3 4.373 3 4"/>
+                                        </svg>
+                                        Datenbank neu kopieren
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
                 <div class="col-md-6">
                     <div class="card mb-3">
                         <h4 class="card-header">Einstellungen</h4>
@@ -77,7 +240,8 @@
                                 Hier kann u.a. der E-Mail-Server für den Versand konfiguriert werden.
                             </p>
                             <a href="/env/{{ app.id }}/" class="btn btn-primary">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-gear" viewBox="0 0 16 16">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                     class="bi bi-gear" viewBox="0 0 16 16">
                                     <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492M5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0"/>
                                     <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115z"/>
                                 </svg>
@@ -86,6 +250,26 @@
                         </div>
                     </div>
                 </div>
+                {% if app.version == 2 %}
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <h4 class="card-header">Python Version</h4>
+                            <div class="card-body">
+                                <p class="card-text">
+                                    Wähle auf welcher Version von Python deine Instanz laufen soll.
+                                </p>
+                                <a href="{% url 'set-python-version' app.id %}" class="btn btn-outline-primary">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                         viewBox="0 0 512 512">
+                                        <path d="M314,36.38c-18.59-3.06-45.8-4.47-64.27-4.38a311.09,311.09,0,0,0-51.66,4.38c-45.74,8-54.07,24.7-54.07,55.54V128H256v16H107.62C66.06,144,32.33,193.67,32,255.12c0,.29,0,.58,0,.88a162.91,162.91,0,0,0,3.13,32c9.29,46.28,38.23,80,72.49,80H128V314c0-31.3,20.84-59.95,55-66.1l9.87-1.23H314a56.05,56.05,0,0,0,15.06-2A52.48,52.48,0,0,0,368,193.68V91.92C368,63,343.32,41.19,314,36.38ZM194.93,105.5a20.37,20.37,0,1,1,20.3-20.3A20.29,20.29,0,0,1,194.93,105.5Z"/>
+                                        <path d="M475.28,217c-10.7-42.61-38.41-73-70.9-73H386.67v47.45c0,39.57-26,68.22-57.74,73.13a63.54,63.54,0,0,1-9.69.75H198.08a60,60,0,0,0-15.23,1.95C160.54,273.14,144,291.7,144,315.77V417.54c0,29,29.14,46,57.73,54.31,34.21,9.95,71.48,11.75,112.42,0,27.19-7.77,53.85-23.48,53.85-54.31V384H256V368H404.38c29.44,0,54.95-24.93,67.45-61.31A156.83,156.83,0,0,0,480,256,160.64,160.64,0,0,0,475.28,217ZM316.51,404a20.37,20.37,0,1,1-20.3,20.3A20.29,20.29,0,0,1,316.51,404Z"/>
+                                    </svg>
+                                    Python-Version ändern
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
                 <div class="col-md-6">
                     <div class="card mb-3">
                         <h4 class="card-header">Branch wechseln</h4>
@@ -139,7 +323,11 @@
                                 <a href="https://docs.djangoproject.com/en/4.2/ref/django-admin/#loaddata">loaddata</a>
                                 importiert werden.
                             </p>
-                            <a href="{% url "dumpdata" app.id %}" class="btn btn-outline-primary">Exportieren</a>
+                            <a href="{% url "dumpdata" app.id %}" class="btn btn-outline-primary">Exportieren als JSON</a>
+                            <p class="card-text mt-3">
+                                Exportiert die Datenbankdaten mit pg_dump.
+                            </p>
+                            <a href="{% url "pgdump" app.id %}" class="btn btn-outline-primary">Exportieren als SQL</a>
                         </div>
                     </div>
                 </div>

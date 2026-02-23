@@ -1,6 +1,11 @@
+import datetime
+from pathlib import Path
+
+import docker
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
+from django.utils import timezone
 
 from adminconsole.util import generate_secret_key
 
@@ -14,14 +19,66 @@ class GitHubKey(models.Model):
 
 
 class App(models.Model):
+    PYTHON_VERSION = [
+        ("3.9", "3.9 (Nur mit Juntagrico < 2.0)"),
+        ("3.10", "3.10"),
+        ("3.11", "3.11"),
+        ("3.12", "3.12"),
+        ("3.13", "3.13 (Nur mit Juntagrico >= 2.0)"),
+        ("3.14", "3.14 (Nur mit Juntagrico >= 2.0)"),
+    ]
+
     user = models.ForeignKey(User, related_name='app', null=True, blank=True, on_delete=models.CASCADE)
-    git_clone_url = models.CharField('github', max_length=100)
-    name = models.CharField('name', max_length=100, unique=True, validators=[RegexValidator(regex='^[a-z0-9]+$')])
+    git_clone_url = models.CharField('github', max_length=100, blank=True)
+    name = models.CharField('name', max_length=100, unique=True, validators=[RegexValidator(regex='^[a-z0-9-]+$')])
     port = models.IntegerField('port', unique=True)
+    wsgi = models.CharField('wsgi', max_length=100, blank=True)
+    python_version = models.CharField('python', max_length=100, blank=True, choices=PYTHON_VERSION)
     managed = models.BooleanField('Managed', default=True)
+    version = models.PositiveIntegerField('version', default=2)
+    staging_of = models.ForeignKey('App', null=True, blank=True, on_delete=models.CASCADE, related_name='stagings')
+    run_until = models.DateTimeField('run until', null=True, blank=True, default=None)
 
     def __str__(self):
         return self.name
+
+    @property
+    def dir(self):
+        return Path('/var/django/projects') / self.name
+
+    @property
+    def code_dir(self):
+        return self.dir / 'code'
+
+    @property
+    def log_file(self):
+        return str(self.dir) + '.txt'
+
+    @property
+    def wsgi_path(self):
+        return self.wsgi or self.name.partition('-')[0] + '.wsgi'
+
+    @property
+    def image_tag(self):
+        version = self.version if self.version >= 2 else 'latest'
+        return f'{self.name}:{version}'
+
+    @property
+    def container(self):
+        return docker.from_env().containers.get(self.name)
+
+    def min_version(self):
+        if (self.dir / 'build').is_dir():
+            return 1
+        return 2
+
+    def set_branch(self, branch_name):
+        self.git_clone_url = self.git_clone_url.split('@')[0] + '@' + branch_name
+        self.save()
+
+    def renew(self):
+        self.run_until = timezone.now() + datetime.timedelta(days=1)
+        self.save()
 
 
 class AppEnv(models.Model):
@@ -44,8 +101,14 @@ class AppEnv(models.Model):
     def __str__(self):
         return self.app.name
 
-    
-
-
-
-
+    def get_lines(self):
+        yield 'JUNTAGRICO_DEBUG=False'
+        yield 'JUNTAGRICO_DATABASE_ENGINE=django.db.backends.postgresql'
+        if self.app.staging_of:
+            yield 'JUNTAGRICO_STAGING=1'
+        for field in self._meta.get_fields():
+            if field.name.startswith('juntagrico'):
+                yield f'{field.verbose_name}={getattr(self, field.name)}'
+        for line in self.various.splitlines():
+            if clean_line := line.strip():
+                yield clean_line

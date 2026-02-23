@@ -1,17 +1,20 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block content %}
     <div class="card">
         <h5 class="card-header">{{ step }}</h5>
         <div class="card-body">
-            <h4 class="card-title">Das kann einen Moment dauern</h4>
-            <p class="card-text">Hier etwas zum Anschauen während du wartest.</p>
+            <h4 class="card-title" id="progress-title">Das kann einen Moment dauern</h4>
+            <p class="card-text" id="progress-text">Hier etwas zum Anschauen während du wartest.</p>
             <div class="progress mb-3" id="progress-div">
               <div class="progress-bar progress-bar-striped progress-bar-animated bg-success"
                    role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"
                    style="width: 0" id="progress"></div>
             </div>
-            <a href="{{ next }}" class="btn btn-success disabled" id="next">weiter</a>
+            {% block next_link %}
+                <a href="{{ next }}" class="btn btn-success disabled" id="next">weiter</a>
+            {% endblock %}
         </div>
         <div class="card-footer text-muted">
             Prozess id {{ pid }}
@@ -23,6 +26,5 @@
     <script type="text/javascript">
         var pid = '{{ pid }}';
     </script>
-    <script type="text/javascript" src="/static/external/require.min.js" data-main="/static/js/initwaitnext.js"></script>
+    <script type="text/javascript" src="{% static 'js/initwaitnext.js' %}"></script>
 {% endblock %}
-
