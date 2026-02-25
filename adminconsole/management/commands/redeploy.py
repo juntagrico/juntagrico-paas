@@ -42,6 +42,8 @@ class Command(BaseCommand):
         print('# Git Pull', flush=True)
         result = git_pull(app)
         print('Return', result, flush=True)
+        if result != 0:
+            return
 
         # force cache invalidation
         # primitive method to enforce upgrade, because docker API doesn't seem to support --no-cache-filter option

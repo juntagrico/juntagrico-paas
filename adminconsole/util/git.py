@@ -23,8 +23,10 @@ def git_clone(app, key=None, output=None):
 def git_pull(app):
     cdir = app.code_dir
     proc1 = subprocess.run(['git', 'fetch', '--depth=1'], stderr=subprocess.STDOUT, cwd=cdir)
+    if proc1.returncode != 0:
+        return proc1.returncode
     proc2 = subprocess.run(['git', 'reset', '--hard', '@{u}'], stderr=subprocess.STDOUT, cwd=cdir)
-    return proc1.returncode + proc2.returncode
+    return proc2.returncode
 
 
 def git_switch(app, branch):
@@ -36,7 +38,7 @@ def git_switch(app, branch):
     if proc.returncode != 0:
         return proc.stdout.decode()
 
-    proc = subprocess.run(['git', 'remote', 'set-branches', '--add', 'origin', branch],
+    proc = subprocess.run(['git', 'remote', 'set-branches', 'origin', branch],
                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
     if proc.returncode != 0:
         return 'git remote: ' + proc.stdout.decode()
