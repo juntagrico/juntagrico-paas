@@ -46,7 +46,13 @@ def git_switch(app, branch):
     proc = subprocess.run(['git', 'fetch', '--depth=1', 'origin', branch],
                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
     if proc.returncode != 0:
-        return 'git fetch: ' + proc.stdout.decode()
+        error = 'git fetch: ' + proc.stdout.decode()
+        # try to restore old branch
+        old_branch = git_current_branch(app)
+        if old_branch != branch:
+            subprocess.run(['git', 'remote', 'set-branches', 'origin', old_branch],
+                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
+        return error
 
     proc = subprocess.run(['git', 'checkout', '-B', branch],
                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
