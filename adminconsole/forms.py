@@ -78,7 +78,8 @@ class EnvForm(ModelForm):
                 username=cleaned_data.get('juntagrico_email_user'),
                 password=cleaned_data.get('juntagrico_email_password'),
                 use_tls=cleaned_data.get('juntagrico_email_tls'),
-                use_ssl=cleaned_data.get('juntagrico_email_ssl')
+                use_ssl=cleaned_data.get('juntagrico_email_ssl'),
+                timeout=5,
             )
 
             try:
