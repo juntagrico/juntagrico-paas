@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.4
-ARG pythonversion=3.9
+ARG pythonversion=3.12
 FROM python:$pythonversion-alpine AS django
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
@@ -12,4 +12,4 @@ FROM django AS app
 ADD code/requirements.txt /
 RUN pip install --upgrade -r requirements.txt
 WORKDIR /code/
-CMD ["gunicorn","--bind","127.0.0.1:{{ app.port }}","-t", "6000","{{ app.wsgi_path }}","&"]
+CMD ["gunicorn","--bind","127.0.0.1:{{ app.port }}","-t", "600","{{ app.wsgi_path }}","&"]
