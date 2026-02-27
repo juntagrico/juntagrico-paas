@@ -1,5 +1,6 @@
 from django import forms
 from django.core.exceptions import ValidationError
+from django.core.mail import get_connection
 from django.core.validators import RegexValidator
 from django.forms import CharField, TextInput, CheckboxInput, Textarea, EmailField, BooleanField, RadioSelect, Select
 from django.forms import ModelForm
@@ -66,6 +67,29 @@ class EnvForm(ModelForm):
             'juntagrico_secret_key': TextInput(attrs={'class': 'form-control'}),
             'various': Textarea(attrs={'class': 'form-control'})
         }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if 'skip_check' not in self.data:
+            connection = get_connection(
+                backend='django.core.mail.backends.smtp.EmailBackend',
+                host=cleaned_data.get('juntagrico_email_host'),
+                port=cleaned_data.get('juntagrico_email_port'),
+                username=cleaned_data.get('juntagrico_email_user'),
+                password=cleaned_data.get('juntagrico_email_password'),
+                use_tls=cleaned_data.get('juntagrico_email_tls'),
+                use_ssl=cleaned_data.get('juntagrico_email_ssl')
+            )
+
+            try:
+                connection.open()
+                connection.close()
+            except Exception as e:
+                raise ValidationError(
+                    'Verbindung zum E-Mail-Server fehlgeschlagen. Prüfe deine Einstellungen: ' + str(e),
+                    code='smtp_error'
+                )
+        return cleaned_data
 
 
 class AppForm(ModelForm):
