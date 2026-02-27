@@ -73,7 +73,7 @@ class EnvForm(ModelForm):
         if 'skip_check' not in self.data:
             connection = get_connection(
                 backend='django.core.mail.backends.smtp.EmailBackend',
-                host=cleaned_data.get('juntagrico_email_host'),
+                host=cleaned_data.get('juntagrico_email_host') or 'invalid host',
                 port=cleaned_data.get('juntagrico_email_port'),
                 username=cleaned_data.get('juntagrico_email_user'),
                 password=cleaned_data.get('juntagrico_email_password'),
