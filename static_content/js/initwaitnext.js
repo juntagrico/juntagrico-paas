@@ -2,7 +2,7 @@ $(function () {
 
     function wait_for_pid() {
         $.getJSON( "/pid/"+pid+"/", function( data ) {
-            if (!data.finished) {
+            if (!(data.finished)) {
                 var num_value = parseInt($("#progress").attr("aria-valuenow"));
                 num_value+=4;
                 if(num_value>100){
