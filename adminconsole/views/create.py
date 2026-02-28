@@ -127,12 +127,11 @@ def init_cronjob(request, app_id):
             stdout=out, stderr=out
         )
 
-    render_dict = {
+    return render(request, 'wait_next.html', {
         'step': 'Cronjob einrichten',
         'pid': proc.pid,
         'next': reverse('ca-build', args=[app_id])
-    }
-    return render(request, 'wait_next.html', render_dict)
+    })
 
 
 @owner_of_app
@@ -165,7 +164,8 @@ def create_admin(request, app_id):
         )
 
     render_dict = {
-        'step': 'Admin erstellen - Notiere dieses Passwort: ' + password,
+        'title': 'Notiere dieses Passwort: ' + password,
+        'step': 'Admin erstellen',
         'pid': proc.pid,
         'next': reverse('overview', args=[app.id])
     }

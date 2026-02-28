@@ -2,7 +2,7 @@ $(function () {
 
     function wait_for_pid() {
         $.getJSON( "/pid/"+pid+"/", function( data ) {
-            if(data.status!="zombie"){
+            if (!data.finished) {
                 var num_value = parseInt($("#progress").attr("aria-valuenow"));
                 num_value+=4;
                 if(num_value>100){
@@ -12,8 +12,7 @@ $(function () {
                 var perc=num_value+"%";
                 $("#progress").css("width",perc)
                 setTimeout(wait_for_pid,1000) ;
-            }
-            else{
+            } else {
                 $("#progress-div").hide();
                 $( "#next" ).removeClass( "disabled" );
             }

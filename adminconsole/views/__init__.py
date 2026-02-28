@@ -18,6 +18,7 @@ from docker.errors import APIError, DockerException
 from adminconsole.decorators import owner_of_app
 from adminconsole.forms import EnvForm, DomainForm, ProfileForm, BranchForm
 from adminconsole.models import App
+from adminconsole.util import pid_finished
 from adminconsole.util.git import git_switch, git_current_branch
 
 
@@ -65,11 +66,9 @@ def overview(request, app_id):
 
 @login_required
 def pidcheck(request, pid):
-    p = psutil.Process(int(pid))
-    data = {
-        'status': p.status()
-    }
-    return JsonResponse(data)
+    return JsonResponse({
+        'finished': pid_finished(pid)
+    })
 
 
 @owner_of_app

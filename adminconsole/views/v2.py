@@ -10,6 +10,7 @@ from django.views.decorators.http import require_POST
 from adminconsole.decorators import owner_of_app
 from adminconsole.forms import PythonVersionForm
 from adminconsole.models import App
+from adminconsole.util import pid_finished
 
 
 @require_POST
@@ -61,7 +62,6 @@ def redeploy(request, app_id, upgrade=False):
 @owner_of_app
 def show_progress(request, app_id, pid):
     app = get_object_or_404(App, pk=app_id)
-    process = psutil.Process(int(pid))
     try:
         start = int(request.GET.get('s', 0))
     except ValueError:
@@ -90,7 +90,7 @@ def show_progress(request, app_id, pid):
         read_until = file.tell()
 
     return JsonResponse({
-        'status': process.status(),
+        'finished': pid_finished(pid),
         'section': current_section,
         'section_progress': current_section_progress,
         'title': current_title,

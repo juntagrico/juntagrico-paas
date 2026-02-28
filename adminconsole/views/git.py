@@ -37,22 +37,24 @@ def github_callback(request):
 
 @owner_of_app
 def select_repo(request, app_id):
-    key = request.user.githubkey.key
-    g = Github(key)
+    key_valid = False
+    if hasattr(request.user, 'githubkey'):
+        g = Github(request.user.githubkey.key)
+        repos = g.get_user().get_repos()
+        try:
+            # check if key is still valid
+            repos[0]
+            key_valid = True
+        except BadCredentialsException:
+            pass
+    if not key_valid:
+        request.session['next'] = request.path
+        return github_request(request)
 
     if request.method == 'POST':
         selected_repo = int(request.POST.get('repo'))
         App.objects.filter(pk=app_id).update(git_clone_url=g.get_repo(selected_repo).clone_url)
         return redirect('ca-git-clone', app_id=app_id)
-
-    # show repos
-    repos = g.get_user().get_repos()
-    try:
-        # check if key is still valid
-        repos[0]
-    except BadCredentialsException:
-        request.session['next'] = request.path
-        return redirect('github-access')
 
     return render(request, 'repos.html', {
         'repos': repos,
@@ -64,9 +66,9 @@ def clone_repo(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     if not app.git_clone_url:
         return redirect('github-select', app_id=app_id)
-    if not request.user.githubkey.key:
+    if not hasattr(request.user, 'githubkey'):
         request.session['next'] = request.path
-        return redirect('github-access')
+        return github_request(request)
 
     errors = []
     success = make_dirs(app.dir, errors)
@@ -85,14 +87,19 @@ def git_push(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     directory = app.code_dir
     output = []
-    proc = subprocess.run(['git', 'add', '.', '--all'], stdout=subprocess.PIPE, cwd=directory)
+    proc = subprocess.run(['git', 'add', '.', '--all'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=directory)
     output.append(str(proc.stdout))
-    proc = subprocess.run(['git', 'commit', '-a', '-m', '"adminconsole"'], stdout=subprocess.PIPE, cwd=directory)
+    proc = subprocess.run(['git', 'commit', '-a', '-m', '"adminconsole"'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=directory)
     output.append(str(proc.stdout))
-    proc = subprocess.run(['git', 'push'], stdout=subprocess.PIPE, cwd=directory)
+    proc = subprocess.run(['git', 'push'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=directory)
     output.append(str(proc.stdout))
+
+    errors = []
+    if proc.returncode > 0:
+        errors.append(output)
 
     return render(request, 'done_next.html', {
         'step': 'Cokkiecutter anwenden und repo pushen',
+        'errors': errors,
         'next': reverse('ca-init-db', args=[app_id])
     })
