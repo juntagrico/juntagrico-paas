@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.4
-ARG pythonversion=3.12
+ARG pythonversion=3.11
 FROM python:$pythonversion-alpine AS django
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
