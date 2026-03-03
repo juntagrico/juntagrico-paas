@@ -23,7 +23,7 @@ class App(models.Model):
         ("3.9", "3.9 (Nur mit Juntagrico < 2.0)"),
         ("3.10", "3.10"),
         ("3.11", "3.11"),
-        ("3.12", "3.12"),
+        ("3.12", "3.12 (Nur mit Juntagrico >= 2.0)"),
         ("3.13", "3.13 (Nur mit Juntagrico >= 2.0)"),
         ("3.14", "3.14 (Nur mit Juntagrico >= 2.0)"),
     ]
