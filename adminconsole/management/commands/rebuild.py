@@ -35,7 +35,8 @@ class Command(BaseCommand):
             tag=app.image_tag,
             buildargs=build_args,
             nocache=options.get('nocache'),
-            decode=True
+            decode=True,
+            rm=True,
         )
         code = 0
         for line in response:
