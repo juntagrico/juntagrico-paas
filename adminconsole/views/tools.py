@@ -28,6 +28,7 @@ def update_permissions(request, app_id):
                 rename_perms.append(line[len('Rename permission: '):])
 
     return render(request, 'tools/update_permissions.html', {
+        'app': app,
         'delete_perms': delete_perms,
         'rename_perms': rename_perms,
         'error': result[0],
