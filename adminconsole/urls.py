@@ -3,7 +3,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from adminconsole import views
-from adminconsole.views import git, create, staging, v2, app
+from adminconsole.views import git, create, staging, v2, app, tools
 
 urlpatterns = [
     
@@ -64,4 +64,7 @@ urlpatterns = [
     path('v2/progress/<int:app_id>/<int:pid>/', v2.show_progress, name='progress'),
     path('v2/python/version/set/<int:app_id>/', v2.set_python_version, name='set-python-version'),
     path('v2/version/set/<int:app_id>/', v2.set_version, name='set-version'),
+
+    # tools
+    path('tools/update_permissions/<int:app_id>/', tools.update_permissions, name='update-permissions'),
 ]

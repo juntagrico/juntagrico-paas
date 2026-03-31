@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+    {% if delete_perms or rename_perms %}
+        {% if delete_perms %}
+            <p>Diese Berechtigungen werden nicht mehr benötigt und werden gelöscht:</p>
+            <ul>
+                {% for perm in delete_perms %}
+                    <li>{{ perm }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        {% if rename_perms %}
+            <p>Diese Berechtigungen werden umbenannt:</p>
+            <ul>
+                {% for perm in rename_perms %}
+                    <li>{{ perm }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        <div>
+            <a href="{% url "overview" app.id %}" class="btn btn-secondary">zurück</a>
+            <form method="POST">
+                <input type="submit" class="btn btn-success" value="anwenden"/>
+            </form>
+        </div>
+    {% else %}
+        {% if error %}
+            <p>Diese Funktion benötigt Juntagrico 2.0.5 oder höher.</p>
+        {% else %}
+            <p>Die Berechtigungen sind schon aktuell.</p>
+        {% endif %}
+        <div>
+            <a href="{% url "overview" app.id %}" class="btn btn-secondary">zurück</a>
+        </div>
+    {% endif %}
+{% endblock %}
