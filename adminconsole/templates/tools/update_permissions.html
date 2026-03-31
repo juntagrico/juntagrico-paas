@@ -20,6 +20,7 @@
         {% endif %}
         <div>
             <form method="POST">
+                {% csrf_token %}
                 <a href="{% url "overview" app.id %}" class="btn btn-secondary">zurück</a>
                 <input type="submit" class="btn btn-success" value="anwenden"/>
             </form>
