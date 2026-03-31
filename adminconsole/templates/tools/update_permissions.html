@@ -19,8 +19,8 @@
             </ul>
         {% endif %}
         <div>
-            <a href="{% url "overview" app.id %}" class="btn btn-secondary">zurück</a>
             <form method="POST">
+                <a href="{% url "overview" app.id %}" class="btn btn-secondary">zurück</a>
                 <input type="submit" class="btn btn-success" value="anwenden"/>
             </form>
         </div>
