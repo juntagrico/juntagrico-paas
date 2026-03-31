@@ -13,7 +13,7 @@ def update_permissions(request, app_id):
     container = docker.from_env().containers.get(app.name)
     if request.method == 'POST':
         result = container.exec_run(cmd)
-        messages.success(request, result[1].decode().rpartition('\n')[-1])
+        messages.success(request, result[1].decode().split('\n')[-2])
         return redirect('overview', app_id)
 
     cmd += ['--dry']

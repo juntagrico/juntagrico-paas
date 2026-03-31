@@ -35,4 +35,8 @@
             <a href="{% url "overview" app.id %}" class="btn btn-secondary">zurück</a>
         </div>
     {% endif %}
+    <form method="POST">
+        {% csrf_token %}
+        <input type="submit" class="btn btn-success" value="anwenden"/>
+    </form>
 {% endblock %}
