@@ -6,28 +6,23 @@ from django.template.loader import get_template
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
-        parser.add_argument('app_name', nargs=1)
-        parser.add_argument('port', nargs=1)
-        parser.add_argument('domain', nargs=1)
+        parser.add_argument('domains', nargs='*')
 
     # entry point used by manage.py
     def handle(self, *args, **options):
-        name = options['app_name'][0]
-        port = options['port'][0]
-        domain = options['domain'][0]
+        for domain in options['domains']:
+            with open('/etc/nginx/sites-available/' + domain, "w") as domain_file:
+                domain_file.write(get_template('infra/domain.txt').render({
+                    'name': domain.app.name,
+                    'port': domain.app.port,
+                    'domain': domain,
+                }))
 
-        with open('/etc/nginx/sites-available/' + domain, "w") as domain_file:
-            domain_file.write(get_template('infra/domain.txt').render({
-                'name': name,
-                'port': port,
-                'domain': domain,
-            }))
-
-        # activate site
-        proc = subprocess.run(['ln', '-sf', '/etc/nginx/sites-available/' + domain, '/etc/nginx/sites-enabled'],
-                              stdout=subprocess.PIPE)
-        print(str(proc.stdout))
-        # install ssl
-        proc = subprocess.run(['certbot', '--nginx', '--redirect', '--keep', '-n', '-d', domain],
-                              stdout=subprocess.PIPE)
-        print(str(proc.stdout))
+            # activate site
+            proc = subprocess.run(['ln', '-sf', '/etc/nginx/sites-available/' + domain, '/etc/nginx/sites-enabled'],
+                                  stdout=subprocess.PIPE)
+            print(str(proc.stdout))
+            # install ssl
+            proc = subprocess.run(['certbot', '--nginx', '--redirect', '--keep', '-n', '-d', domain],
+                                  stdout=subprocess.PIPE)
+            print(str(proc.stdout))

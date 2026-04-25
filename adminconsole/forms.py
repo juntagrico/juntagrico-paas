@@ -3,9 +3,8 @@ from django.core.exceptions import ValidationError
 from django.core.mail import get_connection
 from django.core.validators import RegexValidator
 from django.forms import CharField, TextInput, CheckboxInput, Textarea, EmailField, BooleanField, RadioSelect, Select
-from django.forms import ModelForm
 
-from adminconsole.models import AppEnv, App
+from adminconsole.models import AppEnv, App, Domain
 
 
 class ProjectForm(forms.Form):
@@ -44,7 +43,7 @@ class ProjectForm(forms.Form):
     )
 
 
-class EnvForm(ModelForm):
+class EnvForm(forms.ModelForm):
     class Meta:
         model = AppEnv
         fields = ['juntagrico_admin_email',
@@ -93,7 +92,7 @@ class EnvForm(ModelForm):
         return cleaned_data
 
 
-class AppForm(ModelForm):
+class AppForm(forms.ModelForm):
     def clean_name(self):
         name = self.cleaned_data["name"]
         if '-' in name:
@@ -118,21 +117,30 @@ class OverwriteAppForm(forms.Form):
     ))
 
 
-class DomainForm(forms.Form):
-    domain = CharField(label='Domain', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))
+class DomainForm(forms.ModelForm):
+    class Meta:
+        model = Domain
+        fields = ['name']
+        labels = {
+            'name': 'Domainname',
+        }
+        widgets = {
+            'name': TextInput(attrs={'class': 'form-control'}),
+        }
 
 
 class BranchForm(forms.Form):
     branch = CharField(label='Branch', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))
 
 
-class PythonVersionForm(ModelForm):
+class PythonVersionForm(forms.ModelForm):
     class Meta:
         model = App
         fields = ['python_version']
         widgets = {
             'python_version': Select(attrs={'class': 'custom-select'}),
         }
+
 
 class ProfileForm(forms.Form):
     email = EmailField(label='email adresse', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))

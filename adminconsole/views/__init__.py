@@ -229,14 +229,13 @@ def generate_depot_list(request, app_id):
 @owner_of_app
 def domain_form(request, app_id):
     app = get_object_or_404(App, pk=app_id)
-    port = str(app.port)
     if request.method == 'POST':
         form = DomainForm(request.POST)
         if form.is_valid():
-            domain = form.cleaned_data['domain']
+            domain = form.save()
             with open(app.log_file, 'wb') as out:
                 proc = subprocess.Popen(
-                    ['venv/bin/python', '-m', 'manage', 'add_domain', app.name, port, domain],
+                    ['venv/bin/python', '-m', 'manage', 'add_domain', domain.name],
                     stdout=out, stderr=out
                 )
             return redirect('/dom/add/' + str(proc.pid) + '/')

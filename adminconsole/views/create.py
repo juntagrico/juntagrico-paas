@@ -6,7 +6,6 @@ from cookiecutter.main import cookiecutter
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
-from django.utils.safestring import mark_safe
 
 from adminconsole.config import Config
 from adminconsole.decorators import owner_of_app
@@ -102,11 +101,10 @@ def env_form(request, app_id):
 @owner_of_app
 def init_domain(request, app_id):
     app = get_object_or_404(App, pk=app_id)
-
-    domain = f'{app.name}.juntagrico.science'
+    domain = app.domains.create(name=f'{app.name}.juntagrico.science')
     with open(app.log_file, 'wb') as out:
         proc = subprocess.Popen(
-            ['venv/bin/python', '-m', 'manage', 'add_domain', app.name, str(app.port), domain],
+            ['venv/bin/python', '-m', 'manage', 'add_domain', domain.name],
             stdout=out, stderr=out
         )
 

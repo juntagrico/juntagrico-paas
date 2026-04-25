@@ -4,7 +4,7 @@ from pathlib import Path
 import docker
 from django.db import models
 from django.contrib.auth.models import User
-from django.core.validators import RegexValidator
+from django.core.validators import RegexValidator, validate_domain_name
 from django.utils import timezone
 
 from adminconsole.util import generate_secret_key
@@ -112,3 +112,12 @@ class AppEnv(models.Model):
         for line in self.various.splitlines():
             if clean_line := line.strip():
                 yield clean_line
+
+
+class Domain(models.Model):
+    app = models.ForeignKey(App, related_name='domains', on_delete=models.CASCADE)
+    name = models.CharField('name', max_length=100, unique=True, validators=[validate_domain_name])
+
+    def clean(self):
+        if self.name.endswith('.juntagrico.science'):
+            self.name = f'{self.app.name}.juntagrico.science'
