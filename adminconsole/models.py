@@ -2,6 +2,7 @@ import datetime
 from pathlib import Path
 
 import docker
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator, validate_domain_name
@@ -120,4 +121,11 @@ class Domain(models.Model):
 
     def clean(self):
         if self.name.endswith('.juntagrico.science'):
-            self.name = f'{self.app.name}.juntagrico.science'
+            app = getattr(self, 'app', None)
+            if not app and getattr(self, 'app_id', None):
+                from .models import App
+                try:
+                    app = App.objects.get(pk=self.app_id)
+                except App.DoesNotExist:
+                    raise ValidationError('App konnte nicht gefunden werden')
+            self.name = f'{app.name}.juntagrico.science'

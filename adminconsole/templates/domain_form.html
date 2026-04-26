@@ -5,7 +5,7 @@
         {% csrf_token %}
         
         <div class="form-group row">
-            <label class="col-form-label col-md-4" for="{{ form.name.id_for_label }}">{{ field.name.label }}</label>
+            <label class="col-form-label col-md-4" for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
             <div class="col-md-8">
                 {{ form.name }}
             </div>
