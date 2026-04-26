@@ -230,7 +230,7 @@ def generate_depot_list(request, app_id):
 def domain_form(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     if request.method == 'POST':
-        form = DomainForm(request.POST)
+        form = DomainForm(request.POST, app=app)
         if form.is_valid():
             domain = form.save()
             with open(app.log_file, 'wb') as out:
@@ -240,7 +240,7 @@ def domain_form(request, app_id):
                 )
             return redirect('/dom/add/' + str(proc.pid) + '/')
     else:
-        form = DomainForm()
+        form = DomainForm(app=app)
 
     return render(request, 'domain_form.html', {'form': form})
 

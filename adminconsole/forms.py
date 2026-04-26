@@ -128,6 +128,10 @@ class DomainForm(forms.ModelForm):
             'name': TextInput(attrs={'class': 'form-control'}),
         }
 
+    def __init__(self, *args, app, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.instance.app = app
+
 
 class BranchForm(forms.Form):
     branch = CharField(label='Branch', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))

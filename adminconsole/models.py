@@ -120,12 +120,5 @@ class Domain(models.Model):
     name = models.CharField('name', max_length=100, unique=True, validators=[validate_domain_name])
 
     def clean(self):
-        if self.name.endswith('.juntagrico.science'):
-            app = getattr(self, 'app', None)
-            if not app and getattr(self, 'app_id', None):
-                from .models import App
-                try:
-                    app = App.objects.get(pk=self.app_id)
-                except App.DoesNotExist:
-                    raise ValidationError('App konnte nicht gefunden werden')
-            self.name = f'{app.name}.juntagrico.science'
+        if getattr(self, 'app', None) and self.name.endswith('.juntagrico.science'):
+            self.name = f'{self.app.name}.juntagrico.science'
