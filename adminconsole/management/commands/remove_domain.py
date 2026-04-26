@@ -10,5 +10,5 @@ class Command(BaseCommand):
     # entry point used by manage.py
     def handle(self, *args, **options):
         for domain in options['domain']:
-            Path(f'/etc/nginx/sites-enabled/{domain}').unlink()
-            Path(f'/etc/nginx/sites-available/{domain}').unlink()
+            Path(f'/etc/nginx/sites-enabled/{domain}').unlink(missing_ok=True)
+            Path(f'/etc/nginx/sites-available/{domain}').unlink(missing_ok=True)
