@@ -3,7 +3,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from adminconsole import views
-from adminconsole.views import git, create, staging, v2, app, tools
+from adminconsole.views import git, create, staging, v2, app, tools, domain
 
 urlpatterns = [
     
@@ -14,13 +14,15 @@ urlpatterns = [
     path('overview/<int:app_id>/', views.overview, name='overview'),
     path('app/<int:app_id>/start/', app.start, name='app-start'),
     path('app/<int:app_id>/stop/', app.stop, name='app-stop'),
-    path('dom/form/<int:app_id>/', views.domain_form),
     path('mailtexts/<int:app_id>/', views.mailtexts),
     path('showlog/<int:app_id>/', views.show_log),
     path('show/<int:app_id>/result/', views.show_result, name='show-result'),
     path('logs/<int:app_id>/', views.logs, name='login'),
     path('versions/<int:app_id>/', views.versions, name='versions'),
-    path('dom/add/<int:pid>/', views.add_domain),
+    path('dom/form/<int:app_id>/', domain.manage, name='domain-manage'),
+    path('dom/add/<int:app_id>/<int:pid>/', domain.add, name='domain-add'),
+    path('dom/renew/<int:domain_id>/', domain.renew, name='domain-renew'),
+    path('dom/remove/<int:domain_id>/', domain.remove, name='domain-remove'),
     path('pid/<int:pid>/', views.pidcheck),
     path('reload/<int:app_id>/', views.reload, name='redeploy'),
     path('env/<int:app_id>/', views.env),

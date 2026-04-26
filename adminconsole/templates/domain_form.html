@@ -1,6 +1,28 @@
 {% extends "base.html" %}
 
 {% block content %}
+    <h4>Domains verwalten</h4>
+    <ul>
+        {% for domain in app.domains %}
+            <li>
+                <a href="https://{{ domain.name }}">{{ domain.name }}</a>
+                <form method="post" onsubmit="return confirm('Bist du sicher?')">
+                    <button type="submit" class="btn btn-outline-primary" formaction="{% url 'domain-renew' domain.id %}">erneuern</button>
+                    <button type="submit" class="btn btn-outline-danger" formaction="{% url 'domain-remove' domain.id %}">entfernen</button>
+                </form>
+            </li>
+        {% empty %}
+            <li>Du hast keine Domains.</li>
+        {% endfor %}
+    </ul>
+
+    <h4>Domain hinzufügen</h4>
+    <p class="card-text">
+        Fügt eine neue Domain hinzu und installiert ein SSL-Zertifikat für diese.
+    </p>
+    <p class="alert alert-info">
+        Richte zuerst einen CNAME-Eintrag auf host1.juntagrico.org in deiner DNS ein.
+    </p>
     <form action="" method="post">
         {% csrf_token %}
         
@@ -8,11 +30,16 @@
             <label class="col-form-label col-md-4" for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
             <div class="col-md-8">
                 {{ form.name }}
+                {% if form.name.help_text.strip %}
+                    <small class="form-text text-muted">
+                        {{ form.name.help_text }}
+                    </small>
+                {% endif %}
+                {% if form.name.errors %}
+                    <div class="alert alert-danger col-md-12">{{ form.name.errors }}</div>
+                {% endif %}
             </div>
         </div>
-        {% if form.name.errors %}
-            <div class="alert alert-danger col-md-12">{{ form.name.errors }}</div>
-        {% endif %}
     
         <div class="form-group row">
             <div class="offset-md-4 col-md-8">

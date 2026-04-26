@@ -124,6 +124,9 @@ class DomainForm(forms.ModelForm):
         labels = {
             'name': 'Domainname',
         }
+        help_texts = {
+            'name': 'Ohne https://',
+        }
         widgets = {
             'name': TextInput(attrs={'class': 'form-control'}),
         }

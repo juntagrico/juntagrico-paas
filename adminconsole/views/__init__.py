@@ -5,7 +5,6 @@ from time import sleep
 from zoneinfo import ZoneInfo
 
 import docker
-import psutil
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -16,7 +15,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from docker.errors import APIError, DockerException
 
 from adminconsole.decorators import owner_of_app
-from adminconsole.forms import EnvForm, DomainForm, ProfileForm, BranchForm
+from adminconsole.forms import EnvForm, ProfileForm, BranchForm
 from adminconsole.models import App
 from adminconsole.util import pid_finished
 from adminconsole.util.git import git_switch, git_current_branch
@@ -224,35 +223,6 @@ def generate_depot_list(request, app_id):
         'next': reverse('overview', args=[app.id])
     }
     return render(request, 'done_next.html', render_dict)
-
-
-@owner_of_app
-def domain_form(request, app_id):
-    app = get_object_or_404(App, pk=app_id)
-    if request.method == 'POST':
-        form = DomainForm(request.POST, app=app)
-        if form.is_valid():
-            domain = form.save()
-            with open(app.log_file, 'wb') as out:
-                proc = subprocess.Popen(
-                    ['venv/bin/python', '-m', 'manage', 'add_domain', domain.name],
-                    stdout=out, stderr=out
-                )
-            return redirect('/dom/add/' + str(proc.pid) + '/')
-    else:
-        form = DomainForm(app=app)
-
-    return render(request, 'domain_form.html', {'form': form})
-
-
-@login_required
-def add_domain(request, pid):
-    render_dict = {
-        'step': 'Domain hinzufügen',
-        'pid': pid,
-        'next': '/'
-    }
-    return render(request, 'wait_next.html', render_dict)
 
 
 @owner_of_app

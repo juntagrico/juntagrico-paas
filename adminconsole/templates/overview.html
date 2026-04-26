@@ -277,21 +277,20 @@
                             <p class="card-text">
                                 Wechsle den branch, von welchem der Code von Github geladen wird.
                             </p>
-                            <a href="{% url "change-branch" app.id %}" class="btn btn-outline-primary">Ändern</a>
+                            <a href="{% url "change-branch" app.id %}" class="btn btn-outline-primary">ändern</a>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="card mb-3">
-                        <h4 class="card-header">Domain hinzufügen</h4>
+                        <h4 class="card-header">Domains verwalten</h4>
                         <div class="card-body">
-                            <p class="card-text">
-                                Fügt eine neue Domain hinzu und installiert ein SSL-Zertifikat für diese.
-                            </p>
-                            <p class="alert alert-info">
-                                Richte zuerst einen CNAME-Eintrag auf host1.juntagrico.org in deiner DNS ein.
-                            </p>
-                            <a href="/dom/form/{{ app.id }}/" class="btn btn-outline-primary">Hinzufügen</a>
+                            <ul class="card-text">
+                                {% for domain in app.domains %}
+                                    <li><a href="https://{{ domain.name }}">{{ domain.name }}</a></li>
+                                {% endfor %}
+                            </ul>
+                            <a href="{% url 'domain-manage' app.id %}" class="btn btn-outline-primary">verwalten</a>
                         </div>
                     </div>
                 </div>
@@ -336,11 +335,11 @@
                                 <a href="https://docs.djangoproject.com/en/4.2/ref/django-admin/#loaddata">loaddata</a>
                                 importiert werden.
                             </p>
-                            <a href="{% url "dumpdata" app.id %}" class="btn btn-outline-primary">Exportieren als JSON</a>
+                            <a href="{% url "dumpdata" app.id %}" class="btn btn-outline-primary">exportieren als JSON</a>
                             <p class="card-text mt-3">
                                 Exportiert die Datenbankdaten mit pg_dump.
                             </p>
-                            <a href="{% url "pgdump" app.id %}" class="btn btn-outline-primary">Exportieren als SQL</a>
+                            <a href="{% url "pgdump" app.id %}" class="btn btn-outline-primary">exportieren als SQL</a>
                         </div>
                     </div>
                 </div>
@@ -356,7 +355,7 @@
                                 Seit Juntagrico 1.6 kann die Depotliste auch in der Instanz selbst generiert werden
                                 unter Administration &rarr; Listen &rarr; Erzeugen.
                             </p>
-                            <a href="/gdl/{{ app.id }}/" class="btn btn-outline-primary">Erzeugen</a>
+                            <a href="/gdl/{{ app.id }}/" class="btn btn-outline-primary">erzeugen</a>
                         </div>
                     </div>
                 </div>
