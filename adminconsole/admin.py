@@ -16,8 +16,12 @@ class AppAdmin(admin.ModelAdmin):
 
 
 class DomainAdmin(admin.ModelAdmin):
-    list_display = ['name', 'app']
-    search_fields = ['name', 'app__name']
+    list_display = ['name', 'port', 'app']
+    search_fields = ['name', 'app__name', 'app__port']
+
+    @admin.display(description="port")
+    def port(self, obj):
+        return obj.app.port
 
 
 admin.site.register(GitHubKey)

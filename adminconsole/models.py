@@ -120,5 +120,5 @@ class Domain(models.Model):
     name = models.CharField('name', max_length=100, unique=True, validators=[validate_domain_name])
 
     def clean(self):
-        if getattr(self, 'app', None) and self.name.endswith('.juntagrico.science'):
-            self.name = f'{self.app.name}.juntagrico.science'
+        if self.name == 'admin.juntagrico.science':
+            raise ValidationError({'name': 'ungültige Domain'})
