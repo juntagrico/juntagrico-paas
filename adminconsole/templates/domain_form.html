@@ -7,6 +7,7 @@
             <li>
                 <a href="https://{{ domain.name }}">{{ domain.name }}</a>
                 <form method="post" onsubmit="return confirm('Bist du sicher?')">
+                    {% csrf_token %}
                     <button type="submit" class="btn btn-outline-primary" formaction="{% url 'domain-renew' domain.id %}">erneuern</button>
                     <button type="submit" class="btn btn-outline-danger" formaction="{% url 'domain-remove' domain.id %}">entfernen</button>
                 </form>
