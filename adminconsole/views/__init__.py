@@ -25,19 +25,17 @@ from adminconsole.util.git import git_switch, git_current_branch
 def home(request):
     superuser = request.user.is_superuser
     if superuser:
-        available_apps = App.objects.all()
+        available_apps = App.objects.filter(staging_of__isnull=True).order_by('id')
     else:
-        available_apps = request.user.app.all()
+        available_apps = request.user.app.filter(staging_of__isnull=True)
     number_of_apps = available_apps.count()
     if number_of_apps == 1 and not superuser:
         return redirect('overview', app_id=available_apps[0].id)
-    can_add_apps = number_of_apps < 1 or superuser
-    renderdict = {
-        'apps': available_apps.filter(staging_of__isnull=True),
-        'staging_apps': available_apps.filter(staging_of__isnull=False),
-        'can_add_app': can_add_apps,
-    }
-    return render(request, 'home.html', renderdict)
+
+    return render(request, 'home.html', {
+        'apps': available_apps,
+        'can_add_app': number_of_apps < 1 or superuser,
+    })
 
 
 @owner_of_app

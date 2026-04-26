@@ -7,6 +7,10 @@
 {% block content %}
     <div class="row mb-4">
         <div class="col-md-12">
+            {% if staging %}
+                <a href="{% url 'overview' app.staging_of.id %}" class="btn btn-info">&larr; zurück</a>
+            {% endif %}
+
             <h3>Status</h3>
                 {% if status == 'running' or status == 'created' or status == 'restarting' %}
                     <div class="alert alert-success">
@@ -15,8 +19,17 @@
                         </p>
                         <form action="{% url 'app-stop' app.id %}" method="POST">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-danger">Stoppen</button>
+                            <button type="submit" class="btn btn-danger">stoppen</button>
                         </form>
+                        {% if staging %}
+                            <p>
+                                Diese Staging-App wird in {{ app.run_until|timeuntil }} automatisch gestoppt.
+                            </p>
+                            <form action="{% url 'staging-renew' app.id %}" method="POST">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-warning">verlängern</button>
+                            </form>
+                        {% endif %}
                     </div>
                 {% elif status == 'paused' or status == 'removing' or status == 'exited' or status == 'dead' %}
                     <div class="alert alert-danger">
@@ -25,30 +38,22 @@
                         </p>
                         <form action="{% url 'app-start' app.id %}" method="POST">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-success">Starten</button>
+                            <button type="submit" class="btn btn-success">starten</button>
                         </form>
                     </div>
                 {% endif %}
             {% if staging %}
                 <div class="alert alert-warning">
-                    <h5>Staging</h5>
+                    <h4>Staging</h4>
                     <p>
                         Dies ist deine Staging-App.
-                        <a href="{% url 'overview' app.staging_of.id %}">Zur Produktions-App.</a>
+                        <a href="{% url 'overview' app.staging_of.id %}">Zur Haupt-App &rarr;</a>
                     </p>
-                    {% if status != 'exited' %}
-                        <div>
-                            Die App wird in {{ app.run_until|timeuntil }} automatisch gestoppt.
-                            <form action="{% url 'staging-renew' app.id %}" method="POST">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-warning">Verlängern</button>
-                            </form>
-                        </div>
-                    {% endif %}
                     <p>
-                        Um die app zu öffnen muss {{ app.name }}.juntagrico.science zu den
+                        Um die App zu öffnen muss {{ app.name }}.juntagrico.science zu den
                         <code>ALLOWED_HOSTS</code> hinzugefügt werden.<br>
-                        Die staging app wird mit der Umgebungsvariable <code>JUNTAGRICO_STAGING=1</code> ausgeführt.
+                        Die staging app wird mit der Umgebungsvariable <code>JUNTAGRICO_STAGING=1</code> ausgeführt.<br>
+                        <a href="https://juntagrico.org/staging-apps-im-juntagrico-hosting/">Lies wie du deine App fürs Staging einrichten kannst.</a>
                     </p>
                 </div>
             {% endif %}
