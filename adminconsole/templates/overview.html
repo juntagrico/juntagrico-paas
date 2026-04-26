@@ -286,7 +286,7 @@
                         <h4 class="card-header">Domains verwalten</h4>
                         <div class="card-body">
                             <ul class="card-text">
-                                {% for domain in app.domains %}
+                                {% for domain in app.domains.all %}
                                     <li><a href="https://{{ domain.name }}">{{ domain.name }}</a></li>
                                 {% endfor %}
                             </ul>

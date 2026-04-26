@@ -27,7 +27,7 @@ def manage(request, app_id):
         form = DomainForm(app=app)
 
     return render(request, 'domain_form.html', {
-        'domains': app.domains,
+        'domains': app.domains.all(),
         'form': form
     })
 

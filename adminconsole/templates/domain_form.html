@@ -3,7 +3,7 @@
 {% block content %}
     <h4>Domains verwalten</h4>
     <ul>
-        {% for domain in app.domains %}
+        {% for domain in domains %}
             <li>
                 <a href="https://{{ domain.name }}">{{ domain.name }}</a>
                 <form method="post" onsubmit="return confirm('Bist du sicher?')">
