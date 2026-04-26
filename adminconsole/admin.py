@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
-from adminconsole.models import GitHubKey, App, AppEnv
+from adminconsole.models import GitHubKey, App, AppEnv, Domain
 
 
 class AppAdmin(admin.ModelAdmin):
@@ -18,3 +18,4 @@ class AppAdmin(admin.ModelAdmin):
 admin.site.register(GitHubKey)
 admin.site.register(App, AppAdmin)
 admin.site.register(AppEnv)
+admin.site.register(Domain)
