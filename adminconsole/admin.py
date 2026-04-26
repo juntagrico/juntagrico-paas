@@ -15,7 +15,12 @@ class AppAdmin(admin.ModelAdmin):
         return format_html('<a href="{url}">Github</a>', url=url)
 
 
+class DomainAdmin(admin.ModelAdmin):
+    list_display = ['name', 'app']
+    search_fields = ['name', 'app__name']
+
+
 admin.site.register(GitHubKey)
 admin.site.register(App, AppAdmin)
 admin.site.register(AppEnv)
-admin.site.register(Domain)
+admin.site.register(Domain, DomainAdmin)
