@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 
+{% block page_title %}
+    {{ app.name }}
+{% endblock %}
+
 {% block content %}
     <div class="accordion" id="result-accordion">
         {% for title, section in sections.items %}

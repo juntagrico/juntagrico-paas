@@ -1,6 +1,10 @@
 {% extends "wait_next.html" %}
 {% load static %}
-    
+
+{% block page_title %}
+    {{ page_title }}
+{% endblock %}
+
 {% block scripts %}
     <script type="text/javascript">
         var url = '{{ url }}';

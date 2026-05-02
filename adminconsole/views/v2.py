@@ -47,6 +47,7 @@ def redeploy(request, app_id, upgrade=False):
             proc = subprocess.Popen(command, stdout=out, stderr=out)
 
         return render(request, 'wait_redeploy.html', {
+            'page_title': app.name,
             'step': 'Upgrade' if upgrade else 'Redeploy',
             'url': reverse('progress', args=[app_id, proc.pid]),
             'pid': proc.pid,
