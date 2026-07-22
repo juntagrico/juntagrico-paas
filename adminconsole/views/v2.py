@@ -1,6 +1,7 @@
 import subprocess
 
 import psutil
+from django.conf import settings
 from django.contrib import messages
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
@@ -40,7 +41,7 @@ def redeploy(request, app_id, upgrade=False):
         if app.staging_of:
             app.renew()
 
-        command = ['venv/bin/python', '-m', 'manage', 'redeploy', app.name]
+        command = [settings.PYTHON_BIN, '-m', 'manage', 'redeploy', app.name]
         if upgrade:
             command.insert(-1, '--upgrade')
         with open(app.log_file, 'wb') as out:

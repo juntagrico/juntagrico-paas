@@ -2,6 +2,7 @@ import os
 import subprocess
 
 from cookiecutter.main import cookiecutter
+from django.conf import settings
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -104,7 +105,7 @@ def init_domain(request, app_id):
     domain = app.domains.create(name=f'{app.name}.juntagrico.science')
     with open(app.log_file, 'wb') as out:
         proc = subprocess.Popen(
-            ['venv/bin/python', '-m', 'manage', 'add_domain', domain.name],
+            [settings.PYTHON_BIN, '-m', 'manage', 'add_domain', domain.name],
             stdout=out, stderr=out
         )
 
@@ -121,7 +122,7 @@ def init_cronjob(request, app_id):
 
     with open(app.log_file, 'wb') as out:
         proc = subprocess.Popen(
-            ['venv/bin/python', '-m', 'manage', 'install_cronjob', app.name],
+            [settings.PYTHON_BIN, '-m', 'manage', 'install_cronjob', app.name],
             stdout=out, stderr=out
         )
 
@@ -138,7 +139,7 @@ def build(request, app_id):
 
     with open(app.log_file, 'wb') as out:
         proc = subprocess.Popen(
-            ['venv/bin/python', '-m', 'manage', 'redeploy', app.name],
+            [settings.PYTHON_BIN, '-m', 'manage', 'redeploy', app.name],
             stdout=out, stderr=out
         )
 
@@ -157,7 +158,7 @@ def create_admin(request, app_id):
 
     with open(app.log_file, 'wb') as out:
         proc = subprocess.Popen(
-            ['venv/bin/python', '-m', 'manage', 'create_admin', app.name, password],
+            [settings.PYTHON_BIN, '-m', 'manage', 'create_admin', app.name, password],
             stdout=out, stderr=out
         )
 

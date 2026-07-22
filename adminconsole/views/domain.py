@@ -1,5 +1,6 @@
 import subprocess
 
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -19,7 +20,7 @@ def manage(request, app_id):
             domain = form.save()
             with open(app.log_file, 'wb') as out:
                 proc = subprocess.Popen(
-                    ['venv/bin/python', '-m', 'manage', 'add_domain', domain.name],
+                    [settings.PYTHON_BIN, '-m', 'manage', 'add_domain', domain.name],
                     stdout=out, stderr=out
                 )
             return redirect(reverse('domain-add', args=[app.id, proc.pid]))
@@ -59,7 +60,7 @@ def renew(request, domain_id):
     domain = get_object_or_404(Domain, pk=domain_id)
     with open(domain.app.log_file, 'wb') as out:
         proc = subprocess.Popen(
-            ['venv/bin/python', '-m', 'manage', 'add_domain', domain.name],
+            [settings.PYTHON_BIN, '-m', 'manage', 'add_domain', domain.name],
             stdout=out, stderr=out
         )
     return redirect(reverse('domain-add', args=[domain.app.id, proc.pid]))

@@ -72,7 +72,7 @@ def pidcheck(request, pid):
 def reload(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     with open(app.log_file, 'wb') as out:
-        proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'rebuild_docker', app.name], stdout=out, stderr=out)
+        proc = subprocess.Popen([settings.PYTHON_BIN, '-m', 'manage', 'rebuild_docker', app.name], stdout=out, stderr=out)
     render_dict = {
         'step': 'Redeploy',
         'pid': proc.pid,
@@ -116,7 +116,7 @@ def show_result(request, app_id):
 def rebuild_image(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     with open(app.log_file, 'wb') as out:
-        proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'rebuild_image', app.name, str(app.port)],
+        proc = subprocess.Popen([settings.PYTHON_BIN, '-m', 'manage', 'rebuild_image', app.name, str(app.port)],
                                 stdout=out, stderr=out)
     render_dict = {
         'step': 'Rebuild',
@@ -148,7 +148,7 @@ def env(request, app_id):
             if app.version == 2:
                 with open(app.log_file, 'wb') as out:
                     proc = subprocess.Popen(
-                        ['venv/bin/python', '-m', 'manage', 'restart', app.name],
+                        [settings.PYTHON_BIN, '-m', 'manage', 'restart', app.name],
                         stdout=out, stderr=out
                     )
                 return render(request, 'wait_next.html', {
@@ -181,7 +181,7 @@ def env_restart(request, app_id):
                 out.write(str(getattr(app_env, field.name)))
                 out.write('\n')
     with open(app.log_file, 'wb') as out:
-        proc = subprocess.Popen(['venv/bin/python', '-m', 'manage', 'reload_env', name, str(app.port)], stdout=out,
+        proc = subprocess.Popen([settings.PYTHON_BIN, '-m', 'manage', 'reload_env', name, str(app.port)], stdout=out,
                                 stderr=out)
     render_dict = {
         'step': 'Einstellungen anwenden',

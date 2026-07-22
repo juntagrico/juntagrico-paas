@@ -165,3 +165,5 @@ DEFAULT_FROM_EMAIL = os.environ.get('JUNTAGRICO_EMAIL_USER')
 
 GITHUB_CLIENT_ID = os.environ.get('GITHUB_CLIENT_ID')
 GITHUB_CLIENT_SECRET = os.environ.get('GITHUB_CLIENT_SECRET')
+
+PYTHON_BIN = '.venv/bin/python'

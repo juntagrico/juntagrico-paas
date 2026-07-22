@@ -1,5 +1,6 @@
 import subprocess
 
+from django.conf import settings
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
@@ -70,7 +71,7 @@ def init_db(request, app_id):
     if request.method == 'POST':
         with open(app.log_file, 'wb') as out:
             proc = subprocess.Popen(
-                ['venv/bin/python', '-m', 'manage', 'clone_db', '--no-restart', app.name], stdout=out, stderr=out
+                [settings.PYTHON_BIN, '-m', 'manage', 'clone_db', '--no-restart', app.name], stdout=out, stderr=out
             )
 
         return render(request, 'generic/wait_next_submit.html', {
@@ -93,7 +94,7 @@ def init_domain(request, app_id):
         domain = app.domains.create(name=f'{app.name}.juntagrico.science')
         with open(app.log_file, 'wb') as out:
             proc = subprocess.Popen(
-                ['venv/bin/python', '-m', 'manage', 'add_domain', domain.name],
+                [settings.PYTHON_BIN, '-m', 'manage', 'add_domain', domain.name],
                 stdout=out, stderr=out
             )
 
@@ -116,7 +117,7 @@ def clone_db(request, app_id):
 
     with open(app.log_file, 'wb') as out:
         proc = subprocess.Popen(
-            ['venv/bin/python', '-m', 'manage', 'clone_db', app.name], stdout=out, stderr=out
+            [settings.PYTHON_BIN, '-m', 'manage', 'clone_db', app.name], stdout=out, stderr=out
         )
 
     return render(request, 'wait_next.html', {
