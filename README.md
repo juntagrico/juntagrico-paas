@@ -25,6 +25,7 @@ Create a database
 mkdir -p /var/django/adminconsole
 cd /var/django/adminconsole
 git clone https://github.com/juntagrico/juntagrico-paas.git .
+chmod +x tasks/*.sh
 ```
 
 open `adminconsole/settings.py` and add your domain to the `ALLOWED_HOSTS`
@@ -171,20 +172,19 @@ You can now open your juntagrico PaaS in the browser.
 The juntagrico apps will need docker to run.
 See https://docs.docker.com/engine/install/ubuntu/
 
-To release unused docker images add this to the crontab
+To release unused docker images add this cronjob
 `5 1 * * * docker image prune -f`
 
 ### Enable staging auto-stop
 
-Add this to the crontab to stop expired staging app containers
+Add this cronjob to stop expired staging app containers regularly
 `0 2 * * * /var/django/adminconsole/tasks/stop_staging.sh`
-
 
 ## Create Demo App
 
 The juntagrico demo app can be installed like any other app from https://github.com/juntagrico/juntagrico-demo
 
-Make sure the instance is reset at least every day:
+Make sure the instance is re-initialized at least every day using a cronjob:
 `0 4 * * * /var/django/adminconsole/tasks/reset_demo.sh`
 
 ## Auto Upgrade
