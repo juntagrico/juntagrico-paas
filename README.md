@@ -165,3 +165,29 @@ certbot --nginx -d admin.juntagrico.app
 ### Open in browser
 
 You can now open your juntagrico PaaS in the browser.
+
+### Install Docker
+
+The juntagrico apps will need docker to run.
+See https://docs.docker.com/engine/install/ubuntu/
+
+To release unused docker images add this to the crontab
+`5 1 * * * docker image prune -f`
+
+### Enable staging auto-stop
+
+Add this to the crontab to stop expired staging app containers
+`0 2 * * * /var/django/adminconsole/tasks/stop_staging.sh`
+
+
+## Create Demo App
+
+The juntagrico demo app can be installed like any other app from https://github.com/juntagrico/juntagrico-demo
+
+Make sure the instance is reset at least every day:
+`0 4 * * * /var/django/adminconsole/tasks/reset_demo.sh`
+
+## Auto Upgrade
+
+If desired, add this to crontab for apps that should upgrade automatically
+`0 2 * * * /var/django/adminconsole/tasks/redeploy-v2.sh <app-name>`
