@@ -2,6 +2,7 @@ import datetime
 from pathlib import Path
 
 import docker
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.contrib.auth.models import User
@@ -120,5 +121,5 @@ class Domain(models.Model):
     name = models.CharField('name', max_length=100, unique=True, validators=[validate_domain_name])
 
     def clean(self):
-        if self.name == 'admin.juntagrico.science':
+        if self.name in settings.ALLOWED_HOSTS:
             raise ValidationError({'name': 'ungültige Domain'})

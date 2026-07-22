@@ -50,7 +50,7 @@
                         <a href="{% url 'overview' app.staging_of.id %}">Zur Haupt-App &rarr;</a>
                     </p>
                     <p>
-                        Um die App zu öffnen muss {{ app.name }}.juntagrico.science zu den
+                        Um die App zu öffnen muss {{ app.domains.first.name }} zu den
                         <code>ALLOWED_HOSTS</code> hinzugefügt werden.<br>
                         Die staging app wird mit der Umgebungsvariable <code>JUNTAGRICO_STAGING=1</code> ausgeführt.<br>
                         <a href="https://juntagrico.org/staging-apps-im-juntagrico-hosting/">Lies wie du deine App fürs Staging einrichten kannst.</a>
@@ -74,7 +74,7 @@
             {% endif %}
             <a href="/logs/{{ app.id }}/" class="btn btn-outline-primary mb-1">Logs anzeigen</a>
             <a href="{% url "versions" app.id %}" class="btn btn-outline-primary mb-1">Versionen anzeigen</a>
-            <a href="https://{{ app.name }}.juntagrico.science/" class="btn btn-primary mb-1" target="_blank">
+            <a href="https://{{ app.domains.first.name }}" class="btn btn-primary mb-1" target="_blank">
                 Seite öffnen
             </a>
         </div>
