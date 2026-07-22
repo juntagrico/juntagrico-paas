@@ -25,7 +25,7 @@ SECRET_KEY = os.environ.get('JS_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['admin.juntagrico.science', ]
+ALLOWED_HOSTS = ['admin.juntagrico.app']
 
 
 # Application definition
@@ -167,3 +167,4 @@ GITHUB_CLIENT_ID = os.environ.get('GITHUB_CLIENT_ID')
 GITHUB_CLIENT_SECRET = os.environ.get('GITHUB_CLIENT_SECRET')
 
 PYTHON_BIN = '.venv/bin/python'
+APPS_DOMAIN = '.juntagrico.app'

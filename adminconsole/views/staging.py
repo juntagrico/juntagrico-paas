@@ -91,7 +91,7 @@ def init_domain(request, app_id):
     app = get_object_or_404(App, pk=app_id)
 
     if request.method == 'POST':
-        domain = app.domains.create(name=f'{app.name}.juntagrico.science')
+        domain = app.domains.get_or_create(name=f'{app.name}{settings.APPS_DOMAIN}')[0]
         with open(app.log_file, 'wb') as out:
             proc = subprocess.Popen(
                 [settings.PYTHON_BIN, '-m', 'manage', 'add_domain', domain.name],
