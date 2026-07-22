@@ -104,10 +104,10 @@ WantedBy=multi-user.target
 enable and start:
 
 ```
-sudo systemctl daemon-reload
-sudo systemctl enable gunicorn
-sudo systemctl start gunicorn
-sudo systemctl status gunicorn
+systemctl daemon-reload
+systemctl enable gunicorn
+systemctl start gunicorn
+systemctl status gunicorn
 ```
 
 ### Setup reverse proxy
@@ -149,7 +149,7 @@ using certbot
 
 ```
 snap install --classic certbot
-sudo ln -s /snap/bin/certbot /usr/local/bin/certbot
+ln -s /snap/bin/certbot /usr/local/bin/certbot
 ```
 
 remove the default site as it may disturb certbot
@@ -159,7 +159,7 @@ rm /etc/nginx/sites-enabled/default
 
 Use your domain
 ```
-sudo certbot --nginx -d admin.juntagrico.app
+certbot --nginx -d admin.juntagrico.app
 ```
 
 ### Open in browser

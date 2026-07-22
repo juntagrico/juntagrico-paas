@@ -80,7 +80,7 @@ def cookiecutter_form(request, app_id):
 def init_db(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     name = app.name
-    app_env = AppEnv.objects.create(app=app)
+    app_env = AppEnv.objects.get_or_create(app=app)[0]
     create_database(app_env, name, name)
     return redirect('ca-create-env', app_id=app_id)
 
