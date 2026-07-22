@@ -66,14 +66,15 @@ def clone_repo(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     if not app.git_clone_url:
         return redirect('github-select', app_id=app_id)
-    if not hasattr(request.user, 'githubkey'):
-        request.session['next'] = request.path
-        return github_request(request)
+
+    key = None
+    if hasattr(request.user, 'githubkey'):
+        key = request.user.githubkey.key
 
     errors = []
     success = make_dirs(app.dir, errors)
     if success:
-        success &= git_clone(app, request.user.githubkey.key, errors)
+        success &= git_clone(app, key, errors)
 
     return render(request, 'done_next.html', {
         'errors': '' if success else errors,
