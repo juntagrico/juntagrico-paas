@@ -42,6 +42,7 @@ class Command(BaseCommand):
                 base_dir / 'code': {'bind': '/code/', 'mode': 'rw'},
                 base_dir / 'static': {'bind': '/code/static/', 'mode': 'rw'},
                 base_dir / 'media': {'bind': '/code/media/', 'mode': 'rw'},
+                f'{name}-internal': {'bind': '/code/internal_files/', 'mode': 'rw'},
             }
         )
         print(container.status)
