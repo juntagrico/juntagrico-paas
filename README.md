@@ -25,6 +25,11 @@ Create a database
 mkdir -p /var/django/adminconsole
 cd /var/django/adminconsole
 git clone https://github.com/juntagrico/juntagrico-paas.git .
+```
+
+Make the scripts executable
+
+```
 chmod +x tasks/*.sh
 ```
 
@@ -180,6 +185,7 @@ To release unused docker images add this cronjob
 Add this cronjob to stop expired staging app containers regularly
 `0 2 * * * /var/django/adminconsole/tasks/stop_staging.sh`
 
+
 ## Create Demo App
 
 The juntagrico demo app can be installed like any other app from https://github.com/juntagrico/juntagrico-demo
@@ -187,7 +193,68 @@ The juntagrico demo app can be installed like any other app from https://github.
 Make sure the instance is re-initialized at least every day using a cronjob:
 `0 4 * * * /var/django/adminconsole/tasks/reset_demo.sh`
 
-## Auto Upgrade
+
+## Auto Upgrade Apps
 
 If desired, add this to crontab for apps that should upgrade automatically
 `0 2 * * * /var/django/adminconsole/tasks/redeploy-v2.sh <app-name>`
+
+
+## Backups
+
+Make backup scripts executable
+
+```
+cd var/django/adminconsole/tasks/backup
+chmod +x *.sh
+```
+
+Setup backup location
+
+```
+install -d -o postgres /var/django/backup
+```
+
+Test running a full backup
+
+```
+sudo -u postgres /var/django/adminconsole/tasks/backup/full.sh
+```
+
+The backup should be copied to a different location, e.g. using scp:
+
+It's recommended to use a keyfile for login. Set up a key and move it to the backup server something like this.
+```
+sudo -u postgres ssh-keygen
+sudo -u postgres ssh-copy-id <username>@<host>
+```
+
+Test the full backup and copy. Make sure /juntagrico/backup exists on the backup server.
+```
+sudo -u postgres ./full.sh | sudo -u postgres ./scp.sh <username>@<host>:/juntagrico/backup
+```
+
+Make it cronjob on the postgres user
+```
+sudo -u postgres crontab -e
+```
+
+add this to run the backup once per day at 0:10
+```
+10 0 * * * /var/django/adminconsole/tasks/backup/full.sh | /var/django/adminconsole/tasks/backup/scp.sh <username>@<host>:/juntagrico/backup
+```
+
+The following scripts are provided and can be adjusted to your needs:
+
+- `full.sh` does a dumpall of the database
+- `database.sh` dumps only the selected database
+- `scp.sh` transfers the backup using scp
+- `sftp.sh` transfers the backup using sftp
+- `lftp.sh` alternative to sftp
+- `webdav.sh` transfers the backup using webdav (e.g. to Nextcloud)
+
+
+The transfer commands can be chained in case you want to copy the backup to multiple locations
+```
+./full.sh | ./scp.sh <username1>@<host1>:/juntagrico/backup | ./sftp <username2>@<host2>:/juntagrico/backup <port>
+```

@@ -7,6 +7,6 @@ if [ "$#" -ne 1 ]; then
 fi
 
 backup_file="$(cat -)"
-scp -i ~/.ssh/id_rsa "$backup_file" "$1"
+scp "$backup_file" "$1"
 
 echo "$backup_file"
