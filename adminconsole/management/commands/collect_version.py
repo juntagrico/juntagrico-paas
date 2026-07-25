@@ -1,7 +1,7 @@
 import docker
 
 from django.core.management.base import BaseCommand
-from docker.errors import NotFound
+from docker.errors import NotFound, APIError
 
 from adminconsole.models import App
 
@@ -28,7 +28,10 @@ class Command(BaseCommand):
                 container = docker.from_env().containers.get(app.name)
             except NotFound:
                 continue
-            result = container.exec_run(['pip', 'freeze'])
+            try:
+                result = container.exec_run(['pip', 'freeze'])
+            except APIError:
+                continue
             for line in result.output.decode('utf-8').split('\n'):
                 if line.startswith(package):
                     self.stdout.write(app.name + ': ' + line, ending='\n')
