@@ -5,7 +5,8 @@ from adminconsole.models import GitHubKey, App, AppEnv, Domain
 
 
 class AppAdmin(admin.ModelAdmin):
-    list_display = ['name', 'port', 'wsgi', 'python_version', 'managed', 'version', 'staging_of', 'run_until', 'repo']
+    list_display = ['name', 'port', 'wsgi', 'python_version', 'juntagrico_version', 'managed', 'version', 'staging_of',
+                    'run_until', 'repo']
     search_fields = ['name', 'port']
     list_filter = ('python_version', 'version')
 

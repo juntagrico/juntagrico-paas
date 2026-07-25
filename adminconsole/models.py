@@ -35,6 +35,7 @@ class App(models.Model):
     port = models.IntegerField('port', unique=True)
     wsgi = models.CharField('wsgi', max_length=100, blank=True)
     python_version = models.CharField('python', max_length=100, blank=True, choices=PYTHON_VERSION)
+    juntagrico_version = models.CharField('juntagrico', max_length=50, blank=True)
     managed = models.BooleanField('Managed', default=True)
     version = models.PositiveIntegerField('version', default=2)
     staging_of = models.ForeignKey('App', null=True, blank=True, on_delete=models.CASCADE, related_name='stagings')

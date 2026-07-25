@@ -69,4 +69,5 @@ urlpatterns = [
 
     # tools
     path('tools/update_permissions/<int:app_id>/', tools.update_permissions, name='update-permissions'),
+    path('tools/reload_versions', tools.reload_versions, name='reload-versions'),
 ]
