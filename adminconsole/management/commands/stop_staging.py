@@ -2,6 +2,7 @@ import docker
 
 from django.core.management.base import BaseCommand
 from django.utils import timezone
+from docker.errors import NotFound
 
 from adminconsole.models import App
 
@@ -20,5 +21,8 @@ class Command(BaseCommand):
             if dry_run:
                 print(f'Would stop {app}')
             else:
-                client.containers.get(app.name).stop()
+                try:
+                    client.containers.get(app.name).stop()
+                except NotFound:
+                    continue
                 print(f'stopped {app}')
