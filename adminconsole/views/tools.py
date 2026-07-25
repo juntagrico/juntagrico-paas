@@ -45,5 +45,5 @@ def reload_versions(request):
     app_name = request.GET.get('app')
     package = request.GET.get('package')
     out = StringIO()
-    call_command('collect_version', app_name, package, stdout=out)
+    call_command('collect_version', app_name=app_name, package=package, stdout=out)
     return HttpResponse('OK\n' + out.getvalue())
