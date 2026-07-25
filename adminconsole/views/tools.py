@@ -1,5 +1,10 @@
+from io import StringIO
+
 import docker
 from django.contrib import messages
+from django.contrib.auth.decorators import user_passes_test
+from django.core.management import call_command
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
 
 from adminconsole.decorators import owner_of_app
@@ -33,3 +38,12 @@ def update_permissions(request, app_id):
         'rename_perms': rename_perms,
         'error': result[0],
     })
+
+
+@user_passes_test(lambda u: u.is_superuser)
+def reload_versions(request):
+    app_name = request.GET.get('app')
+    package = request.GET.get('package')
+    out = StringIO()
+    call_command('collect_version', app_name, package, stdout=out)
+    return HttpResponse('OK\n' + out.getvalue())
