@@ -31,5 +31,5 @@ class Command(BaseCommand):
                     version = line[len(package):]
                     break
             if package == 'juntagrico==':
-                app.juntagrico_version = version
+                app.juntagrico_version = version or ''
                 app.save()
