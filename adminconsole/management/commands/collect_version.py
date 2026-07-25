@@ -1,6 +1,7 @@
 import docker
 
 from django.core.management.base import BaseCommand
+from docker.errors import NotFound
 
 from adminconsole.models import App
 
@@ -23,7 +24,10 @@ class Command(BaseCommand):
 
         for app in apps:
             version = None
-            container = docker.from_env().containers.get(app.name)
+            try:
+                container = docker.from_env().containers.get(app.name)
+            except NotFound:
+                continue
             result = container.exec_run(['pip', 'freeze'])
             for line in result.output.decode('utf-8').split('\n'):
                 if line.startswith(package):
