@@ -43,22 +43,10 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-create `/var/django/adminconsole/.venv/env.env` and define all the config variables.
-
+copy the config variables and define all values. Then save the file.
 ```
-JS_DATABASE_NAME=
-JS_DATABASE_USER=
-JS_DATABASE_PASSWORD=
-JS_DATABASE_HOST=localhost
-JS_KEY=
-JUNTAGRICO_EMAIL_HOST=
-JUNTAGRICO_EMAIL_USER=
-JUNTAGRICO_EMAIL_PASSWORD=
-JUNTAGRICO_EMAIL_PORT=
-JUNTAGRICO_EMAIL_TLS=
-JUNTAGRICO_EMAIL_SSL=
-GITHUB_CLIENT_ID=
-GITHUB_CLIENT_SECRET=
+cp setup/env.env /var/django/adminconsole/.venv/env.env
+nano /var/django/adminconsole/.venv/env.env
 ```
 
 ### Collect static files
@@ -89,22 +77,10 @@ Create superuser
 
 ### setup Gunicorn
 
-create `/etc/systemd/system/gunicorn.service` and paste the following:
+copy the configuration:
 
 ```
-[Unit]
-Description=gunicorn daemon
-After=network.target
-
-[Service]
-User=root
-Group=www-data
-EnvironmentFile=/var/django/adminconsole/.venv/env.env
-WorkingDirectory=/var/django/adminconsole/
-ExecStart=/var/django/adminconsole/.venv/bin/gunicorn --access-logfile - --workers 1 --bind unix:/var/django/adminconsole/adminconsole.sock adminconsole.wsgi:application -t 60000
-
-[Install]
-WantedBy=multi-user.target
+cp setup/gunicorn.service /etc/systemd/system/gunicorn.service
 ```
 
 enable and start:
@@ -122,24 +98,15 @@ Using nginx
 
 `apt install nginx`
 
-Create `/etc/nginx/sites-available/admin.juntagrico.app` and paste the following:
-
-use your actual domain (server_name)
+copy the config file and open it to change `server_name` to your domain.
 ```
-server {
-    listen 80;
-    server_name admin.juntagrico.app;
+cp setup/admin.juntagrico.app /etc/nginx/sites-available/admin.juntagrico.app
+nano /etc/nginx/sites-available/admin.juntagrico.app
+```
 
-    location = /favicon.ico { access_log off; log_not_found off; }
-    location /static/ {
-        root /var/django/adminconsole;
-    }
-
-    location / {
-        include proxy_params;
-        proxy_pass http://unix:/var/django/adminconsole/adminconsole.sock;
-    }
-}
+copy the global juntagrico config:
+```
+cp setup/juntagrico-global.conf /etc/nginx/snippets/
 ```
 
 enable the site

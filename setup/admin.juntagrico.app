@@ -1,19 +1,15 @@
 server {
-    server_name {{domain}};
     listen 80;
+    server_name admin.juntagrico.app;
 
     location = /favicon.ico { access_log off; log_not_found off; }
     location /static/ {
-        root /var/django/projects/{{name}};
-    }
-
-    location /media/ {
-        root /var/django/projects/{{name}};
+        root /var/django/adminconsole;
     }
 
     location / {
         include proxy_params;
-        proxy_pass http://0.0.0.0:{{port}};
+        proxy_pass http://unix:/var/django/adminconsole/adminconsole.sock;
     }
 
     include /etc/nginx/snippets/juntagrico-*.conf;
