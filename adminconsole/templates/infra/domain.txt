@@ -2,6 +2,17 @@ server {
     server_name {{domain}};
     listen 80;
 
+    # Maintenance Mode
+    if (-f /var/www/MAINTENANCE_MODE) {
+        return 503;
+    }
+    error_page 503 @maintenance;
+    location @maintenance {
+        root /var/www;
+        rewrite ^(.*)$ /maintenance.html break;
+    }
+    # end Maintenance Mode
+
     location = /favicon.ico { access_log off; log_not_found off; }
     location /static/ {
         root /var/django/projects/{{name}};

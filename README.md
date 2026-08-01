@@ -167,6 +167,26 @@ If desired, add this to crontab for apps that should upgrade automatically
 `0 2 * * * /var/django/adminconsole/tasks/redeploy-v2.sh <app-name>`
 
 
+## Maintenance Mode
+
+On the first time, copy the maintenance page and customize it if needed:
+```
+cp setup/maintenance.html /var/www/
+```
+
+To turn maintenance mode on do
+```
+touch /var/www/MAINTENANCE_MODE
+systemctl reload nginx
+```
+
+To turn it off do
+```
+rm -f /var/www/MAINTENANCE_MODE
+systemctl reload nginx
+```
+
+
 ## Backups
 
 Make backup scripts executable
