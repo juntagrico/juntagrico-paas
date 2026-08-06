@@ -69,6 +69,13 @@ class EnvForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        tls = cleaned_data.get('juntagrico_email_tls')
+        ssl = cleaned_data.get('juntagrico_email_ssl')
+        if tls and ssl:
+            raise ValidationError(
+                'Es kann nur entweder TLS oder SSL ausgewählt werden.',
+                code='ssl_error'
+            )
         if 'skip_check' not in self.data:
             connection = get_connection(
                 backend='django.core.mail.backends.smtp.EmailBackend',
@@ -76,8 +83,8 @@ class EnvForm(forms.ModelForm):
                 port=cleaned_data.get('juntagrico_email_port'),
                 username=cleaned_data.get('juntagrico_email_user'),
                 password=cleaned_data.get('juntagrico_email_password'),
-                use_tls=cleaned_data.get('juntagrico_email_tls'),
-                use_ssl=cleaned_data.get('juntagrico_email_ssl'),
+                use_tls=tls,
+                use_ssl=ssl,
                 timeout=5,
             )
 
