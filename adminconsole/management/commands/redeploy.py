@@ -74,7 +74,8 @@ class Command(BaseCommand):
 
         # update juntagrico version register
         print('# Collect Version', flush=True)
-        call_command('collect_version', app_name=app.name)
+        result = call_command('collect_version', app_name=app.name)
+        print('Return', result, flush=True)
 
         print('# Docker Restart', flush=True)
         start = datetime.now()
