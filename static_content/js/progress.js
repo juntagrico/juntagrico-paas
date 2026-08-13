@@ -2,7 +2,7 @@ $(function () {
     let current_url = url
     let current_step = 0
     let last_section_progress = 0
-    let expected_steps = 5.1
+    let expected_steps = 6.1
 
     function set_progress(value) {
         let bar = $("#progress")

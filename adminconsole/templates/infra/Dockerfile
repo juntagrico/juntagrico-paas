@@ -9,7 +9,7 @@ RUN apk add --update --virtual .build-deps gcc musl-dev postgresql-dev git \
     && pip install psycopg[c] --no-cache-dir
 
 FROM django AS app
-ADD code/requirements.txt /
+COPY code/requirements*.txt /
 RUN pip install --upgrade -r requirements.txt
 WORKDIR /code/
 CMD ["gunicorn","--bind","127.0.0.1:{{ app.port }}","-t", "600","{{ app.wsgi_path }}","&"]
