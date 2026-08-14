@@ -10,9 +10,9 @@ Using postgres
 
 `apt install postgresql`
 
-Create a new superuser `adminconsole`
+Create a new superuser `juntagrico`
 
-`sudo -u postgres createuser --interactive --pwprompt`
+`sudo -u postgres createuser -s --pwprompt juntagrico`
 
 Create a database
 
@@ -21,9 +21,18 @@ Create a database
 
 ### Install from Source
 
+create local user with required permissions
 ```
-mkdir -p /var/django/adminconsole
-cd /var/django/adminconsole
+useradd -m -d /var/django/adminconsole -g www-data -s /bin/bash juntagrico
+rm /var/django/adminconsole/.*
+usermod -aG docker juntagrico
+install -d -o juntagrico -g www-data /var/django/projects
+cp setup/50-juntagrico-paas /etc/sudoers.d/
+```
+
+install with git
+```
+su - juntagrico
 git clone https://github.com/juntagrico/juntagrico-paas.git .
 ```
 
@@ -98,6 +107,11 @@ Using nginx
 
 `apt install nginx`
 
+Set permissions
+```
+chown juntagrico /etc/nginx/sites-*
+```
+
 copy the config file and open it to change `server_name` to your domain.
 ```
 cp setup/admin.juntagrico.app /etc/nginx/sites-available/admin.juntagrico.app
@@ -112,8 +126,7 @@ cp setup/juntagrico-global.conf /etc/nginx/snippets/
 enable the site
 ```
 ln -s /etc/nginx/sites-available/admin.juntagrico.app /etc/nginx/sites-enabled/
-nginx -t
-systemctl reload nginx
+nginx -t & systemctl reload nginx
 ```
 
 ### Enable HTTPS

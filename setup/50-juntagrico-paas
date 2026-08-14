@@ -1,0 +1,1 @@
+juntagrico ALL=(root) NOPASSWD: /usr/local/bin/certbot --nginx --redirect --keep -n -d *

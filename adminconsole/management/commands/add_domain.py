@@ -25,6 +25,6 @@ class Command(BaseCommand):
                                   stdout=subprocess.PIPE)
             print(str(proc.stdout))
             # install ssl
-            proc = subprocess.run(['certbot', '--nginx', '--redirect', '--keep', '-n', '-d', domain.name],
+            proc = subprocess.run(['sudo', 'certbot', '--nginx', '--redirect', '--keep', '-n', '-d', domain.name],
                                   stdout=subprocess.PIPE)
             print(str(proc.stdout))
