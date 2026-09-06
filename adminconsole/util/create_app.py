@@ -41,6 +41,7 @@ def create_database(app_env, db_name, user_name, replace=False):
     with connection.cursor() as cursor:
         if replace:
             cursor.execute("DROP DATABASE IF EXISTS " + db_name)
+            cursor.execute("REVOKE ALL ON SCHEMA public FROM " + user_name)
             cursor.execute("DROP USER IF EXISTS " + user_name)
         cursor.execute("CREATE DATABASE " + db_name)
         cursor.execute("CREATE USER " + user_name + " WITH PASSWORD '" + password + "'")
