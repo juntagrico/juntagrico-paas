@@ -22,7 +22,7 @@ class Command(BaseCommand):
         package = package or 'juntagrico'
         package += '=='
 
-        return_code = 1
+        return_code = 'package not found'
         for app in apps:
             version = None
             try:
@@ -30,14 +30,14 @@ class Command(BaseCommand):
             except NotFound:
                 continue
             try:
-                result = container.exec_run(['pip', 'freeze'])
+                result = container.exec_run(['pip', 'list', '--format', 'freeze'])
             except APIError:
                 continue
             for line in result.output.decode('utf-8').split('\n'):
                 if line.startswith(package):
                     self.stdout.write(app.name + ': ' + line, ending='\n')
                     version = line[len(package):]
-                    return_code = 0
+                    return_code = ''
                     break
             if package == 'juntagrico==':
                 app.juntagrico_version = version or ''
