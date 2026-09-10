@@ -37,7 +37,7 @@ class Command(BaseCommand):
                 if line.startswith(package):
                     self.stdout.write(app.name + ': ' + line, ending='\n')
                     version = line[len(package):]
-                    return_code = ''
+                    return_code = '0'
                     break
             if package == 'juntagrico==':
                 app.juntagrico_version = version or ''
