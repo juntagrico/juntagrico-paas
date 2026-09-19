@@ -11,5 +11,6 @@ RUN apk add --update --virtual .build-deps gcc musl-dev postgresql-dev git \
 FROM django AS app
 COPY code/requirements*.txt /
 RUN pip install --upgrade -r requirements.txt
+RUN pip install --upgrade "psycopg>=3.1.8,<3.3.6"
 WORKDIR /code/
 CMD ["gunicorn","--bind","127.0.0.1:{{ app.port }}","-t", "600","{{ app.wsgi_path }}","&"]
