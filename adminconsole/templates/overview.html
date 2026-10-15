@@ -57,21 +57,6 @@
                     </p>
                 </div>
             {% endif %}
-            {% if app.version == 2 and app.min_version == 1 %}
-                <div class="alert alert-info">
-                    <h5>Die App verwendet die V2-Umgebung</h5>
-                    <div>
-                        Falls du ein Problem mit dieser Umgebung feststellst,
-                        kannst du wieder zur V1-Umgebung wechseln.
-                        <form action="{% url 'set-version' app.id %}" method="POST">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-info" name="version" value="1">
-                                Zurück zu V1 umschalten
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            {% endif %}
             <a href="/logs/{{ app.id }}/" class="btn btn-outline-primary mb-1">Logs anzeigen</a>
             <a href="{% url "versions" app.id %}" class="btn btn-outline-primary mb-1">Versionen anzeigen</a>
             <a href="https://{{ app.name }}.juntagrico.science/" class="btn btn-primary mb-1" target="_blank">
