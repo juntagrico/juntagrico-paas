@@ -2,12 +2,20 @@
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.views.generic import RedirectView
+from two_factor.admin import AdminSiteOTPRequired
+from two_factor.urls import urlpatterns as two_factor_urls
+
 from adminconsole import views
 from adminconsole.views import git, create, staging, v2, app, tools, domain
 
+admin.site.__class__ = AdminSiteOTPRequired
+
 urlpatterns = [
-    
+    path('', include(two_factor_urls)),
     path('admin/', admin.site.urls),
+    # the plain password login would bypass the second factor
+    path('accounts/login/', RedirectView.as_view(pattern_name='two_factor:login', query_string=True)),
     path('accounts/', include('django.contrib.auth.urls')),
     path('profile', views.profile, name='profile'),
     path('', views.home, name='home'),
@@ -16,7 +24,7 @@ urlpatterns = [
     path('app/<int:app_id>/stop/', app.stop, name='app-stop'),
     path('mailtexts/<int:app_id>/', views.mailtexts),
     path('show/<int:app_id>/result/', views.show_result, name='show-result'),
-    path('logs/<int:app_id>/', views.logs, name='login'),
+    path('logs/<int:app_id>/', views.logs, name='logs'),
     path('versions/<int:app_id>/', views.versions, name='versions'),
     path('dom/form/<int:app_id>/', domain.manage, name='domain-manage'),
     path('dom/add/<int:app_id>/<int:pid>/', domain.add, name='domain-add'),

@@ -26,7 +26,8 @@
         
     <div class="row">
         <div class="col-md-12">
-            <a href="{% url 'password_change' %}">Passwort ändern</a>
+            <a href="{% url 'password_change' %}">Passwort ändern</a><br/>
+            <a href="{% url 'two_factor:profile' %}">Zwei-Faktor-Authentifizierung verwalten</a>
         </div>
     </div>
 {% endblock %}
