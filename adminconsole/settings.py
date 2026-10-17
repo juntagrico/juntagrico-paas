@@ -25,7 +25,7 @@ SECRET_KEY = os.environ.get('JS_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['admin.juntagrico.app']
+ALLOWED_HOSTS = ['admin.juntagrico.app', 'admin.juntagrico.science']
 
 
 # Application definition
