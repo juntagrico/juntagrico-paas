@@ -15,7 +15,6 @@ urlpatterns = [
     path('app/<int:app_id>/start/', app.start, name='app-start'),
     path('app/<int:app_id>/stop/', app.stop, name='app-stop'),
     path('mailtexts/<int:app_id>/', views.mailtexts),
-    path('showlog/<int:app_id>/', views.show_log),
     path('show/<int:app_id>/result/', views.show_result, name='show-result'),
     path('logs/<int:app_id>/', views.logs, name='login'),
     path('versions/<int:app_id>/', views.versions, name='versions'),
