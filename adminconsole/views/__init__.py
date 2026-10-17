@@ -127,16 +127,6 @@ def rebuild_image(request, app_id):
 
 
 @owner_of_app
-def show_log(request, app_id):
-    app = get_object_or_404(App, pk=app_id)
-    with open(app.log_file, 'r') as file:
-        b_texts = file.readlines()
-        texts = [str(eval(b_text), 'utf-8') if b_text.startswith('b') else b_text for b_text in b_texts]
-        result_text = '\n'.join(texts)
-    return render(request, 'mailtexts.html', {'app': app, 'text': result_text})
-
-
-@owner_of_app
 def env(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     app_env = app.env
