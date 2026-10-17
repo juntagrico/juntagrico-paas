@@ -122,5 +122,11 @@ class Domain(models.Model):
     name = models.CharField('name', max_length=100, unique=True, validators=[validate_domain_name])
 
     def clean(self):
-        if self.name in settings.ALLOWED_HOSTS:
-            raise ValidationError({'name': 'ungültige Domain'})
+        # nginx and certbot treat domain names case-insensitively and ignore a trailing dot
+        self.name = self.name.lower().rstrip('.')
+        for platform_domain in settings.ALLOWED_HOSTS:
+            platform_domain = '.'.join(platform_domain.rsplit('.', 2)[-2:])
+            if self.name == platform_domain or self.name.endswith('.' + platform_domain):
+                # platform subdomains are reserved: an app may only use its own
+                if not self.app_id or self.name != f'{self.app.name}.{platform_domain}':
+                    raise ValidationError({'name': 'ungültige Domain'})
