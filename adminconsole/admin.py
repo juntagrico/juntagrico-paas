@@ -20,9 +20,9 @@ class AppEnvAdmin(admin.ModelAdmin):
 
 class AppAdmin(admin.ModelAdmin):
     list_display = ['name', 'port', 'wsgi', 'python_version', 'juntagrico_version', 'managed', 'version', 'staging_of',
-                    'run_until', 'repo']
+                    'run_until', 'isolated_network', 'repo']
     search_fields = ['name', 'port']
-    list_filter = ('python_version', 'version')
+    list_filter = ('python_version', 'version', 'isolated_network')
     inlines = [AppCronjobInline]
 
     @admin.display(description="repo")

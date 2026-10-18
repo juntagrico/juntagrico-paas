@@ -249,6 +249,72 @@ Then revoke all tokens issued so far in the settings of the GitHub OAuth app ("R
 Users are asked to authorize the app again the next time they select a repository.
 
 
+## App network isolation
+
+By default an app runs in the network of the server (`network_mode=host`) and can reach every service on it.
+With network isolation, an app runs in the Docker network `juntagrico-apps` (172.30.0.0/22, gateway 172.30.0.1):
+apps cannot reach each other, they reach only their own database on the server, and they have a memory limit
+(600 MB). nginx, cron jobs and the settings of the app stay the same.
+
+The switch is per app ("network isolation" in the Django admin, off by default) and takes effect when the
+container is created again by `manage.py restart` (the button "Neustart" only restarts the existing container).
+
+### Set up the server once
+
+Run as root in `/var/django/adminconsole`.
+
+Let Postgres listen on the gateway address before Docker has created the network:
+```
+install -o root -g root -m 0644 setup/99-juntagrico-nonlocal-bind.conf /etc/sysctl.d/
+sysctl --system
+```
+
+Postgres: listen on the gateway, and allow each app role only its own database from the app network:
+```
+sudo -u postgres psql -c "ALTER SYSTEM SET listen_addresses = 'localhost,172.30.0.1'"
+echo "host sameuser all 172.30.0.0/22 scram-sha-256" >> "$(sudo -u postgres psql -Atc 'SHOW hba_file')"
+systemctl restart postgresql
+```
+
+Firewall: from the app network only Postgres may be reached on the server:
+```
+install -o root -g root -m 0755 setup/juntagrico-apps-firewall /usr/local/sbin/juntagrico-apps-firewall
+install -o root -g root -m 0644 setup/juntagrico-apps-firewall.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now juntagrico-apps-firewall
+```
+
+Check: Postgres listens on `172.30.0.1` and the rule is active:
+```
+ss -tlnp | grep 5432
+iptables -S JUNTAGRICO-APPS
+iptables -S INPUT | grep JUNTAGRICO-APPS
+```
+If you change the network in the settings (`APPS_NETWORK`), change Postgres and the firewall script accordingly.
+
+### Switch an app
+
+1. In the Django admin, open the app, check "network isolation" and save.
+2. Create the container again, as `juntagrico`:
+   ```
+   cd /var/django/adminconsole
+   export $(cat .venv/env.env | xargs)
+   .venv/bin/python manage.py restart <app>
+   ```
+3. Check:
+   ```
+   docker inspect -f '{{.HostConfig.NetworkMode}} {{.HostConfig.Memory}}' <app>
+   docker exec <app> python -m manage showmigrations juntagrico | tail -1
+   docker exec <app> python -c "import socket; socket.create_connection(('172.30.0.1', 22), 3)"
+   ```
+   The first shows `juntagrico-apps 629145600`, the second a migration (the database is reachable), the third
+   must fail with a timeout (sshd is not reachable). Then open the site, log in and check the logs of the app.
+
+Undo: uncheck "network isolation", save, and run `manage.py restart <app>` again.
+
+Start with the demo app, then a staging app, then the other apps one by one.
+
+
 ## Backups
 
 Make backup scripts executable

@@ -60,6 +60,11 @@ class App(models.Model):
     version = models.PositiveIntegerField('version', default=2)
     staging_of = models.ForeignKey('App', null=True, blank=True, on_delete=models.CASCADE, related_name='stagings')
     run_until = models.DateTimeField('run until', null=True, blank=True, default=None)
+    isolated_network = models.BooleanField(
+        'network isolation', default=False,
+        help_text='Run the app in its own Docker network instead of the host network. '
+                  'Takes effect at the next restart (manage.py restart), see README "App network isolation".'
+    )
 
     def __str__(self):
         return self.name
