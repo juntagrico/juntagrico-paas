@@ -16,5 +16,14 @@ def generate_secret_key():
 
 
 def pid_finished(pid):
-    pid = int(pid)
-    return not psutil.pid_exists(pid) or psutil.Process(pid).status() == 'zombie'
+    """
+    True if the process has ended. Processes not started by the console (same user, `-m manage`) also count as
+    ended, so the answer reveals nothing about other processes on the server.
+    """
+    try:
+        process = psutil.Process(int(pid))
+        if process.status() == psutil.STATUS_ZOMBIE:
+            return True
+        return process.username() != psutil.Process().username() or 'manage' not in process.cmdline()
+    except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+        return True
