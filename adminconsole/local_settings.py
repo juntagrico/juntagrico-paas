@@ -115,7 +115,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LOGIN_URL = 'two_factor:login'
 LOGIN_REDIRECT_URL = 'home'
-OTP_TOTP_ISSUER = 'juntagrico.science'
+OTP_TOTP_ISSUER = 'juntagrico Admin'
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.0/topics/i18n/
