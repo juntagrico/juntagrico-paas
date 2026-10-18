@@ -15,6 +15,10 @@ from adminconsole.forms import ProjectForm, EnvForm, AppForm, OverwriteAppForm
 from adminconsole.util.create_app import find_port, create_database
 from adminconsole.views.generic import confirm_post
 
+COOKIECUTTER_URL = 'https://github.com/juntagrico/juntagrico-science-django-cookiecutter'
+# Template version used for new apps. Review the changes of the template before updating the commit.
+COOKIECUTTER_COMMIT = 'ee1aad6eb7eb94b4cdae3d89fba1f037c75cecc3'
+
 
 @login_required
 def app_form(request):
@@ -63,12 +67,13 @@ def overwrite_app(request, app_id):
 def cookiecutter_form(request, app_id):
     app = get_object_or_404(App, pk=app_id)
 
-    url = 'https://github.com/juntagrico/juntagrico-science-django-cookiecutter'
     if request.method == 'POST':
         form = ProjectForm(request.POST)
         if form.is_valid():
             data = form.cleaned_data
-            cookiecutter(url, no_input=True, extra_context=data, output_dir=app.dir, overwrite_if_exists=True)
+            # pinned version and no hooks: the template must not run code on this server
+            cookiecutter(COOKIECUTTER_URL, checkout=COOKIECUTTER_COMMIT, accept_hooks=False, no_input=True,
+                         extra_context=data, output_dir=app.dir, overwrite_if_exists=True)
             if Config.test_localhost():
                 return redirect('ca-init-db', app_id=app_id)
             return redirect('ca-git-push', app_id=app_id)
