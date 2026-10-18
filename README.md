@@ -26,7 +26,13 @@ create local user with required permissions
 useradd -m -g www-data -s /bin/bash juntagrico
 usermod -aG docker juntagrico
 install -d -o juntagrico -g www-data /var/django/projects
-cp setup/50-juntagrico-paas /etc/sudoers.d/
+```
+
+allow the user to request certificates. The script must be a copy owned by root, never a symlink into the repository
+```
+install -o root -g root -m 0755 setup/juntagrico-certbot /usr/local/sbin/juntagrico-certbot
+install -o root -g root -m 0440 setup/50-juntagrico-paas /etc/sudoers.d/50-juntagrico-paas
+visudo -c
 ```
 
 install with git
@@ -213,6 +219,34 @@ To turn it off do
 rm -f /var/www/MAINTENANCE_MODE
 systemctl reload nginx
 ```
+
+
+## Upgrading an existing installation
+
+Some changes require one-time steps on existing servers. Run them right after deploying the new code.
+
+### Certificates via wrapper script
+
+The user `juntagrico` may only request certificates through a wrapper script, which accepts exactly one domain.
+Run as root in `/var/django/adminconsole`:
+```
+install -o root -g root -m 0755 setup/juntagrico-certbot /usr/local/sbin/juntagrico-certbot
+install -o root -g root -m 0440 setup/50-juntagrico-paas /etc/sudoers.d/50-juntagrico-paas
+visudo -c
+```
+
+### GitHub tokens
+
+GitHub tokens are no longer stored in the app repositories. Remove the ones stored by earlier versions:
+```
+su - juntagrico
+cd /var/django/adminconsole
+export $(cat .venv/env.env | xargs)
+.venv/bin/python manage.py remove_git_credentials
+```
+
+Then revoke all tokens issued so far in the settings of the GitHub OAuth app ("Revoke all user tokens").
+Users are asked to authorize the app again the next time they select a repository.
 
 
 ## Backups

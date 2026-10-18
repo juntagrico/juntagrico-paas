@@ -24,8 +24,8 @@ class Command(BaseCommand):
             proc = subprocess.run(['ln', '-sf', '/etc/nginx/sites-available/' + domain.name, '/etc/nginx/sites-enabled'],
                                   stdout=subprocess.PIPE)
             print(str(proc.stdout))
-            # install ssl
-            proc = subprocess.run(['sudo', 'certbot', '--nginx', '--redirect', '--keep', '-n', '-d', domain.name],
+            # install ssl, the wrapper is the only command the user may run with sudo
+            proc = subprocess.run(['sudo', '/usr/local/sbin/juntagrico-certbot', domain.name],
                                   stdout=subprocess.PIPE)
             print(str(proc.stdout))
 

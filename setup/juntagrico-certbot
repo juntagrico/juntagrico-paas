@@ -1,0 +1,21 @@
+#!/bin/sh
+# Requests a certificate for exactly one domain with fixed options.
+# The juntagrico user may run this script, and nothing else, as root via sudo (see setup/50-juntagrico-paas).
+# It must be owned by root and not writable by juntagrico, so install a copy (no symlink into the repository):
+#   install -o root -g root -m 0755 setup/juntagrico-certbot /usr/local/sbin/juntagrico-certbot
+set -eu
+export LC_ALL=C  # ASCII ranges in the pattern below
+
+if [ "$#" -ne 1 ]; then
+    echo "Usage: $0 <domain>" >&2
+    exit 2
+fi
+
+case "$1" in
+    ''|-*|.*|*..*|*[!A-Za-z0-9.-]*)
+        echo "Invalid domain: $1" >&2
+        exit 2
+        ;;
+esac
+
+exec /usr/local/bin/certbot --nginx --redirect --keep -n -d "$1"
