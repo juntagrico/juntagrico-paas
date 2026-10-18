@@ -1,10 +1,66 @@
+import ipaddress
+import smtplib
+import socket
+import ssl
+
 from django import forms
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.mail import get_connection
 from django.core.validators import RegexValidator
 from django.forms import CharField, TextInput, CheckboxInput, Textarea, EmailField, BooleanField, RadioSelect, Select
 
 from adminconsole.models import AppEnv, App, Domain, AppCronjob, get_available_cronjobs
+
+# ports of mail servers, the connection test is only made to these ports (setting SMTP_CHECK_PORTS)
+SMTP_CHECK_PORTS = (25, 465, 587, 2525)
+
+
+def is_public_address(address):
+    ip = ipaddress.ip_address(address.split('%')[0])  # strip the scope of IPv6 link-local addresses
+    if ip.version == 6 and ip.ipv4_mapped:
+        ip = ip.ipv4_mapped
+    return ip.is_global
+
+
+def smtp_target_error(host, port):
+    """
+    Returns why the console must not connect to the mail server, or None.
+    The connection test runs in the console, so it must not reach hosts and ports in the console's own network.
+    """
+    if not host:
+        return 'Es ist kein E-Mail-Server angegeben.'
+    allowed_ports = getattr(settings, 'SMTP_CHECK_PORTS', SMTP_CHECK_PORTS)
+    if port not in allowed_ports:
+        return f'Die Verbindung kann nur für die Ports {", ".join(map(str, allowed_ports))} geprüft werden.'
+    try:
+        addresses = {info[4][0] for info in socket.getaddrinfo(host, port, proto=socket.IPPROTO_TCP)}
+    except (OSError, UnicodeError):
+        return 'Der E-Mail-Server wurde nicht gefunden. Prüfe den Servernamen.'
+    if not addresses or not all(is_public_address(address) for address in addresses):
+        return 'Die Verbindung zu Servern im internen Netz kann nicht geprüft werden.'
+    return None
+
+
+def smtp_connection_error(connection):
+    """ connects to the mail server, returns a message for the user if it fails or None """
+    try:
+        connection.open()
+        connection.close()
+    except smtplib.SMTPAuthenticationError as e:
+        # the answer of a public mail server, often with a hint (e.g. about app passwords)
+        answer = e.smtp_error.decode('utf-8', 'replace') if isinstance(e.smtp_error, bytes) else str(e.smtp_error)
+        return f'Anmeldung fehlgeschlagen. Antwort des Servers: {answer[:300]}'
+    except (ssl.SSLError, smtplib.SMTPNotSupportedError):
+        return 'TLS/SSL-Verbindung fehlgeschlagen. Prüfe die Einstellung TLS bzw. SSL und den Port.'
+    except ConnectionRefusedError:
+        return 'Der Server lehnt die Verbindung ab. Prüfe den Port.'
+    except TimeoutError:
+        return 'Der Server antwortet nicht. Prüfe Server und Port.'
+    except (OSError, smtplib.SMTPException):
+        # no details: they could reveal information about the network
+        return 'Verbindung zum E-Mail-Server fehlgeschlagen. Prüfe deine Einstellungen.'
+    return None
 
 
 class ProjectForm(forms.Form):
@@ -69,34 +125,40 @@ class EnvForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        tls = cleaned_data.get('juntagrico_email_tls')
-        ssl = cleaned_data.get('juntagrico_email_ssl')
-        if tls and ssl:
+        use_tls = cleaned_data.get('juntagrico_email_tls')
+        use_ssl = cleaned_data.get('juntagrico_email_ssl')
+        if use_tls and use_ssl:
             raise ValidationError(
                 'Es kann nur entweder TLS oder SSL ausgewählt werden.',
                 code='ssl_error'
             )
         if 'skip_check' not in self.data:
-            connection = get_connection(
-                backend='django.core.mail.backends.smtp.EmailBackend',
-                host=cleaned_data.get('juntagrico_email_host') or 'invalid host',
-                port=cleaned_data.get('juntagrico_email_port'),
-                username=cleaned_data.get('juntagrico_email_user'),
-                password=cleaned_data.get('juntagrico_email_password'),
-                use_tls=tls,
-                use_ssl=ssl,
-                timeout=5,
-            )
-
-            try:
-                connection.open()
-                connection.close()
-            except Exception as e:
-                raise ValidationError(
-                    'Verbindung zum E-Mail-Server fehlgeschlagen. Prüfe deine Einstellungen: ' + str(e),
-                    code='smtp_error'
-                )
+            error = self.check_smtp_connection(cleaned_data, use_tls, use_ssl)
+            if error:
+                raise ValidationError(error, code='smtp_error')
         return cleaned_data
+
+    @staticmethod
+    def check_smtp_connection(cleaned_data, use_tls, use_ssl):
+        host = cleaned_data.get('juntagrico_email_host')
+        try:
+            port = int(cleaned_data.get('juntagrico_email_port') or 25)
+        except ValueError:
+            return 'Der Port muss eine Zahl sein.'
+
+        error = smtp_target_error(host, port)
+        if error:
+            return error
+        return smtp_connection_error(get_connection(
+            backend='django.core.mail.backends.smtp.EmailBackend',
+            host=host,
+            port=port,
+            username=cleaned_data.get('juntagrico_email_user'),
+            password=cleaned_data.get('juntagrico_email_password'),
+            use_tls=use_tls,
+            use_ssl=use_ssl,
+            timeout=5,
+        ))
 
 
 class AppForm(forms.ModelForm):
