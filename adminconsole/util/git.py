@@ -13,13 +13,17 @@ def github_auth_env(key):
     The token is passed as HTTP header via environment variables (requires git >= 2.31), so it is neither stored
     in the repository (e.g. in the remote url) nor visible in the process list. The header is only sent to
     https://github.com/.
+    Credential helpers are disabled, so git neither sends other stored credentials nor erases them if the token
+    is rejected.
     """
     credentials = base64.b64encode(f'{key}:x-oauth-basic'.encode()).decode()
     return {
         **os.environ,
-        'GIT_CONFIG_COUNT': '1',
+        'GIT_CONFIG_COUNT': '2',
         'GIT_CONFIG_KEY_0': 'http.https://github.com/.extraHeader',
         'GIT_CONFIG_VALUE_0': f'Authorization: Basic {credentials}',
+        'GIT_CONFIG_KEY_1': 'credential.helper',
+        'GIT_CONFIG_VALUE_1': '',  # an empty value resets the list of credential helpers
         'GIT_TERMINAL_PROMPT': '0',
     }
 
