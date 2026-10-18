@@ -11,7 +11,7 @@ from django.contrib.auth.decorators import login_required
 from adminconsole.decorators import owner_of_app
 from adminconsole.models import GitHubKey, App
 from adminconsole.util.create_app import make_dirs
-from adminconsole.util.git import git_clone
+from adminconsole.util.git import git_clone, github_auth_env
 from adminconsole.views.generic import confirm_post
 
 
@@ -95,7 +95,9 @@ def git_push(request, app_id):
     output.append(str(proc.stdout))
     proc = subprocess.run(['git', 'commit', '-a', '-m', '"adminconsole"'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=directory)
     output.append(str(proc.stdout))
-    proc = subprocess.run(['git', 'push'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=directory)
+    # the token is only passed to this command, the repository has no credentials stored
+    env = github_auth_env(request.user.githubkey.key) if hasattr(request.user, 'githubkey') else None
+    proc = subprocess.run(['git', 'push'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=directory, env=env)
     output.append(str(proc.stdout))
 
     errors = []

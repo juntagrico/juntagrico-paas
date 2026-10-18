@@ -1,19 +1,44 @@
+import base64
+import os
 import re
 import subprocess
+from urllib.parse import urlsplit, urlunsplit
 
 from adminconsole.config import Config
+
+
+def github_auth_env(key):
+    """
+    Environment for a single git command that authenticates with the GitHub token.
+    The token is passed as HTTP header via environment variables (requires git >= 2.31), so it is neither stored
+    in the repository (e.g. in the remote url) nor visible in the process list. The header is only sent to
+    https://github.com/.
+    """
+    credentials = base64.b64encode(f'{key}:x-oauth-basic'.encode()).decode()
+    return {
+        **os.environ,
+        'GIT_CONFIG_COUNT': '1',
+        'GIT_CONFIG_KEY_0': 'http.https://github.com/.extraHeader',
+        'GIT_CONFIG_VALUE_0': f'Authorization: Basic {credentials}',
+        'GIT_TERMINAL_PROMPT': '0',
+    }
+
+
+def remove_credentials(url):
+    """ returns the url without user name and password """
+    parts = urlsplit(url)
+    if '@' not in parts.netloc:
+        return url
+    return urlunsplit(parts._replace(netloc=parts.netloc.rpartition('@')[2]))
 
 
 def git_clone(app, key=None, output=None):
     if not Config.test_localhost():
         clone_url, _, branch = app.git_clone_url.partition('@')
-        if key:
-            protocol, clone_path = clone_url.split('://')
-            clone_url = protocol + '://' + key + ':x-oauth-basic@' + clone_path
-        if branch:
-            branch = ['-b', branch]
+        branch = ['-b', branch] if branch else []
         proc = subprocess.run(['git', 'clone', *branch, '--depth=1', clone_url, 'code'],
-                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=app.dir)
+                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=app.dir,
+                              env=github_auth_env(key) if key else None)
         if output is not None:
             output.append(proc.stdout.decode())
         return proc.returncode == 0
