@@ -16,7 +16,7 @@ from adminconsole.forms import EnvForm, ProfileForm, BranchForm, AppEnvVarFormSe
 from adminconsole.models import App
 from adminconsole.util import pid_finished
 from adminconsole.util.git import git_switch, git_current_branch
-from adminconsole.views.generic import confirm_post
+from adminconsole.views.generic import confirm_post, confirm_password, security_log, client_address
 
 
 @login_required
@@ -187,9 +187,11 @@ def mailtexts(request, app_id):
 
 
 @owner_of_app
+@confirm_password('Daten exportieren (JSON)', 'Exportieren')
 def dumpdata(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     name = app.name
+    security_log.info('%s exports JSON of %s from %s', request.user, name, client_address(request))
     client = docker.from_env()
     container = client.containers.get(name)
     cmd = ['python', '-m', 'manage', 'dumpdata', '--natural-foreign', '--natural-primary', '-e', 'sessions']
@@ -200,8 +202,10 @@ def dumpdata(request, app_id):
 
 
 @owner_of_app
+@confirm_password('Daten exportieren (SQL)', 'Exportieren')
 def pgdump(request, app_id):
     app = get_object_or_404(App, pk=app_id)
+    security_log.info('%s exports SQL of %s from %s', request.user, app.name, client_address(request))
     db_user = settings.DATABASES['default']['USER']
     db_pw = settings.DATABASES['default']['PASSWORD']
 
