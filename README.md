@@ -126,7 +126,7 @@ cp setup/juntagrico-global.conf /etc/nginx/snippets/
 enable the site
 ```
 ln -s /etc/nginx/sites-available/admin.juntagrico.app /etc/nginx/sites-enabled/
-nginx -t & systemctl reload nginx
+nginx -t && systemctl reload nginx
 ```
 
 ### Enable HTTPS
@@ -256,5 +256,5 @@ The following scripts are provided and can be adjusted to your needs:
 
 The transfer commands can be chained in case you want to copy the backup to multiple locations
 ```
-./full.sh | ./scp.sh <username1>@<host1>:/juntagrico/backup | ./sftp <username2>@<host2>:/juntagrico/backup <port>
+./full.sh | ./scp.sh <username1>@<host1>:/juntagrico/backup | ./sftp.sh <username2>@<host2>:/juntagrico/backup <port>
 ```

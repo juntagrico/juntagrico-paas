@@ -6,8 +6,9 @@ if [ "$#" -lt 3 ]; then
     exit 1
 fi
 
+backup_file="$(cat -)"
+
 lftp -u "$1" "$2" << EOF
-set ssl:verify-certificate no
 set sftp:auto-confirm yes
 set ftp:ssl-force true
 set ftp:ssl-protect-data true
@@ -16,7 +17,7 @@ cd "$3"
 mkdir -f $(date +%Y%m%d)
 cd $(date +%Y%m%d)
 
-put -e "$backup_file"
+put "$backup_file"
 
 bye
 EOF
