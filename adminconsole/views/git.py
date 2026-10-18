@@ -12,6 +12,7 @@ from adminconsole.decorators import owner_of_app
 from adminconsole.models import GitHubKey, App
 from adminconsole.util.create_app import make_dirs
 from adminconsole.util.git import git_clone
+from adminconsole.views.generic import confirm_post
 
 
 @login_required
@@ -62,6 +63,7 @@ def select_repo(request, app_id):
 
 
 @owner_of_app
+@confirm_post('Repo klonen', 'Repo klonen')
 def clone_repo(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     if not app.git_clone_url:
@@ -84,6 +86,7 @@ def clone_repo(request, app_id):
 
 
 @owner_of_app
+@confirm_post('Repo pushen', 'Code ins Repo pushen')
 def git_push(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     directory = app.code_dir
@@ -99,7 +102,7 @@ def git_push(request, app_id):
     if proc.returncode > 0:
         errors.append(output)
 
-    return render(request, 'done_next.html', {
+    return render(request, 'generic/done_next_submit.html', {
         'step': 'Cokkiecutter anwenden und repo pushen',
         'errors': errors,
         'next': reverse('ca-init-db', args=[app_id])

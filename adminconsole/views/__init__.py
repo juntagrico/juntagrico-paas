@@ -19,6 +19,7 @@ from adminconsole.forms import EnvForm, ProfileForm, BranchForm, AppEnvVarFormSe
 from adminconsole.models import App
 from adminconsole.util import pid_finished
 from adminconsole.util.git import git_switch, git_current_branch
+from adminconsole.views.generic import confirm_post
 
 
 @login_required
@@ -69,6 +70,7 @@ def pidcheck(request, pid):
 
 
 @owner_of_app
+@confirm_post('Redeploy', 'Redeploy starten')
 def reload(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     with open(app.log_file, 'wb') as out:
@@ -113,6 +115,7 @@ def show_result(request, app_id):
 
 
 @owner_of_app
+@confirm_post('Rebuild', 'Rebuild starten')
 def rebuild_image(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     with open(app.log_file, 'wb') as out:
@@ -149,7 +152,7 @@ def env(request, app_id):
                     'next': reverse('overview', args=[app.id])
                 })
 
-            return redirect('/env/restart/' + str(app_id) + '/')
+            return env_restart(request, app_id=app_id)
     else:
         form = EnvForm(instance=app_env)
         formset = AppEnvVarFormSet(instance=app_env)
@@ -158,6 +161,7 @@ def env(request, app_id):
 
 
 @owner_of_app
+@confirm_post('Einstellungen anwenden', 'Einstellungen anwenden')
 def env_restart(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     name = app.name
@@ -203,6 +207,7 @@ def change_branch(request, app_id):
 
 
 @owner_of_app
+@confirm_post('Depotliste generieren', 'Depotliste erzeugen')
 def generate_depot_list(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     name = app.name
@@ -307,6 +312,7 @@ def versions(request, app_id):
 
 
 @owner_of_app
+@confirm_post('Django Migrate', 'Migrate ausführen')
 def migrate(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     name = app.name
@@ -321,6 +327,7 @@ def migrate(request, app_id):
 
 
 @owner_of_app
+@confirm_post('Django Collectstatic', 'Collectstatic ausführen')
 def collectstatic(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     name = app.name
@@ -335,6 +342,7 @@ def collectstatic(request, app_id):
 
 
 @owner_of_app
+@confirm_post('Neustart', 'Container neu starten')
 def restart(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     name = app.name
