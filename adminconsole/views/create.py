@@ -95,7 +95,7 @@ def env_form(request, app_id):
             form.save()
             return redirect('ca-init-domain', app_id=app_id)
     else:
-        form = EnvForm()
+        form = EnvForm(instance=app.env)
     return render(request, 'env.html', {'form': form})
 
 

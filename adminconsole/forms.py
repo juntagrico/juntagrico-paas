@@ -8,9 +8,11 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.mail import get_connection
 from django.core.validators import RegexValidator
-from django.forms import CharField, TextInput, CheckboxInput, Textarea, EmailField, BooleanField, RadioSelect, Select
+from django.forms import CharField, TextInput, CheckboxInput, Textarea, EmailField, BooleanField, RadioSelect, Select, \
+    PasswordInput
 
 from adminconsole.models import AppEnv, App, Domain, AppCronjob, get_available_cronjobs
+from adminconsole.util import generate_secret_key
 
 # ports of mail servers, the connection test is only made to these ports (setting SMTP_CHECK_PORTS)
 SMTP_CHECK_PORTS = (25, 465, 587, 2525)
@@ -100,6 +102,21 @@ class ProjectForm(forms.Form):
 
 
 class EnvForm(forms.ModelForm):
+    clear_email_password = BooleanField(
+        label='Gespeichertes Passwort entfernen', required=False,
+        help_text='Für E-Mail-Server ohne Anmeldung.',
+        widget=CheckboxInput(attrs={'class': 'form-control'})
+    )
+    new_secret_key = BooleanField(
+        label='Neuen geheimen Schlüssel erzeugen', required=False,
+        help_text='Nur im Notfall, z. B. wenn der Schlüssel bekannt wurde. Alle Benutzer der Instanz werden abgemeldet.',
+        widget=CheckboxInput(attrs={'class': 'form-control'})
+    )
+
+    field_order = ['juntagrico_admin_email', 'juntagrico_email_user', 'juntagrico_email_password',
+                   'clear_email_password', 'juntagrico_email_host', 'juntagrico_email_port', 'juntagrico_email_tls',
+                   'juntagrico_email_ssl', 'juntagrico_secret_key', 'new_secret_key', 'various']
+
     class Meta:
         model = AppEnv
         fields = ['juntagrico_admin_email',
@@ -111,20 +128,50 @@ class EnvForm(forms.ModelForm):
                   'juntagrico_email_ssl',
                   'juntagrico_secret_key',
                   'various']
+        # Secrets are never sent to the browser. "new-password" keeps browsers from filling in the saved password
+        # of the console, which would otherwise become the password of the mail account.
         widgets = {
             'juntagrico_admin_email': TextInput(attrs={'class': 'form-control'}),
-            'juntagrico_email_user': TextInput(attrs={'class': 'form-control'}),
-            'juntagrico_email_password': TextInput(attrs={'class': 'form-control'}),
+            'juntagrico_email_user': TextInput(attrs={'class': 'form-control', 'autocomplete': 'off'}),
+            'juntagrico_email_password': PasswordInput(attrs={'class': 'form-control', 'autocomplete': 'new-password'}),
             'juntagrico_email_host': TextInput(attrs={'class': 'form-control'}),
             'juntagrico_email_port': TextInput(attrs={'class': 'form-control'}),
             'juntagrico_email_tls': CheckboxInput(attrs={'class': 'form-control'}),
             'juntagrico_email_ssl': CheckboxInput(attrs={'class': 'form-control'}),
-            'juntagrico_secret_key': TextInput(attrs={'class': 'form-control'}),
+            'juntagrico_secret_key': PasswordInput(attrs={'class': 'form-control', 'autocomplete': 'new-password'}),
             'various': Textarea(attrs={'class': 'form-control'})
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # an empty field keeps the stored value
+        password = self.fields['juntagrico_email_password']
+        if self.instance.juntagrico_email_password:
+            password.help_text = 'Ein Passwort ist gespeichert. Leer lassen, um es zu behalten.'
+        else:
+            password.help_text = 'Kein Passwort gespeichert.'
+        secret_key = self.fields['juntagrico_secret_key']
+        secret_key.required = False
+        # fields with a callable default render their initial value in a hidden input, which would expose the key
+        secret_key.show_hidden_initial = False
+        if self.is_bound:
+            # After an error, keep what the user just typed (never the stored value, which is only the initial value),
+            # so "skip check and save" does not silently drop a new password.
+            password.widget.render_value = True
+            secret_key.widget.render_value = True
+        secret_key.help_text = 'Wird nicht angezeigt. Leer lassen, um den gespeicherten Schlüssel zu behalten.'
+
     def clean(self):
         cleaned_data = super().clean()
+        if cleaned_data.get('clear_email_password'):
+            cleaned_data['juntagrico_email_password'] = ''
+        elif not cleaned_data.get('juntagrico_email_password'):
+            cleaned_data['juntagrico_email_password'] = self.instance.juntagrico_email_password
+        if cleaned_data.get('new_secret_key'):
+            cleaned_data['juntagrico_secret_key'] = generate_secret_key()
+        elif not cleaned_data.get('juntagrico_secret_key'):
+            cleaned_data['juntagrico_secret_key'] = self.instance.juntagrico_secret_key
+
         use_tls = cleaned_data.get('juntagrico_email_tls')
         use_ssl = cleaned_data.get('juntagrico_email_ssl')
         if use_tls and use_ssl:
