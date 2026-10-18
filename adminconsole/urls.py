@@ -14,6 +14,7 @@ urlpatterns = [
     path('overview/<int:app_id>/', views.overview, name='overview'),
     path('app/<int:app_id>/start/', app.start, name='app-start'),
     path('app/<int:app_id>/stop/', app.stop, name='app-stop'),
+    path('app/<int:app_id>/admin-password/', app.reset_admin_password, name='app-admin-password'),
     path('mailtexts/<int:app_id>/', views.mailtexts),
     path('show/<int:app_id>/result/', views.show_result, name='show-result'),
     path('logs/<int:app_id>/', views.logs, name='login'),

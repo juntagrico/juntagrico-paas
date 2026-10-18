@@ -7,11 +7,14 @@ from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
+from django.views.decorators.cache import never_cache
 
 from adminconsole.config import Config
 from adminconsole.decorators import owner_of_app
 from adminconsole.models import App, AppEnv, AppCronjob
 from adminconsole.forms import ProjectForm, EnvForm, AppForm, OverwriteAppForm
+from adminconsole.util import generate_password
+from adminconsole.util.admin import PASSWORD_ENV
 from adminconsole.util.create_app import find_port, create_database
 from adminconsole.views.generic import confirm_post
 
@@ -181,14 +184,16 @@ def build(request, app_id):
 
 @owner_of_app
 @confirm_post('Admin erstellen', 'Admin erstellen')
+@never_cache
 def create_admin(request, app_id):
     app = get_object_or_404(App, pk=app_id)
-    password = app.env.juntagrico_database_password
+    # an own password, independent of the database password, passed via environment instead of the command line
+    password = generate_password()
 
     with open(app.log_file, 'wb') as out:
         proc = subprocess.Popen(
-            [settings.PYTHON_BIN, '-m', 'manage', 'create_admin', app.name, password],
-            stdout=out, stderr=out
+            [settings.PYTHON_BIN, '-m', 'manage', 'create_admin', app.name],
+            stdout=out, stderr=out, env={**os.environ, PASSWORD_ENV: password}
         )
 
     render_dict = {

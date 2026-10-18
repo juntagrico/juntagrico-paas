@@ -279,6 +279,20 @@
                 </div>
                 <div class="col-md-6">
                     <div class="card mb-3">
+                        <h4 class="card-header">Admin-Passwort neu setzen</h4>
+                        <div class="card-body">
+                            <p class="card-text">
+                                Setzt ein neues, zufälliges Passwort für den Benutzer admin deiner Instanz,
+                                z. B. wenn das Passwort verloren ging. Das bisherige Passwort wird ungültig.
+                            </p>
+                            <a href="{% url "app-admin-password" app.id %}" class="btn btn-outline-primary">
+                                Admin-Passwort neu setzen
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card mb-3">
                         <h4 class="card-header">Daten exportieren</h4>
                         <div class="card-body">
                             <p class="card-text">

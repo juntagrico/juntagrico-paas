@@ -1,18 +1,18 @@
-import random
+import secrets
 import string
 
 import psutil
 
 
 def generate_password():
-    return ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(20))
+    return ''.join(secrets.choice(string.ascii_uppercase + string.digits) for x in range(20))
 
 
 def generate_secret_key():
     choice = string.ascii_letters
     choice = choice + string.digits
     choice = choice + string.punctuation
-    return ''.join(random.choice(choice) for x in range(50))
+    return ''.join(secrets.choice(choice) for x in range(50))
 
 
 def pid_finished(pid):
