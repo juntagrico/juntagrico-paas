@@ -27,6 +27,13 @@ DEBUG = False
 
 ALLOWED_HOSTS = ['admin.juntagrico.app', 'admin.juntagrico.science']
 
+# The console is only served via HTTPS. nginx passes the scheme in X-Forwarded-Proto, which gunicorn trusts on its
+# unix socket, so Django recognises HTTPS requests without SECURE_PROXY_SSL_HEADER.
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+# browsers use only HTTPS for the console for this many seconds; raise to 31536000 (one year) once it works
+SECURE_HSTS_SECONDS = 3600
+
 
 # Application definition
 
