@@ -31,7 +31,7 @@ class Command(BaseCommand):
 
                 # PostgreSQL format() quotes the role identifier and password literal.
                 cursor.execute(
-                    "SELECT format('ALTER ROLE %I PASSWORD %L;', %s, %s)",
+                    "SELECT format('ALTER ROLE %%I PASSWORD %%L;', %s, %s)",
                     [role, password],
                 )
                 self.stdout.write(cursor.fetchone()[0])
