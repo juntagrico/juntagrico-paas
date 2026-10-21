@@ -5,45 +5,33 @@ from adminconsole.models import AppEnv
 
 
 class Command(BaseCommand):
-    help = "Reset PostgreSQL role passwords from AppEnv."
-
-    # ALTER ROLE affects the database beyond a transaction; run statements directly.
-    requires_system_checks = []
-    output_transaction = False
+    help = (
+        "Generate SQL to reset AppEnv PostgreSQL role passwords\n\n"
+        "Usage: python manage.py generate_role_password_sql | "
+        'psql -v ON_ERROR_STOP=1\n\n'
+        "The default Django database connection reads AppEnv. "
+        "SQL is streamed directly to psql; "
+        "passwords are not printed to the terminal."
+    )
 
     def handle(self, *args, **options):
         if connection.vendor != "postgresql":
             raise CommandError("The default Django database must be PostgreSQL.")
 
-        updated = 0
-        skipped = 0
+        self.stdout.write("SET password_encryption = 'scram-sha-256';")
 
-        try:
-            with connection.cursor() as cursor:
-                for env in AppEnv.objects.all().iterator():
-                    role = env.juntagrico_database_user
-                    password = env.juntagrico_database_password
+        with connection.cursor() as cursor:
+            for role, password in (
+                AppEnv.objects.using("default")
+                .values_list("juntagrico_database_user", "juntagrico_database_password")
+                .iterator()
+            ):
+                if not role or password is None:
+                    continue
 
-                    if not role or password is None:
-                        skipped += 1
-                        continue
-
-                    # PostgreSQL's format() safely quotes the role as an identifier
-                    # and the password as a string literal.
-                    cursor.execute(
-                        "SELECT format('ALTER ROLE %I PASSWORD %L', %s, %s)",
-                        [role, password],
-                    )
-                    alter_statement = cursor.fetchone()[0]
-                    cursor.execute(alter_statement)
-                    updated += 1
-
-        except Exception as exc:
-            raise CommandError(
-                "Could not reset the role passwords. Check that the default "
-                "database connection has permission to alter those roles."
-            ) from exc
-
-        self.stdout.write(
-            self.style.SUCCESS(f"Updated {updated} role(s); skipped {skipped}.")
-        )
+                # PostgreSQL format() quotes the role identifier and password literal.
+                cursor.execute(
+                    "SELECT format('ALTER ROLE %I PASSWORD %L;', %s, %s)",
+                    [role, password],
+                )
+                self.stdout.write(cursor.fetchone()[0])
