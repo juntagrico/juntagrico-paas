@@ -18,8 +18,6 @@ class Command(BaseCommand):
         if connection.vendor != "postgresql":
             raise CommandError("The default Django database must be PostgreSQL.")
 
-        self.stdout.write("SET password_encryption = 'scram-sha-256';")
-
         with connection.cursor() as cursor:
             for role, password in (
                 AppEnv.objects.using("default")
