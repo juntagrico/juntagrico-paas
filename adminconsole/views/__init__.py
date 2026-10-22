@@ -294,11 +294,11 @@ def versions(request, app_id):
         ['pip', 'freeze'],
     ]
 
-    result_text = '\n'.join(
-        container.exec_run(command).output.decode('utf-8') for command in commands
-    )
+    results = [container.exec_run(command) for command in commands]
+    result_text = '\n'.join(result.output.decode('utf-8') for result in results)
+    exit_codes = [result.exit_code for result in results]
     return render(request, 'show_result.html', {'app': app, 'sections': {
-        'Installierte App Versionen': {'text': result_text, 'result': result1.exit_code + result2.exit_code},
+        'Installierte App Versionen': {'text': result_text, 'result': exit_codes},
     }})
 
 
