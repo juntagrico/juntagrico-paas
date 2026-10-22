@@ -288,9 +288,15 @@ def versions(request, app_id):
     name = app.name
     client = docker.from_env()
     container = client.containers.get(name)
-    result1 = container.exec_run(['python', '--version'])
-    result2 = container.exec_run(['pip', 'freeze'])
-    result_text = result1.output.decode('utf-8') + "\n" + result2.output.decode('utf-8')
+    commands = [
+        ['python', '--version'],
+        ['pip', '--version'],
+        ['pip', 'freeze'],
+    ]
+
+    result_text = '\n'.join(
+        container.exec_run(command).output.decode('utf-8') for command in commands
+    )
     return render(request, 'show_result.html', {'app': app, 'sections': {
         'Installierte App Versionen': {'text': result_text, 'result': result1.exit_code + result2.exit_code},
     }})
