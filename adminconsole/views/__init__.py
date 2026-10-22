@@ -296,9 +296,9 @@ def versions(request, app_id):
 
     results = [container.exec_run(command) for command in commands]
     result_text = '\n'.join(result.output.decode('utf-8') for result in results)
-    exit_codes = sum(result.exit_code or 1 for result in results)
+    exit_code = sum(result.exit_code or 0 for result in results)
     return render(request, 'show_result.html', {'app': app, 'sections': {
-        'Installierte App Versionen': {'text': result_text, 'result': exit_codes},
+        'Installierte App Versionen': {'text': result_text, 'result': exit_code},
     }})
 
 
