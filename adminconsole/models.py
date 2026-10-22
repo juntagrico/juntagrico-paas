@@ -21,7 +21,6 @@ class GitHubKey(models.Model):
 
 class App(models.Model):
     PYTHON_VERSION = [
-        ("3.9", "3.9 (Nur mit Juntagrico < 2.0)"),
         ("3.10", "3.10"),
         ("3.11", "3.11"),
         ("3.12", "3.12 (Nur mit Juntagrico >= 2.0)"),
