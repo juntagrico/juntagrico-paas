@@ -20,8 +20,37 @@ def git_clone(app, key=None, output=None):
     return True
 
 
+def run_git(args, cdir, **kwargs):
+    return subprocess.run(
+        ["git", *args], cwd=cdir, **kwargs
+    )
+
+
 def git_pull(app):
     cdir = app.code_dir
+    git_repo, _, ref = app.git_clone_url.partition('@')
+    if ref:
+        fetch = run_git(
+            ['fetch', '--no-tags', '--depth=1', git_repo, ref],
+            cdir,
+            stdout=subprocess.DEVNULL,
+        )
+        if fetch.returncode != 0:
+            return fetch.returncode
+
+        current = run_git(
+            ['rev-parse', 'HEAD'], cdir, capture_output=True, text=True
+        ).stdout.strip()
+        target = run_git(
+            ['rev-parse', 'FETCH_HEAD'], cdir, capture_output=True, text=True
+        ).stdout.strip()
+
+        if current == target:
+            return False
+
+        reset = run_git(['reset', '--hard', 'FETCH_HEAD'], cdir, stdout=subprocess.DEVNULL)
+        return reset.returncode
+
     proc1 = subprocess.run(['git', 'fetch', '--depth=1'], stderr=subprocess.STDOUT, cwd=cdir)
     if proc1.returncode != 0:
         return proc1.returncode

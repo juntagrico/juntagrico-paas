@@ -38,7 +38,7 @@ class Command(BaseCommand):
             network_mode='host',
             restart_policy={'Name': 'always'},
             volumes={
-                dir+'/code': {'bind': '/code/', 'mode': 'rw'},
+                dir+'/code': {'bind': '/code/', 'mode': 'r'},
                 dir+'/static': {'bind': '/code/static/', 'mode': 'rw'},
                 dir+'/media': {'bind': '/code/media/', 'mode': 'rw'},
             }
