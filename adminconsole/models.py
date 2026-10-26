@@ -22,7 +22,6 @@ class GitHubKey(models.Model):
 
 class App(models.Model):
     PYTHON_VERSION = [
-        ("3.9", "3.9 (Nur mit Juntagrico < 2.0)"),
         ("3.10", "3.10"),
         ("3.11", "3.11"),
         ("3.12", "3.12 (Nur mit Juntagrico >= 2.0)"),
@@ -120,6 +119,11 @@ class AppEnv(models.Model):
 class Domain(models.Model):
     app = models.ForeignKey(App, related_name='domains', on_delete=models.CASCADE)
     name = models.CharField('name', max_length=100, unique=True, validators=[validate_domain_name])
+
+    PLATFORM_DOMAINS = (
+        'juntagrico.science',
+        'juntagrico.app',
+    )
 
     def clean(self):
         # nginx and certbot treat domain names case-insensitively and ignore a trailing dot
