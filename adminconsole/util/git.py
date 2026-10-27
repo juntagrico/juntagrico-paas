@@ -46,7 +46,7 @@ def git_pull(app):
         ).stdout.strip()
 
         if current == target:
-            return False
+            return 0
 
         reset = run_git(['reset', '--hard', 'FETCH_HEAD'], cdir, stderr=subprocess.STDOUT)
         return reset.returncode

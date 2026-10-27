@@ -73,7 +73,7 @@ class Command(BaseCommand):
             output = client.containers.run(
                 image=app.image_tag,
                 environment=list(app.env.get_lines()),
-                name=name,
+                name=name + '-collectstatic',
                 labels=['collectstatic'],
                 network_mode=None,
                 volumes={
