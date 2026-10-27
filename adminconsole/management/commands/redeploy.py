@@ -5,6 +5,7 @@ import docker
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.utils import timezone
+from docker.errors import ContainerError
 
 from adminconsole.models import App
 from adminconsole.util.commands import log_after
@@ -66,11 +67,30 @@ class Command(BaseCommand):
         print('Return', result[0](), flush=True)
 
         print('# Django Collectstatic', flush=True)
-        cmd = ['python', '-m', 'manage', 'collectstatic', '--noinput', '-c']
-        result = exec_run(container, cmd, stream=True)
-        for line in result[1]:
-            print(line.decode(), end="", flush=True)
-        print('Return', result[0](), flush=True)
+        # start new container with write access on static
+        client = docker.from_env()
+        try:
+            output = client.containers.run(
+                image=app.image_tag,
+                environment=list(app.env.get_lines()),
+                name=name,
+                labels=['collectstatic'],
+                network_mode=None,
+                volumes={
+                    app.dir / 'code': {'bind': '/code/', 'mode': 'ro'},
+                    app.dir / 'static': {'bind': '/code/static/', 'mode': 'rw'},
+                },
+                command='python -m manage collectstatic --noinput -c',
+                remove=True,
+                stdout=True,
+                stderr=True,
+            )
+            print(output.decode("utf-8", errors="replace"))
+            print('Return 0', flush=True)
+        except ContainerError as exc:
+            if exc.stderr:
+                print(exc.stderr)
+            print('Return', exc.exit_status, flush=True)
 
         # update juntagrico version register
         print('# Collect Version', flush=True)
