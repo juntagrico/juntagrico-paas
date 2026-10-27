@@ -120,7 +120,8 @@ nano /etc/nginx/sites-available/admin.juntagrico.app
 
 copy the global juntagrico config:
 ```
-cp setup/juntagrico-global.conf /etc/nginx/snippets/
+cp setup/nginx/juntagrico-global.conf /etc/nginx/snippets/
+cp setup/nginx/juntagrico-security-maps.conf /etc/nginx/conf.d/
 ```
 
 enable the site
