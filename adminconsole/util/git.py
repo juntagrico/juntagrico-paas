@@ -33,7 +33,7 @@ def git_pull(app):
         fetch = run_git(
             ['fetch', '--no-tags', '--depth=1', git_repo, ref],
             cdir,
-            stdout=subprocess.STDOUT,
+            stderr=subprocess.STDOUT,
         )
         if fetch.returncode != 0:
             return fetch.returncode
@@ -48,7 +48,7 @@ def git_pull(app):
         if current == target:
             return False
 
-        reset = run_git(['reset', '--hard', 'FETCH_HEAD'], cdir, stdout=subprocess.STDOUT)
+        reset = run_git(['reset', '--hard', 'FETCH_HEAD'], cdir, stderr=subprocess.STDOUT)
         return reset.returncode
 
     proc1 = subprocess.run(['git', 'fetch', '--depth=1'], stderr=subprocess.STDOUT, cwd=cdir)
