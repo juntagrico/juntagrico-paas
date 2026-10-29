@@ -74,10 +74,10 @@ class Command(BaseCommand):
         static_stat = os.stat(static_dir)
         client = docker.from_env()
         volumes = {
-            static_dir: {'bind': '/code/static/', 'mode': 'rw'},
+            static_dir: {'bind': '/code/static/', 'mode': 'rw'}
         }
         if app.version <3:
-            volumes[app.dir / 'code'] = {'bind': '/code/', 'mode': 'rw'},
+            volumes[app.dir / 'code'] = {'bind': '/code/', 'mode': 'rw'}
         try:
             output = client.containers.run(
                 image=app.image_tag,
