@@ -4,6 +4,7 @@ import docker
 from django.core.management import call_command
 
 from django.core.management.base import BaseCommand
+from django.template.loader import get_template
 
 from adminconsole.models import App
 from adminconsole.util.create_app import create_docker_file
@@ -29,8 +30,6 @@ class Command(BaseCommand):
         if python_version:
             build_args['pythonversion'] = python_version
 
-        create_docker_file(app)
-
         if app.version >= 3:
             build_args['appuser'] = app.name
             build_args['appuid'] = 10000 + app.port
@@ -39,15 +38,11 @@ class Command(BaseCommand):
             else:
                 build_args['git_repo'] = app.git_clone_url
 
-            cmd = [
-                'docker',
-                'buildx',
-                'build',
-                '--no-cache-filter',
-                'app',
-                '--tag',
-                app.image_tag,
-            ]
+            cmd = (
+                ['docker', 'buildx', 'build', '-f', '-']
+                + ['--no-cache-filter', 'app']
+                + ['--tag', app.image_tag]
+            )
 
             if options.get('nocache', False):
                 cmd.append('--no-cache')
@@ -59,7 +54,14 @@ class Command(BaseCommand):
             cmd.append('--load')
             cmd.append(str(app.dir))
 
-            result = subprocess.run(cmd, check=False)
+            result = subprocess.run(
+                cmd,
+                input=get_template(f'infra/v{app.version}/Dockerfile').render(
+                    {'app': app}
+                ),
+                text=True,
+                check=False,
+            )
             code = result.returncode
 
             if code != 0:
@@ -92,6 +94,8 @@ class Command(BaseCommand):
                 return None
 
         else:
+            create_docker_file(app)
+            
             response = client.api.build(
                 path=str(app.dir),
                 tag=app.image_tag,
