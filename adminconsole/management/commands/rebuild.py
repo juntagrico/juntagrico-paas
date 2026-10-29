@@ -67,7 +67,7 @@ class Command(BaseCommand):
                 return None
 
             # fix volume permissions
-            cmd = ['chown', '-R', build_args['appuid']]
+            cmd = ['chown', '-R', str(build_args['appuid'])]
             client.containers.run(
                 image=app.image_tag,
                 user='0:0',
