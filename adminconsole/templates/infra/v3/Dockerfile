@@ -42,3 +42,6 @@ RUN mkdir -p /code/internal_files && chown -R "$appuser" /code/internal_files
 USER "$appuser"
 
 CMD ["gunicorn", "--no-control-socket", "--bind","127.0.0.1:{{ app.port }}", "-t", "600", "{{ app.wsgi_path }}"]
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://127.0.0.1:{{ app.port }}/ || exit 1
