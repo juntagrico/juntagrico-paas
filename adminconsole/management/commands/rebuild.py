@@ -62,9 +62,32 @@ class Command(BaseCommand):
             result = subprocess.run(cmd, check=False)
             code = result.returncode
 
+            if code != 0:
+                print(f'Return {code}', flush=True)
+                return None
+
+            # fix volume permissions
+            cmd = ['chown', '-R', build_args['appuid']]
+            client.containers.run(
+                image=app.image_tag,
+                user='0:0',
+                command=cmd + ['/code/internal_files'],
+                volumes={
+                    f'{app.name}-internal': {
+                        'bind': '/code/internal_files/',
+                        'mode': 'rw',
+                    },
+                },
+                remove=True,
+            )
+
+            result = subprocess.run(cmd + [str(app.dir / 'media')], check=False)
+            code = result.returncode
+
             print(f'Return {code}', flush=True)
             if code != 0:
                 return None
+
         else:
             response = client.api.build(
                 path=str(app.dir),

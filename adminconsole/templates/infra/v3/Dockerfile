@@ -29,6 +29,8 @@ WORKDIR /code
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --root-user-action=ignore --upgrade -r requirements.txt
 
+RUN mkdir -p /code/internal_files && chown -R "$appuser" /code/internal_files
+
 # Switch to the non-root user
 USER "$appuser"
 
