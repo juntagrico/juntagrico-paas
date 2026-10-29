@@ -23,8 +23,7 @@ Create a database
 
 create local user with required permissions
 ```
-useradd -m -d /var/django/adminconsole -g www-data -s /bin/bash juntagrico
-rm /var/django/adminconsole/.*
+useradd -m -g www-data -s /bin/bash juntagrico
 usermod -aG docker juntagrico
 install -d -o juntagrico -g www-data /var/django/projects
 cp setup/50-juntagrico-paas /etc/sudoers.d/
@@ -32,7 +31,8 @@ cp setup/50-juntagrico-paas /etc/sudoers.d/
 
 install with git
 ```
-su - juntagrico
+mkdir -p /var/django/adminconsole
+cd /var/django/adminconsole
 git clone https://github.com/juntagrico/juntagrico-paas.git .
 ```
 
@@ -85,6 +85,12 @@ Create superuser
 `python manage.py createsuperuser`
 
 ### setup Gunicorn
+
+prepare the socket
+```
+mkdir -p /run/adminconsole
+chown juntagrico:www-data /run/adminconsole
+```
 
 copy the configuration:
 

@@ -9,7 +9,7 @@ server {
 
     location / {
         include proxy_params;
-        proxy_pass http://unix:/var/django/adminconsole/adminconsole.sock;
+        proxy_pass http://unix:/run/adminconsole/gunicorn.sock;
     }
 
     include /etc/nginx/snippets/juntagrico-*.conf;
