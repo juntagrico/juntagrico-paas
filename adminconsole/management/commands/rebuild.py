@@ -32,6 +32,8 @@ class Command(BaseCommand):
         create_docker_file(app)
 
         if app.version >= 3:
+            build_args['appuser'] = app.name
+            
             cmd = [
                 'docker',
                 'buildx',

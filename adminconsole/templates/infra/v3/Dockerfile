@@ -1,10 +1,10 @@
 # syntax=docker/dockerfile:1.4
 ARG pythonversion=3.11
-ARG appuser=appuser
 FROM python:$pythonversion-alpine AS django
 
+ARG appuser=appuser
 # Create a non-root user
-RUN adduser -D $appuser
+RUN adduser -D "$appuser"
 
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
@@ -19,7 +19,7 @@ COPY code/requirements*.txt /
 RUN pip install --upgrade -r requirements.txt
 
 # Switch to the non-root user
-USER $appuser
+USER "$appuser"
 
 WORKDIR /code
 CMD ["gunicorn","--bind","127.0.0.1:{{ app.port }}","-t", "600","{{ app.wsgi_path }}","&"]
