@@ -32,7 +32,7 @@ COPY --from=fetcher /code /code
 
 # install requirements
 WORKDIR /code
-RUN echo "Break Docker Cache: {% now "%Y-%m-%d %H:%M:%S.%f" %}"
+RUN echo "Break Docker Cache: {% now "Y-m-d H:i:s.u" %}"
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --root-user-action=ignore --upgrade -r requirements.txt
 
