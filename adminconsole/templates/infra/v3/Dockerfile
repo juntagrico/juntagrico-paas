@@ -3,8 +3,10 @@ ARG pythonversion=3.11
 FROM python:$pythonversion-alpine AS django
 
 ARG appuser=appuser
+ARG appuid=10001
 # Create a non-root user
-RUN adduser -D "$appuser"
+RUN addgroup -g "$appuid" "$appuser" \
+    && adduser -D -u "$appuid" -G "$appuser" "$appuser"
 
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1

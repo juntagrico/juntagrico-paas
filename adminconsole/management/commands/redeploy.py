@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 
 import docker
@@ -68,6 +69,8 @@ class Command(BaseCommand):
 
         print('# Django Collectstatic', flush=True)
         # start new container with write access on static
+        static_dir = app.dir / 'static'
+        static_stat = os.stat(static_dir)
         client = docker.from_env()
         try:
             output = client.containers.run(
@@ -76,9 +79,10 @@ class Command(BaseCommand):
                 name=name + '-collectstatic',
                 labels=['collectstatic'],
                 network_mode=None,
+                user=f'{static_stat.st_uid}:{static_stat.st_gid}',
                 volumes={
                     app.dir / 'code': {'bind': '/code/', 'mode': 'ro'},
-                    app.dir / 'static': {'bind': '/code/static/', 'mode': 'rw'},
+                    static_dir: {'bind': '/code/static/', 'mode': 'rw'},
                 },
                 command='python -m manage collectstatic --noinput -c',
                 remove=True,

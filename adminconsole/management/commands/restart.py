@@ -31,7 +31,7 @@ class Command(BaseCommand):
             labels.append('staging')
 
         volumes = {
-            base_dir / 'code': {'bind': '/code/', 'mode': 'ro'},
+            base_dir / 'code': {'bind': '/code/', 'mode': 'ro' if app.version >= 3 else 'rw'},
             f'{name}-internal': {'bind': '/code/internal_files/', 'mode': 'rw'},
         }
         volumes |= {
