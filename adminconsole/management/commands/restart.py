@@ -31,13 +31,13 @@ class Command(BaseCommand):
             labels.append('staging')
 
         volumes = {
-            base_dir / 'code': {'bind': '/code/', 'mode': 'ro' if app.version >= 3 else 'rw'},
+            # needed to read staticfiles.json
+            base_dir / 'static': {'bind': '/code/static/', 'mode': 'ro'},
+            base_dir / 'media': {'bind': '/code/media/', 'mode': 'rw'},
             f'{name}-internal': {'bind': '/code/internal_files/', 'mode': 'rw'},
         }
-        volumes |= {
-            base_dir / 'static': {'bind': '/code/static/', 'mode': 'ro'},  # needed to read staticfiles.json
-            base_dir / 'media': {'bind': '/code/media/', 'mode': 'rw'},
-        }
+        if app.version < 3:
+            volumes[base_dir / 'code'] = {'bind': '/code/', 'mode': 'rw'}
 
         container = client.containers.run(
             image=app.image_tag,

@@ -29,7 +29,6 @@ class Command(BaseCommand):
         name = options['app_name'][0]
         app = App.objects.get(name=name)
 
-        upgrade_nonce = ''
         if app.version <3:
             upgrade_nonce = timezone.now()
             if not options['upgrade']:
@@ -43,14 +42,13 @@ class Command(BaseCommand):
                 except IndexError:
                     pass
 
-        print('# Git Pull', flush=True)
-        result = git_pull(app)
-        print('Return', result, flush=True)
-        if result != 0:
-            return
+            print('# Git Pull', flush=True)
+            result = git_pull(app)
+            print('Return', result, flush=True)
+            if result != 0:
+                return
 
-        # force cache invalidation
-        if app.version <3:
+            # force cache invalidation
             # primitive method to enforce upgrade, because docker API doesn't seem to support --no-cache-filter option
             with open(app.code_dir / 'requirements.txt', 'a') as f:
                 f.write('\nsvglib<1.6.0')  # force fix. 1.6. requires cairo
@@ -75,6 +73,11 @@ class Command(BaseCommand):
         static_dir = app.dir / 'static'
         static_stat = os.stat(static_dir)
         client = docker.from_env()
+        volumes = {
+            static_dir: {'bind': '/code/static/', 'mode': 'rw'},
+        }
+        if app.version <3:
+            volumes[app.dir / 'code'] = {'bind': '/code/', 'mode': 'rw'},
         try:
             output = client.containers.run(
                 image=app.image_tag,
@@ -83,10 +86,7 @@ class Command(BaseCommand):
                 labels=['collectstatic'],
                 network_mode=None,
                 user=f'{static_stat.st_uid}:{static_stat.st_gid}',
-                volumes={
-                    app.dir / 'code': {'bind': '/code/', 'mode': 'ro'},
-                    static_dir: {'bind': '/code/static/', 'mode': 'rw'},
-                },
+                volumes=volumes,
                 command='python -m manage collectstatic --noinput -c',
                 remove=True,
                 stdout=True,

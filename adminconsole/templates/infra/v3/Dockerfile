@@ -11,23 +11,25 @@ RUN addgroup -g "$appuid" "$appuser" \
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --root-user-action=ignore --upgrade pip
-
 # install psycopg for postgres & git to enable pip install from repos
 RUN apk add --update --virtual .build-deps gcc musl-dev postgresql-dev git
 
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --root-user-action=ignore 'psycopg[c]' 'svglib<1.6.0'
+    pip install --root-user-action=ignore --upgrade pip \
+    && pip install --root-user-action=ignore 'psycopg[c]' 'svglib<1.6.0'
 
 FROM django AS app
+# git pull
+ARG GIT_REPO
+ARG GIT_REF=main
+RUN test -n "$GIT_REPO" && git clone --depth 1 --branch "$GIT_REF" "$GIT_REPO" /code
+
 # install requirements
-COPY code/requirements*.txt /
+WORKDIR /code
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --root-user-action=ignore --upgrade -r requirements.txt
 
 # Switch to the non-root user
 USER "$appuser"
 
-WORKDIR /code
 CMD ["gunicorn","--bind","127.0.0.1:{{ app.port }}","-t", "600","{{ app.wsgi_path }}","&"]

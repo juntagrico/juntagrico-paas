@@ -65,33 +65,44 @@ def git_switch(app, branch):
     proc = subprocess.run(['git', 'check-ref-format', '--branch',  branch],
                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
     if proc.returncode != 0:
-        return proc.stdout.decode()
+        return proc.stdout.decode(errors='replace')
 
-    proc = subprocess.run(['git', 'remote', 'set-branches', 'origin', branch],
-                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
-    if proc.returncode != 0:
-        return 'git remote: ' + proc.stdout.decode()
+    if app.version >= 3:
+        repo, _, _ = app.git_clone_url.partition('@')
+        proc = subprocess.run(
+            ['git', 'ls-remote', '--exit-code', '--heads', repo, f'refs/heads/{branch}'],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            cwd=cdir
+        )
+        if proc.returncode != 0:
+            return 'git ls-remote: ' + proc.stdout.decode(errors='replace')
+    else:
+        proc = subprocess.run(['git', 'remote', 'set-branches', 'origin', branch],
+                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
+        if proc.returncode != 0:
+            return 'git remote: ' + proc.stdout.decode()
 
-    proc = subprocess.run(['git', 'fetch', '--depth=1', 'origin', branch],
-                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
-    if proc.returncode != 0:
-        error = 'git fetch: ' + proc.stdout.decode()
-        # try to restore old branch
-        old_branch = git_current_branch(app)
-        if old_branch != branch:
-            subprocess.run(['git', 'remote', 'set-branches', 'origin', old_branch],
-                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
-        return error
+        proc = subprocess.run(['git', 'fetch', '--depth=1', 'origin', branch],
+                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
+        if proc.returncode != 0:
+            error = 'git fetch: ' + proc.stdout.decode()
+            # try to restore old branch
+            old_branch = git_current_branch(app)
+            if old_branch != branch:
+                subprocess.run(['git', 'remote', 'set-branches', 'origin', old_branch],
+                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
+            return error
 
-    proc = subprocess.run(['git', 'checkout', '-B', branch],
-                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
-    if proc.returncode != 0:
-        return 'git checkout:' + proc.stdout.decode()
+        proc = subprocess.run(['git', 'checkout', '-B', branch],
+                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
+        if proc.returncode != 0:
+            return 'git checkout:' + proc.stdout.decode()
 
-    proc = subprocess.run(['git', 'branch', '-u', 'origin/' + branch, branch],
-                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
-    if proc.returncode != 0:
-        return 'git branch: ' + proc.stdout.decode()
+        proc = subprocess.run(['git', 'branch', '-u', 'origin/' + branch, branch],
+                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
+        if proc.returncode != 0:
+            return 'git branch: ' + proc.stdout.decode()
 
     app.set_branch(branch)  # save current branch in db
     return ''
