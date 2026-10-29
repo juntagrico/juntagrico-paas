@@ -34,11 +34,13 @@ class Command(BaseCommand):
         if app.version >= 3:
             build_args['appuser'] = app.name
             build_args['appuid'] = 10000 + app.port
-            
+
             cmd = [
                 'docker',
                 'buildx',
                 'build',
+                '--no-cache-filter',
+                'app',
                 '--tag',
                 app.image_tag,
             ]

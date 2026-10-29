@@ -29,17 +29,19 @@ class Command(BaseCommand):
         name = options['app_name'][0]
         app = App.objects.get(name=name)
 
-        upgrade_nonce = timezone.now()
-        if not options['upgrade']:
-            # if we don't want to force an upgrade, store the current nonce to use again.
-            # using the same nonce as in the last build will ensure that the right cache is used.
-            try:
-                with open(app.code_dir / 'requirements.txt', 'r') as f:
-                    upgrade_nonce = f.readlines()[-1].split(self.FORCE_REBUILD_SEP)[1]
-            except FileNotFoundError:
-                pass
-            except IndexError:
-                pass
+        upgrade_nonce = ''
+        if app.version <3:
+            upgrade_nonce = timezone.now()
+            if not options['upgrade']:
+                # if we don't want to force an upgrade, store the current nonce to use again.
+                # using the same nonce as in the last build will ensure that the right cache is used.
+                try:
+                    with open(app.code_dir / 'requirements.txt', 'r') as f:
+                        upgrade_nonce = f.readlines()[-1].split(self.FORCE_REBUILD_SEP)[1]
+                except FileNotFoundError:
+                    pass
+                except IndexError:
+                    pass
 
         print('# Git Pull', flush=True)
         result = git_pull(app)
@@ -48,10 +50,11 @@ class Command(BaseCommand):
             return
 
         # force cache invalidation
-        # primitive method to enforce upgrade, because docker API doesn't seem to support --no-cache-filter option
-        with open(app.code_dir / 'requirements.txt', 'a') as f:
-            f.write('\nsvglib<1.6.0')  # force fix. 1.6. requires cairo
-            f.write(f'\n{self.FORCE_REBUILD_SEP}{upgrade_nonce}')
+        if app.version <3:
+            # primitive method to enforce upgrade, because docker API doesn't seem to support --no-cache-filter option
+            with open(app.code_dir / 'requirements.txt', 'a') as f:
+                f.write('\nsvglib<1.6.0')  # force fix. 1.6. requires cairo
+                f.write(f'\n{self.FORCE_REBUILD_SEP}{upgrade_nonce}')
 
         print('# Docker Rebuild', flush=True)
         result = call_command('rebuild', '--restart', app.name)

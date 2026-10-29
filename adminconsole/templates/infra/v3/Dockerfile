@@ -18,7 +18,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 RUN apk add --update --virtual .build-deps gcc musl-dev postgresql-dev git
 
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --root-user-action=ignore 'psycopg[c]'
+    pip install --root-user-action=ignore 'psycopg[c]' 'svglib<1.6.0'
 
 FROM django AS app
 # install requirements
