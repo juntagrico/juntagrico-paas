@@ -20,9 +20,9 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 FROM django AS app
 # git pull
-ARG GIT_REPO
-ARG GIT_REF=main
-RUN test -n "$GIT_REPO" && git clone --depth 1 --branch "$GIT_REF" "$GIT_REPO" /code
+ARG git_repo
+ARG git_ref=main
+RUN test -n "$git_repo" && git clone --depth 1 --branch "$git_ref" "$git_repo" /code
 
 # install requirements
 WORKDIR /code
