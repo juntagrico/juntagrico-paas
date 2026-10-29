@@ -40,7 +40,7 @@ class Command(BaseCommand):
             restart_policy={'Name': 'always'},
             volumes={
                 base_dir / 'code': {'bind': '/code/', 'mode': 'ro'},
-                base_dir / 'static' / 'staticfiles.json': {'bind': '/code/static/staticfiles.json', 'mode': 'ro'},
+                base_dir / 'static' : {'bind': '/code/static/', 'mode': 'ro'},  # needed to read staticfiles.json
                 base_dir / 'media': {'bind': '/code/media/', 'mode': 'rw'},
                 f'{name}-internal': {'bind': '/code/internal_files/', 'mode': 'rw'},
             },
