@@ -12,19 +12,19 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --upgrade pip
+    pip install --root-user-action=ignore --upgrade pip
 
 # install psycopg for postgres & git to enable pip install from repos
 RUN apk add --update --virtual .build-deps gcc musl-dev postgresql-dev git
 
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install 'psycopg[c]'
+    pip install --root-user-action=ignore 'psycopg[c]'
 
 FROM django AS app
 # install requirements
 COPY code/requirements*.txt /
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --upgrade -r requirements.txt
+    pip install --root-user-action=ignore --upgrade -r requirements.txt
 
 # Switch to the non-root user
 USER "$appuser"
