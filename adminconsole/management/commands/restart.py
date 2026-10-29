@@ -40,9 +40,10 @@ class Command(BaseCommand):
             restart_policy={'Name': 'always'},
             volumes={
                 base_dir / 'code': {'bind': '/code/', 'mode': 'ro'},
+                base_dir / 'static' / 'staticfiles.json': {'bind': '/code/static/staticfiles.json', 'mode': 'ro'},
                 base_dir / 'media': {'bind': '/code/media/', 'mode': 'rw'},
                 f'{name}-internal': {'bind': '/code/internal_files/', 'mode': 'rw'},
-            }
+            },
         )
         print(container.status)
         print('Return 0', flush=True)
