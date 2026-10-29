@@ -122,5 +122,8 @@ def git_status(app, errors=None):
 
 
 def git_current_branch(app):
+    if app.version >= 3:
+        repo, _, branch = app.git_clone_url.partition('@')
+        return branch or 'main'
     proc = subprocess.Popen(['git', 'branch', '--show-current'], stdout=subprocess.PIPE, cwd=app.code_dir)
     return proc.stdout.read().decode().strip()
