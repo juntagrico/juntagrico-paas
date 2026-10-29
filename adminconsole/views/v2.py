@@ -116,7 +116,7 @@ def show_progress(request, app_id, pid):
         'finished': pid_finished(pid),
         'section': current_section,
         'section_progress': current_section_progress,
-        'expected_steps': 6.1 if app.version <=3 else 7.1,
+        'expected_steps': 6.1 if app.version <3 else 7.1,
         'title': current_title,
         'read': read_until,
     })
