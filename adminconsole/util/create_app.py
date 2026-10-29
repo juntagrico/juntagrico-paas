@@ -57,4 +57,4 @@ def create_database(app_env, db_name, user_name, replace=False):
 
 def create_docker_file(app):
     with open(app.dir / 'Dockerfile', "w") as docker_file:
-        docker_file.write(get_template('infra/Dockerfile').render({'app': app}))
+        docker_file.write(get_template(f'infra/v{app.version}/Dockerfile').render({'app': app}))

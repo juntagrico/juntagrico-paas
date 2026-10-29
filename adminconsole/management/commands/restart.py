@@ -30,6 +30,15 @@ class Command(BaseCommand):
         if app.staging_of:
             labels.append('staging')
 
+        volumes = {
+            base_dir / 'code': {'bind': '/code/', 'mode': 'ro'},
+            f'{name}-internal': {'bind': '/code/internal_files/', 'mode': 'rw'},
+        }
+        volumes |= {
+            base_dir / 'static': {'bind': '/code/static/', 'mode': 'ro'},  # needed to read staticfiles.json
+            base_dir / 'media': {'bind': '/code/media/', 'mode': 'rw'},
+        }
+
         container = client.containers.run(
             image=app.image_tag,
             detach=True,
@@ -38,12 +47,7 @@ class Command(BaseCommand):
             labels=labels,
             network_mode='host',
             restart_policy={'Name': 'always'},
-            volumes={
-                base_dir / 'code': {'bind': '/code/', 'mode': 'ro'},
-                base_dir / 'static' : {'bind': '/code/static/', 'mode': 'ro'},  # needed to read staticfiles.json
-                base_dir / 'media': {'bind': '/code/media/', 'mode': 'rw'},
-                f'{name}-internal': {'bind': '/code/internal_files/', 'mode': 'rw'},
-            },
+            volumes=volumes
         )
         print(container.status)
         print('Return 0', flush=True)

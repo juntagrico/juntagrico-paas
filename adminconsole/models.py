@@ -106,6 +106,8 @@ class AppEnv(models.Model):
     def get_lines(self):
         yield 'JUNTAGRICO_DEBUG=False'
         yield 'JUNTAGRICO_DATABASE_ENGINE=django.db.backends.postgresql'
+        yield 'JUNTAGRICO_STATIC_ROOT=/code/static/'
+        yield 'JUNTAGRICO_MEDIA_ROOT=/code/media/'
         if self.app.staging_of:
             yield 'JUNTAGRICO_STAGING=1'
         for field in self._meta.get_fields():
