@@ -24,7 +24,7 @@ def set_version(request, app_id):
         app.save()
         if version == 1:
             messages.success(request, 'V1 aktiviert. Mache einen Rebuild um die Änderungen anzuwenden.')
-        elif version == 2:
+        elif version >= 2:
             messages.success(request, 'V2 aktiviert. Mache einen Redeploy um die Änderungen anzuwenden.')
     except ValueError:
         messages.error(request, 'Version nicht definiert.')
@@ -34,7 +34,7 @@ def set_version(request, app_id):
 @owner_of_app
 def redeploy(request, app_id, upgrade=False):
     app = get_object_or_404(App, pk=app_id)
-    if app.version != 2:
+    if app.version < 2:
         raise Http404
 
     if request.method == 'POST':
@@ -103,7 +103,7 @@ def show_progress(request, app_id, pid):
 @owner_of_app
 def set_python_version(request, app_id):
     app = get_object_or_404(App, pk=app_id)
-    if app.version != 2:
+    if app.version < 2:
         raise Http404
 
     success = False

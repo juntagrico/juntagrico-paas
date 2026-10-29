@@ -118,7 +118,7 @@
                             </div>
                         </div>
                     </div>
-                {% elif app.version == 2 %}
+                {% elif app.version >= 2 %}
                     <div class="col-md-6">
                         <div class="card border-primary mb-3">
                             <h4 class="card-header">Redeploy</h4>
@@ -157,7 +157,7 @@
                     </div>
                 {% endif %}
 
-                {% if not staging and app.version == 2 %}
+                {% if not staging and app.version >= 2 %}
                     <div class="col-md-6">
                         <div class="card mb-3">
                             <h4 class="card-header">Staging</h4>
@@ -240,7 +240,7 @@
                         </div>
                     </div>
                 </div>
-                {% if app.version == 2 %}
+                {% if app.version >= 2 %}
                     <div class="col-md-6">
                         <div class="card mb-3">
                             <h4 class="card-header">Python Version</h4>

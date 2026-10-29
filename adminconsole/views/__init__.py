@@ -135,7 +135,7 @@ def env(request, app_id):
         form = EnvForm(request.POST, instance=app_env)
         if form.is_valid():
             form.save()
-            if app.version == 2:
+            if app.version >= 2:
                 with open(app.log_file, 'wb') as out:
                     proc = subprocess.Popen(
                         [settings.PYTHON_BIN, '-m', 'manage', 'restart', app.name],
