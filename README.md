@@ -164,6 +164,14 @@ You can now open your juntagrico PaaS in the browser.
 The juntagrico apps will need docker to run.
 See https://docs.docker.com/engine/install/ubuntu/
 
+Set up a persistent log-driver.
+Add this to `/etc/docker/daemon.json` or create the file if it doesn't exist.
+```
+{
+  "log-driver": "journald"
+}
+```
+
 To release unused docker images add this cronjob
 `5 1 * * * docker image prune -f`
 

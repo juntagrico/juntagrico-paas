@@ -4,6 +4,8 @@ FROM python:$pythonversion-alpine AS django
 
 ARG appuser=appuser
 ARG appuid=10001
+ARG gunicorn_ver=">=25.1.0"
+
 # Create a non-root user
 RUN addgroup -g "$appuid" "$appuser" \
     && adduser -D -u "$appuid" -G "$appuser" "$appuser"
@@ -16,7 +18,7 @@ RUN apk add --update --virtual .build-deps gcc musl-dev postgresql-dev git
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --root-user-action=ignore --upgrade pip \
-    && pip install --root-user-action=ignore 'psycopg[c]' 'svglib<1.6.0'
+    && pip install --root-user-action=ignore 'psycopg[c]' 'svglib<1.6.0' 'gunicorn${GUNICORN_SPEC}'
 
 FROM django AS app
 # git pull
@@ -34,4 +36,4 @@ RUN mkdir -p /code/internal_files && chown -R "$appuser" /code/internal_files
 # Switch to the non-root user
 USER "$appuser"
 
-CMD ["gunicorn","--bind","127.0.0.1:{{ app.port }}","-t", "600","{{ app.wsgi_path }}","&"]
+CMD ["gunicorn", "--no-control-socket", "--bind","127.0.0.1:{{ app.port }}", "-t", "600", "{{ app.wsgi_path }}"]
