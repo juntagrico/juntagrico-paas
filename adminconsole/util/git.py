@@ -63,7 +63,7 @@ def git_switch(app, branch):
     branch = re.sub('[?*[@#$;&~^: ]', '', branch)
 
     proc = subprocess.run(['git', 'check-ref-format', '--branch',  branch],
-                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir)
+                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     if proc.returncode != 0:
         return proc.stdout.decode(errors='replace')
 
@@ -73,7 +73,6 @@ def git_switch(app, branch):
             ['git', 'ls-remote', '--exit-code', '--heads', repo, f'refs/heads/{branch}'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            cwd=cdir
         )
         if proc.returncode != 0:
             return 'git ls-remote: ' + proc.stdout.decode(errors='replace')
