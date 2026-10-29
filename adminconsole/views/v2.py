@@ -93,7 +93,7 @@ def show_progress(request, app_id, pid):
                     current_title = detail or stage_name
                     current_section_progress = int(num) / int(den)
                     # make a new section of each stage
-                    if stage_name == 'app' and num == 1:
+                    if stage_name == 'app' and num == '1':
                         current_section += 1
 
                 continue
