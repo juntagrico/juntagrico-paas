@@ -71,18 +71,21 @@ class Command(BaseCommand):
             client.containers.run(
                 image=app.image_tag,
                 user='0:0',
-                command=cmd + ['/code/internal_files'],
+                command=cmd + ['/code/internal_files', '/code/media'],
                 volumes={
                     f'{app.name}-internal': {
                         'bind': '/code/internal_files/',
                         'mode': 'rw',
                     },
+                    app.dir / 'media': {
+                        "bind": "/code/media",
+                        "mode": "rw",
+                    },
                 },
                 remove=True,
+                stdout=True,
+                stderr=True,
             )
-
-            result = subprocess.run(cmd + [str(app.dir / 'media')], check=False)
-            code = result.returncode
 
             print(f'Return {code}', flush=True)
             if code != 0:
