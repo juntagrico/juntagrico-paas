@@ -20,14 +20,19 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --root-user-action=ignore --upgrade pip \
     && pip install --root-user-action=ignore 'psycopg[c]' 'svglib<1.6.0' "gunicorn${gunicorn_ver}"
 
-FROM django AS app
-# git pull
+
+FROM django AS fetcher
 ARG git_repo
 ARG git_ref=main
 RUN test -n "$git_repo" && git clone --depth 1 --branch "$git_ref" "$git_repo" /code
 
+
+FROM django AS app
+COPY --from=fetcher /code /code
+
 # install requirements
 WORKDIR /code
+RUN echo "Break Docker Cache: {% now "%Y-%m-%d %H:%M:%S.%f" %}"
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --root-user-action=ignore --upgrade -r requirements.txt
 

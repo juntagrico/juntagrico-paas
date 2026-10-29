@@ -40,7 +40,7 @@ class Command(BaseCommand):
 
             cmd = (
                 ['docker', 'buildx', 'build', '-f', '-']
-                + ['--no-cache-filter', 'app']
+                + ['--no-cache-filter', 'fetcher']  # always pull latest changes from branch
                 + ['--tag', app.image_tag]
             )
 
