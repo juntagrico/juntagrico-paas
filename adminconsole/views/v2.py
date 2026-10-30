@@ -109,7 +109,7 @@ def show_progress(request, app_id, pid):
         'finished': pid_finished(pid),
         'section': current_section,
         'section_progress': current_section_progress,
-        'expected_steps': 6.1 + (22 if app.version >= 3 else 0),  # v3 counts each docker build step
+        'expected_steps':  ((21 + 4.1) if app.version >= 3 else 6.1),  # v3 counts each docker build step
         'title': current_title,
         'read': read_until,
     })
