@@ -83,7 +83,7 @@ def show_progress(request, app_id, pid):
 
             match = docker_build_header.match(line)
             if match:
-                current_title = match.groups(3)
+                current_title = line
                 continue
             
             match = docker_build_done.match(line)
