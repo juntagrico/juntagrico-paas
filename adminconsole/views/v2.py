@@ -74,28 +74,21 @@ def show_progress(request, app_id, pid):
     current_section = 0
     current_section_progress = None
     current_title = None
-    buildkit_header = re.compile(r'^#(\d+)\s+\[([^\]]+)\]\s*(.*)$')
-    buildkit_step = re.compile(r'^(.+?)\s+(\d+)/(\d+)$')
+    docker_build_header = re.compile(r'^#(\d+)\s+\[([^\]]+)\]\s*(.*)$')
+    docker_build_done = re.compile(r'^#(\d+)\s+(DONE|CACHED)')
     with open(app.log_file, 'r') as file:
         file.seek(start)
         while line := file.readline():
             line = line.lstrip()
 
-            match = buildkit_header.match(line)
+            match = docker_build_header.match(line)
             if match:
-                build_id, stage, detail = match.groups()
-
-                # A BuildKit stage header may look like:
-                # [app 2/5] RUN ...
-                stage_match = buildkit_step.match(stage)
-                if stage_match:
-                    stage_name, num, den = stage_match.groups()
-                    current_title = detail or stage_name
-                    current_section_progress = int(num) / int(den)
-                    # make a new section of each stage
-                    if stage_name != 'django' and num == '1':
-                        current_section += 1
-
+                current_title = match.groups(3)
+                continue
+            
+            match = docker_build_done.match(line)
+            if match:
+                current_section += 1
                 continue
             
             if line.startswith('# '):
@@ -116,7 +109,7 @@ def show_progress(request, app_id, pid):
         'finished': pid_finished(pid),
         'section': current_section,
         'section_progress': current_section_progress,
-        'expected_steps': 6.1 if app.version < 3 else 7.1,
+        'expected_steps': 6.1 + (22 if app.version >= 3 else 0),  # v3 counts each docker build step
         'title': current_title,
         'read': read_until,
     })
