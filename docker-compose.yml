@@ -1,0 +1,51 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-adminconsole}
+      POSTGRES_USER: ${POSTGRES_USER:-juntagrico}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-juntagrico} -d ${POSTGRES_DB:-adminconsole}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    env_file: .env
+    environment:
+      JS_DATABASE_HOST: db
+      JS_DATABASE_NAME: ${POSTGRES_DB:-adminconsole}
+      JS_DATABASE_USER: ${POSTGRES_USER:-juntagrico}
+      JS_DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-password}
+    volumes:
+      - static_data:/app/static
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/')\" || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
+      - static_data:/app/static:ro
+    depends_on:
+      - app
+
+volumes:
+  postgres_data:
+  static_data:

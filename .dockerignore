@@ -1,0 +1,76 @@
+# Version control
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info
+dist
+build
+.eggs
+*.egg
+
+# Virtual environments
+.venv
+venv
+env
+
+# Static and media (collected during build)
+static
+media
+
+# Tests
+test
+test_*.py
+*_test.py
+
+# Dev files
+dev_*.py
+dev_manage.py
+dev_settings.py
+
+# Tasks and setup (not needed in container)
+tasks
+setup
+
+# Database files
+yourdatabasename.db
+*.db
+
+# Environment files (loaded at runtime)
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Docker
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# Lock files
+uv.lock
+pipfile.lock
+
+# Documentation
+README.md
+*.md
+
+# Images
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+
+# Junie session artifacts
+.junie

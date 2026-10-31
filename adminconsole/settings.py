@@ -25,7 +25,10 @@ SECRET_KEY = os.environ.get('JS_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['admin.juntagrico.app', 'admin.juntagrico.science']
+ALLOWED_HOSTS = os.environ.get(
+    'DJANGO_ALLOWED_HOSTS',
+    'admin.juntagrico.app,admin.juntagrico.science'
+).split(',')
 
 # The console is only served via HTTPS. nginx passes the scheme in X-Forwarded-Proto, which gunicorn trusts on its
 # unix socket, so Django recognises HTTPS requests without SECURE_PROXY_SSL_HEADER.
