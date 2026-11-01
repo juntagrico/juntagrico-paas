@@ -6,6 +6,8 @@ if [ "$#" -lt 3 ]; then
     exit 1
 fi
 
+backup_file="$(cat -)"
+
 lftp -u "$1" "$2" << EOF
 set ssl:verify-certificate no
 set sftp:auto-confirm yes
