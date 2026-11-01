@@ -40,7 +40,7 @@ def add(request, app_id, pid):
     render_dict = {
         'step': 'Domain hinzufügen',
         'pid': pid,
-        'next': reverse('domain-manage', args=[app.id])
+        'next': reverse('show-result', args=[app.id])
     }
     return render(request, 'wait_next.html', render_dict)
 

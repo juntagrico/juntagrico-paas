@@ -28,3 +28,5 @@ class Command(BaseCommand):
             proc = subprocess.run(['sudo', 'certbot', '--nginx', '--redirect', '--keep', '-n', '-d', domain.name],
                                   stdout=subprocess.PIPE)
             print(str(proc.stdout))
+
+            print('Return', proc.returncode)
