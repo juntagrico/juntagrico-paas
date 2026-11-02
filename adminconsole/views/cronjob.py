@@ -17,11 +17,15 @@ def manage(request, app_id):
         if form.is_valid():
             form.save()
             with open(app.log_file, 'wb') as out:
-                subprocess.Popen(
+                proc = subprocess.Popen(
                     [settings.PYTHON_BIN, '-m', 'manage', 'install_cronjob', app.name],
                     stdout=out, stderr=out
                 )
-            return redirect(reverse('overview', args=[app.id]))
+            return render(request, 'wait_next.html', {
+                'step': 'Cronjobs installieren',
+                'pid': proc.pid,
+                'next': reverse('show-result', args=[app.id]),
+            })
     else:
         form = CronjobForm(app=app)
 
