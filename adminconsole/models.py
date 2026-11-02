@@ -12,6 +12,26 @@ from django.utils import timezone
 from adminconsole.util import generate_secret_key
 
 
+def get_cronjob_definition(cronjob_id):
+    """Look up a cronjob definition from settings.CRONJOBS by id."""
+    for cj in settings.CRONJOBS:
+        if cj['id'] == cronjob_id:
+            return cj
+    return None
+
+
+def get_available_cronjobs(app_name=None):
+    """Return cronjob definitions filtered by app availability.
+    If app_name is provided, only return cronjobs where apps is not set or app_name is in the list.
+    """
+    results = []
+    for cj in settings.CRONJOBS:
+        apps = cj.get('apps')
+        if apps is None or app_name in apps:
+            results.append(cj)
+    return results
+
+
 class GitHubKey(models.Model):
     user = models.OneToOneField(User, related_name='githubkey', null=True, blank=True, on_delete=models.CASCADE)
     key = models.CharField(max_length=500)
@@ -116,6 +136,19 @@ class AppEnv(models.Model):
         for line in self.various.splitlines():
             if clean_line := line.strip():
                 yield clean_line
+
+
+class AppCronjob(models.Model):
+    app = models.ForeignKey(App, related_name='cronjobs', on_delete=models.CASCADE)
+    cronjob_id = models.CharField(max_length=100)
+    minute = models.PositiveIntegerField(null=True, blank=True, help_text='Minute (0-59)')
+    hour = models.PositiveIntegerField(null=True, blank=True, help_text='Hour (0-23)')
+
+    class Meta:
+        unique_together = ('app', 'cronjob_id')
+
+    def __str__(self):
+        return f'{self.app.name}: {self.cronjob_id}'
 
 
 class Domain(models.Model):

@@ -220,7 +220,7 @@ systemctl reload nginx
 Make backup scripts executable
 
 ```
-cd var/django/adminconsole/tasks/backup
+cd /var/django/adminconsole/tasks/backup
 chmod +x *.sh
 ```
 

@@ -4,7 +4,7 @@ from django.core.mail import get_connection
 from django.core.validators import RegexValidator
 from django.forms import CharField, TextInput, CheckboxInput, Textarea, EmailField, BooleanField, RadioSelect, Select
 
-from adminconsole.models import AppEnv, App, Domain
+from adminconsole.models import AppEnv, App, Domain, AppCronjob, get_available_cronjobs
 
 
 class ProjectForm(forms.Form):
@@ -158,3 +158,92 @@ class PythonVersionForm(forms.ModelForm):
 
 class ProfileForm(forms.Form):
     email = EmailField(label='email adresse', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))
+
+
+class CronjobForm(forms.Form):
+    def __init__(self, *args, app, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.app = app
+        available = get_available_cronjobs(app.name)
+        current_ids = {ac.cronjob_id for ac in app.cronjobs.all()}
+        current_map = {ac.cronjob_id: ac for ac in app.cronjobs.all()}
+
+        # Group cronjobs by group
+        groups = {}
+        standalone = []
+        for cj in available:
+            group = cj.get('group')
+            if group:
+                groups.setdefault(group, []).append(cj)
+            else:
+                standalone.append(cj)
+
+        self.groups = groups
+        self.standalone = standalone
+        self.current_ids = current_ids
+        self.current_map = current_map
+
+        # Build minute choices (0-59)
+        minute_choices = [(m, str(m)) for m in range(60)]
+        # Build hour choices (0-23)
+        hour_choices = [(h, str(h)) for h in range(24)]
+
+        # Store for template access
+        self.minute_choices = minute_choices
+        self.hour_choices = hour_choices
+
+    def clean(self):
+        cleaned_data = super().clean()
+        # Validate that at most one cronjob per group is selected
+        selected_by_group = {}
+        for cj in self.groups.values():
+            for cj_def in cj:
+                field_name = f'cronjob_{cj_def["id"]}'
+                if field_name in cleaned_data and cleaned_data[field_name]:
+                    group = cj_def.get('group')
+                    if group in selected_by_group:
+                        raise ValidationError(
+                            f'Nur einen Cronjob pro Gruppe auswählen: {group}.',
+                            code='duplicate_group'
+                        )
+                    selected_by_group[group] = cj_def['id']
+        return cleaned_data
+
+    def save(self):
+        """Save cronjob selections to the database."""
+        # Collect all selected cronjob ids
+        selected_ids = set()
+        for cj_list in self.groups.values():
+            for cj_def in cj_list:
+                field_name = f'cronjob_{cj_def["id"]}'
+                if field_name in self.data and self.data[field_name]:
+                    selected_ids.add(cj_def['id'])
+        for cj_def in self.standalone:
+            field_name = f'cronjob_{cj_def["id"]}'
+            if field_name in self.data and self.data[field_name]:
+                selected_ids.add(cj_def['id'])
+
+        # Delete unselected cronjobs
+        self.app.cronjobs.exclude(cronjob_id__in=selected_ids).delete()
+
+        # Create or update selected cronjobs with timing values
+        all_cronjobs = list(self.groups.values()) + [self.standalone]
+        for cj_list in all_cronjobs:
+            for cj_def in cj_list:
+                if cj_def['id'] not in selected_ids:
+                    continue
+                timing = cj_def.get('timing', 'fixed')
+                defaults = {}
+                if timing == 'hourly':
+                    minute = self.data.get(f'minute_{cj_def["id"]}')
+                    defaults['minute'] = int(minute) if minute else self.app.port % 60
+                elif timing == 'daily':
+                    hour = self.data.get(f'hour_{cj_def["id"]}')
+                    minute = self.data.get(f'minute_{cj_def["id"]}')
+                    defaults['hour'] = int(hour) if hour else cj_def.get('default_hour', 23)
+                    defaults['minute'] = int(minute) if minute else cj_def.get('default_minute', 0)
+                AppCronjob.objects.update_or_create(
+                    app=self.app,
+                    cronjob_id=cj_def['id'],
+                    defaults=defaults
+                )

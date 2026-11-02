@@ -168,3 +168,33 @@ GITHUB_CLIENT_SECRET = os.environ.get('GITHUB_CLIENT_SECRET')
 
 PYTHON_BIN = '.venv/bin/python'
 APPS_DOMAIN = '.juntagrico.app'
+
+CRONJOBS = [
+    {
+        'id': 'depot_list_future',
+        'name': 'Depotänderungen annehmen und Depotliste erstellen',
+        'group': 'depot_list',
+        'timing': 'daily',
+        'command': 'generate_depot_list --future',
+        'default_hour': 23,
+        'default_minute': 50,
+    },
+    {
+        'id': 'depot_list_no_future',
+        'name': 'Depotliste erstellen ohne Depotänderungen anzunehmen',
+        'group': 'depot_list',
+        'timing': 'daily',
+        'command': 'generate_depot_list --no-future',
+        'default_hour': 23,
+        'default_minute': 50,
+    },
+    {
+        'id': 'remind_members',
+        'name': 'Mitglieder erinnern',
+        'group': None,
+        'timing': 'fixed',
+        'minute': '*/10',
+        'hour': '*',
+        'command': 'remind_members',
+    },
+]

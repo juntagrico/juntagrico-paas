@@ -10,7 +10,7 @@ from django.urls import reverse
 
 from adminconsole.config import Config
 from adminconsole.decorators import owner_of_app
-from adminconsole.models import App, AppEnv
+from adminconsole.models import App, AppEnv, AppCronjob
 from adminconsole.forms import ProjectForm, EnvForm, AppForm, OverwriteAppForm
 from adminconsole.util.create_app import find_port, create_database
 
@@ -119,6 +119,21 @@ def init_domain(request, app_id):
 @owner_of_app
 def init_cronjob(request, app_id):
     app = get_object_or_404(App, pk=app_id)
+
+    # Set default cronjobs for new apps: depot_list_no_future with daily timing
+    from adminconsole.models import get_available_cronjobs
+    available = get_available_cronjobs(app.name)
+    for cj_def in available:
+        if cj_def.get('group') == 'depot_list' and '--no-future' in cj_def.get('command', ''):
+            AppCronjob.objects.get_or_create(
+                app=app,
+                cronjob_id=cj_def['id'],
+                defaults={
+                    'hour': cj_def.get('default_hour', 23),
+                    'minute': cj_def.get('default_minute', 50),
+                }
+            )
+            break
 
     with open(app.log_file, 'wb') as out:
         proc = subprocess.Popen(
