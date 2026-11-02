@@ -1,6 +1,6 @@
 import subprocess
 
-from django.db import connection, transaction
+from django.db import connection
 from django.template.loader import get_template
 
 from adminconsole.models import App

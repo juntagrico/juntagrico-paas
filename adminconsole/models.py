@@ -82,17 +82,11 @@ class App(models.Model):
 
     @property
     def image_tag(self):
-        version = self.version if self.version >= 2 else 'latest'
-        return f'{self.name}:{version}'
+        return f'{self.name}:{self.version}'
 
     @property
     def container(self):
         return docker.from_env().containers.get(self.name)
-
-    def min_version(self):
-        if (self.dir / 'build').is_dir():
-            return 1
-        return 2
 
     def set_branch(self, branch_name):
         self.git_clone_url = self.git_clone_url.split('@')[0] + '@' + branch_name
