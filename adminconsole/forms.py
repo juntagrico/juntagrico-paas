@@ -183,6 +183,12 @@ class CronjobForm(forms.Form):
         self.current_ids = current_ids
         self.current_map = current_map
 
+        # Track which groups have a currently selected cronjob
+        self.group_selected = {}
+        for group_name, cj_list in groups.items():
+            group_ids = {cj['id'] for cj in cj_list}
+            self.group_selected[group_name] = bool(current_ids & group_ids)
+
         # Build minute choices (0-59)
         minute_choices = [(m, str(m)) for m in range(60)]
         # Build hour choices (0-23)
