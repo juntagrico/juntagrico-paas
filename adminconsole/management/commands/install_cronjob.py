@@ -22,7 +22,7 @@ def install_cronjobs_for_app(app):
             continue
 
         job = cron.new(
-            command=f'docker exec {app_name} python -m manage {definition["command"]} 2>&1 | logger -t juntagrico-cron',
+            command=f'docker exec {app_name} python -m manage {definition["command"]}',
             comment=comment
         )
 
