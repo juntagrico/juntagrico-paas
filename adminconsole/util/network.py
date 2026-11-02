@@ -2,29 +2,17 @@ import docker
 from django.conf import settings
 from docker.errors import NotFound
 
-# Docker network for apps with network isolation (setting APPS_NETWORK overrides single values).
-# The gateway is the server as seen from the apps: Postgres listens on it, and the firewall rule
-# (setup/juntagrico-apps-firewall) refers to the bridge name. See README "App network isolation".
-APPS_NETWORK = {
-    'name': 'juntagrico-apps',
-    'subnet': '172.30.0.0/22',
-    'gateway': '172.30.0.1',
-    'bridge': 'br-juntagrico',
-}
-# memory limit of an isolated app (setting APPS_MEMORY_LIMIT)
-APPS_MEMORY_LIMIT = '600m'
-
 
 class NetworkMismatch(Exception):
     pass
 
 
 def apps_network():
-    return {**APPS_NETWORK, **getattr(settings, 'APPS_NETWORK', {})}
+    return {**settings.APPS_NETWORK, **getattr(settings, 'APPS_NETWORK', {})}
 
 
 def apps_memory_limit():
-    return getattr(settings, 'APPS_MEMORY_LIMIT', APPS_MEMORY_LIMIT)
+    return getattr(settings, 'APPS_MEMORY_LIMIT', settings.APPS_MEMORY_LIMIT)
 
 
 def ensure_apps_network(client):

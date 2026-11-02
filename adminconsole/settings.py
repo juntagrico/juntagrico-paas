@@ -179,6 +179,18 @@ COOKIECUTTER_URL = 'https://github.com/juntagrico/juntagrico-science-django-cook
 # Template version used for new apps. Review the changes of the template before updating the commit.
 COOKIECUTTER_COMMIT = 'main'
 
+# Docker network for apps with network isolation (setting APPS_NETWORK overrides single values).
+# The gateway is the server as seen from the apps: Postgres listens on it, and the firewall rule
+# (setup/juntagrico-apps-firewall) refers to the bridge name. See README "App network isolation".
+APPS_NETWORK = {
+    'name': 'juntagrico-apps',
+    'subnet': '172.30.0.0/22',
+    'gateway': '172.30.0.1',
+    'bridge': 'br-juntagrico',
+}
+# memory limit of an isolated app (setting APPS_MEMORY_LIMIT)
+APPS_MEMORY_LIMIT = '600m'
+
 CRONJOBS = [
     {
         'id': 'depot_list_future',
