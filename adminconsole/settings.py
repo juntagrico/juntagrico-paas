@@ -173,7 +173,7 @@ CRONJOBS = [
     {
         'id': 'depot_list_future',
         'name': 'Depotänderungen annehmen und Depotliste erstellen',
-        'group': 'depot_list',
+        'group': 'Depotlisten generieren',
         'timing': 'daily',
         'command': 'generate_depot_list --future',
         'default_hour': 23,
@@ -182,7 +182,7 @@ CRONJOBS = [
     {
         'id': 'depot_list_no_future',
         'name': 'Depotliste erstellen ohne Depotänderungen anzunehmen',
-        'group': 'depot_list',
+        'group': 'Depotlisten generieren',
         'timing': 'daily',
         'command': 'generate_depot_list --no-future',
         'default_hour': 23,
@@ -204,5 +204,25 @@ CRONJOBS = [
         'default_hour': 4,
         'default_minute': 0,
         'required': True,
+    },
+    {
+        'id': 'upcoming_jobs',
+        'name': 'Koordinator:innen über bevorstehende Jobs ihrer Tätigkeitsbereiche informieren',
+        'group': None,
+        'timing': 'daily',
+        'command': 'upcoming_jobs',
+        'default_hour': 8,
+        'default_minute': 0,
+        'apps': ['ortoloco'],
+    },
+    {
+        'id': 'sendmails',
+        'name': 'Emails im Postausgang versenden',
+        'group': None,
+        'timing': 'fixed',
+        'command': 'sendmails --skip-checks -l 50',
+        'minute': '*/5',
+        'hour': '*',
+        'apps': ['mehalsgmues'],
     },
 ]
