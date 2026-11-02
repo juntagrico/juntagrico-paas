@@ -197,7 +197,7 @@ CRONJOBS = [
     },
     {
         'id': 'clearsessions',
-        'name': 'Abgelaufene Sessions löschen',
+        'name': 'Abgelaufene Sessionen aufräumen',
         'group': None,
         'timing': 'daily',
         'command': 'clearsessions',
