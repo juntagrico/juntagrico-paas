@@ -112,12 +112,12 @@ class EnvForm(forms.ModelForm):
     clear_email_password = BooleanField(
         label='Gespeichertes Passwort entfernen', required=False,
         help_text='Für E-Mail-Server ohne Anmeldung.',
-        widget=CheckboxInput(attrs={'class': 'form-control'})
+        widget=CheckboxInput(attrs={'class': 'form-check-input'})
     )
     new_secret_key = BooleanField(
         label='Neuen geheimen Schlüssel erzeugen', required=False,
         help_text='Nur im Notfall, z. B. wenn der Schlüssel bekannt wurde. Alle Benutzer der Instanz werden abgemeldet.',
-        widget=CheckboxInput(attrs={'class': 'form-control'})
+        widget=CheckboxInput(attrs={'class': 'form-check-input'})
     )
     juntagrico_email_port = ChoiceField(
         label='JUNTAGRICO_EMAIL_PORT',
@@ -267,6 +267,9 @@ class AppEnvVarForm(forms.ModelForm):
             self.fields['value'].help_text = 'Geheimer Wert'
         if self.is_bound and self.instance and self.instance.pk and self.instance.secret:
             self.fields['value'].widget.render_value = True
+        # Style the DELETE checkbox with Bootstrap form-check-input class
+        if 'DELETE' in self.fields:
+            self.fields['DELETE'].widget = CheckboxInput(attrs={'class': 'form-check-input'})
 
     def clean_key(self):
         key = self.cleaned_data.get('key', '').strip()
