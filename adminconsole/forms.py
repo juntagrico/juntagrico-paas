@@ -197,6 +197,7 @@ class CronjobForm(forms.Form):
         # Store for template access
         self.minute_choices = minute_choices
         self.hour_choices = hour_choices
+        self.default_minute = app.port % 60
 
     def save(self):
         """Save cronjob selections to the database."""

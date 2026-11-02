@@ -190,11 +190,9 @@ CRONJOBS = [
     },
     {
         'id': 'remind_members',
-        'name': 'Mitglieder erinnern',
+        'name': 'Mitglieder an Einsätze erinnern',
         'group': None,
-        'timing': 'fixed',
-        'minute': '*/10',
-        'hour': '*',
-        'command': 'remind_members',
+        'timing': 'hourly',
+        'command': 'remind_members --skip-checks',
     },
 ]

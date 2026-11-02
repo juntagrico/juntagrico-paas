@@ -4,10 +4,7 @@
 {% block content %}
     <h4>Cronjobs verwalten</h4>
     <p class="card-text">
-        Wähle die Cronjobs aus, die für deine App installiert werden sollen.
-    </p>
-    <p class="alert alert-info">
-        Bei Cronjobs in einer Gruppe (z.B. Depotliste) kann nur einer ausgewählt werden.
+        Wähle die Cronjobs aus, die für diese App installiert werden sollen.
     </p>
 
     <form action="" method="post">
@@ -20,58 +17,66 @@
                 </div>
                 <div class="card-body">
                     <div class="form-check mb-2">
-                        <input class="form-check-input" type="radio" name="group_{{ group_name }}" id="group_{{ group_name }}_none" value=""
-                            {% if not form.group_selected|get_item:group_name %}checked{% endif %}>
+                        <input class="form-check-input" type="radio" name="group_{{ group_name }}"
+                               id="group_{{ group_name }}_none" value=""
+                               {% if not form.group_selected|get_item:group_name %}checked{% endif %}>
                         <label class="form-check-label" for="group_{{ group_name }}_none">
                             Keine (deaktiviert)
                         </label>
                     </div>
                     {% for cj in cronjobs %}
                         {% with ac=form.current_map|get_item:cj.id %}
-                        <div class="form-check mb-2">
-                            <input class="form-check-input" type="radio" name="group_{{ group_name }}" id="cronjob_{{ cj.id }}" value="{{ cj.id }}"
-                                {% if ac %}checked{% endif %}>
-                            <label class="form-check-label" for="cronjob_{{ cj.id }}">
-                                {{ cj.name }} <small class="text-muted">({{ cj.command }})</small>
-                            </label>
-                            {% if cj.timing == 'hourly' %}
-                                <div class="ml-3 mt-1">
-                                    <label for="minute_{{ cj.id }}">Minute:</label>
-                                    <select name="minute_{{ cj.id }}" id="minute_{{ cj.id }}" class="custom-select custom-select-sm d-inline-block" style="width: auto;">
-                                        {% for val, label in form.minute_choices %}
-                                            <option value="{{ val }}"
-                                                {% if ac and ac.minute == val %}selected{% endif %}
-                                                {% if not ac and val == app.port|add:0 %}selected{% endif %}>
-                                                {{ label }}
-                                            </option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                            {% elif cj.timing == 'daily' %}
-                                <div class="ml-3 mt-1">
-                                    <label for="hour_{{ cj.id }}">Stunde:</label>
-                                    <select name="hour_{{ cj.id }}" id="hour_{{ cj.id }}" class="custom-select custom-select-sm d-inline-block" style="width: auto;">
-                                        {% for val, label in form.hour_choices %}
-                                            <option value="{{ val }}"
-                                                {% if ac and ac.hour == val %}selected{% endif %}
-                                                {% if not ac and val == cj.default_hour %}selected{% endif %}>
-                                                {{ label }}
-                                            </option>
-                                        {% endfor %}
-                                    </select>
-                                    <label for="minute_{{ cj.id }}">Minute:</label>
-                                    <select name="minute_{{ cj.id }}" id="minute_{{ cj.id }}" class="custom-select custom-select-sm d-inline-block" style="width: auto;">
-                                        {% for val, label in form.minute_choices %}
-                                            <option value="{{ val }}"
-                                                {% if ac and ac.minute == val %}selected{% endif %}
-                                                {% if not ac and val == cj.default_minute %}selected{% endif %}>
-                                                {{ label }}
-                                            </option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                            {% endif %}
-                        </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="group_{{ group_name }}"
+                                       id="cronjob_{{ cj.id }}" value="{{ cj.id }}"
+                                       {% if ac %}checked{% endif %}>
+                                <label class="form-check-label" for="cronjob_{{ cj.id }}">
+                                    {{ cj.name }} <small class="text-muted">({{ cj.command }})</small>
+                                </label>
+                                {% if cj.timing == 'hourly' %}
+                                    <div class="ml-3 mt-1">
+                                        <label for="minute_{{ cj.id }}">Minute:</label>
+                                        <select name="minute_{{ cj.id }}" id="minute_{{ cj.id }}"
+                                                class="custom-select custom-select-sm d-inline-block"
+                                                style="width: auto;">
+                                            {% for val, label in form.minute_choices %}
+                                                <option value="{{ val }}"
+                                                        {% if ac and ac.minute == val %}selected{% endif %}
+                                                        {% if not ac and val == form.default_minute %}selected{% endif %}>
+                                                    {{ label }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                {% elif cj.timing == 'daily' %}
+                                    <div class="ml-3 mt-1">
+                                        <label for="hour_{{ cj.id }}">Stunde:</label>
+                                        <select name="hour_{{ cj.id }}" id="hour_{{ cj.id }}"
+                                                class="custom-select custom-select-sm d-inline-block"
+                                                style="width: auto;">
+                                            {% for val, label in form.hour_choices %}
+                                                <option value="{{ val }}"
+                                                        {% if ac and ac.hour == val %}selected{% endif %}
+                                                        {% if not ac and val == cj.default_hour %}selected{% endif %}>
+                                                    {{ label }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                        <label for="minute_{{ cj.id }}">Minute:</label>
+                                        <select name="minute_{{ cj.id }}" id="minute_{{ cj.id }}"
+                                                class="custom-select custom-select-sm d-inline-block"
+                                                style="width: auto;">
+                                            {% for val, label in form.minute_choices %}
+                                                <option value="{{ val }}"
+                                                        {% if ac and ac.minute == val %}selected{% endif %}
+                                                        {% if not ac and val == cj.default_minute %}selected{% endif %}>
+                                                    {{ label }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                {% endif %}
+                            </div>
                         {% endwith %}
                     {% endfor %}
                 </div>
@@ -80,50 +85,54 @@
 
         {% for cj in form.standalone %}
             {% with ac=form.current_map|get_item:cj.id %}
-            <div class="form-check mb-2">
-                <input class="form-check-input" type="checkbox" name="cronjob_{{ cj.id }}" id="cronjob_{{ cj.id }}" value="on"
-                    {% if ac %}checked{% endif %}>
-                <label class="form-check-label" for="cronjob_{{ cj.id }}">
-                    {{ cj.name }} <small class="text-muted">({{ cj.command }})</small>
-                </label>
-                {% if cj.timing == 'hourly' %}
-                    <div class="ml-3 mt-1">
-                        <label for="minute_{{ cj.id }}">Minute:</label>
-                        <select name="minute_{{ cj.id }}" id="minute_{{ cj.id }}" class="custom-select custom-select-sm d-inline-block" style="width: auto;">
-                            {% for val, label in form.minute_choices %}
-                                <option value="{{ val }}"
-                                    {% if ac and ac.minute == val %}selected{% endif %}
-                                    {% if not ac and val == app.port|add:0 %}selected{% endif %}>
-                                    {{ label }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                {% elif cj.timing == 'daily' %}
-                    <div class="ml-3 mt-1">
-                        <label for="hour_{{ cj.id }}">Stunde:</label>
-                        <select name="hour_{{ cj.id }}" id="hour_{{ cj.id }}" class="custom-select custom-select-sm d-inline-block" style="width: auto;">
-                            {% for val, label in form.hour_choices %}
-                                <option value="{{ val }}"
-                                    {% if ac and ac.hour == val %}selected{% endif %}
-                                    {% if not ac and val == cj.default_hour %}selected{% endif %}>
-                                    {{ label }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                        <label for="minute_{{ cj.id }}">Minute:</label>
-                        <select name="minute_{{ cj.id }}" id="minute_{{ cj.id }}" class="custom-select custom-select-sm d-inline-block" style="width: auto;">
-                            {% for val, label in form.minute_choices %}
-                                <option value="{{ val }}"
-                                    {% if ac and ac.minute == val %}selected{% endif %}
-                                    {% if not ac and val == cj.default_minute %}selected{% endif %}>
-                                    {{ label }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                {% endif %}
-            </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" name="cronjob_{{ cj.id }}" id="cronjob_{{ cj.id }}"
+                           value="on"
+                           {% if ac %}checked{% endif %}>
+                    <label class="form-check-label" for="cronjob_{{ cj.id }}">
+                        {{ cj.name }} <small class="text-muted">({{ cj.command }})</small>
+                    </label>
+                    {% if cj.timing == 'hourly' %}
+                        <div class="ml-3 mt-1">
+                            <label for="minute_{{ cj.id }}">Minute:</label>
+                            <select name="minute_{{ cj.id }}" id="minute_{{ cj.id }}"
+                                    class="custom-select custom-select-sm d-inline-block" style="width: auto;">
+                                {% for val, label in form.minute_choices %}
+                                    <option value="{{ val }}"
+                                            {% if ac and ac.minute == val %}selected{% endif %}
+                                            {% if not ac and val == form.default_minute %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    {% elif cj.timing == 'daily' %}
+                        <div class="ml-3 mt-1">
+                            <label for="hour_{{ cj.id }}">Stunde:</label>
+                            <select name="hour_{{ cj.id }}" id="hour_{{ cj.id }}"
+                                    class="custom-select custom-select-sm d-inline-block" style="width: auto;">
+                                {% for val, label in form.hour_choices %}
+                                    <option value="{{ val }}"
+                                            {% if ac and ac.hour == val %}selected{% endif %}
+                                            {% if not ac and val == cj.default_hour %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <label for="minute_{{ cj.id }}">Minute:</label>
+                            <select name="minute_{{ cj.id }}" id="minute_{{ cj.id }}"
+                                    class="custom-select custom-select-sm d-inline-block" style="width: auto;">
+                                {% for val, label in form.minute_choices %}
+                                    <option value="{{ val }}"
+                                            {% if ac and ac.minute == val %}selected{% endif %}
+                                            {% if not ac and val == cj.default_minute %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    {% endif %}
+                </div>
             {% endwith %}
         {% empty %}
             {% if not form.groups %}

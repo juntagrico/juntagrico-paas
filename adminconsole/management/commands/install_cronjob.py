@@ -66,6 +66,7 @@ class Command(BaseCommand):
                     job.minute.on(minute)
 
             cron.write()
+            print('Cronjobs erfolgreich installiert')
             print('Return 0')
         except Exception as e:
             print(str(e))
