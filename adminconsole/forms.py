@@ -192,32 +192,19 @@ class CronjobForm(forms.Form):
         self.minute_choices = minute_choices
         self.hour_choices = hour_choices
 
-    def clean(self):
-        cleaned_data = super().clean()
-        # Validate that at most one cronjob per group is selected
-        selected_by_group = {}
-        for cj in self.groups.values():
-            for cj_def in cj:
-                field_name = f'cronjob_{cj_def["id"]}'
-                if field_name in cleaned_data and cleaned_data[field_name]:
-                    group = cj_def.get('group')
-                    if group in selected_by_group:
-                        raise ValidationError(
-                            f'Nur einen Cronjob pro Gruppe auswählen: {group}.',
-                            code='duplicate_group'
-                        )
-                    selected_by_group[group] = cj_def['id']
-        return cleaned_data
-
     def save(self):
         """Save cronjob selections to the database."""
         # Collect all selected cronjob ids
         selected_ids = set()
-        for cj_list in self.groups.values():
-            for cj_def in cj_list:
-                field_name = f'cronjob_{cj_def["id"]}'
-                if field_name in self.data and self.data[field_name]:
-                    selected_ids.add(cj_def['id'])
+
+        # Grouped cronjobs: radio buttons use name="group_{group_name}" with value=cj.id
+        for group_name, cj_list in self.groups.items():
+            field_name = f'group_{group_name}'
+            selected_id = self.data.get(field_name)
+            if selected_id:
+                selected_ids.add(selected_id)
+
+        # Standalone cronjobs: checkboxes use name="cronjob_{cj.id}" with value="on"
         for cj_def in self.standalone:
             field_name = f'cronjob_{cj_def["id"]}'
             if field_name in self.data and self.data[field_name]:
