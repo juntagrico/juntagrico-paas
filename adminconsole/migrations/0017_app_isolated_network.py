@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('adminconsole', '0013_app_juntagrico_version'),
+        ('adminconsole', '0016_remove_appenv_various'),
     ]
 
     operations = [
