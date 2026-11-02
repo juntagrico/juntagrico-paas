@@ -5,8 +5,7 @@
         <label for="minute_{{ cj.id }}">Jede Stunde in Minute:</label>
         <select name="minute_{{ cj.id }}" id="minute_{{ cj.id }}"
                 class="custom-select custom-select-sm d-inline-block"
-                style="width: auto;"
-                {% if disabled %}disabled{% endif %}>
+                style="width: auto;">
             {% for val, label in form.minute_choices %}
                 <option value="{{ val }}"
                         {% if ac and ac.minute == val %}selected{% endif %}
@@ -21,8 +20,7 @@
         <label for="hour_{{ cj.id }}">Stunde:</label>
         <select name="hour_{{ cj.id }}" id="hour_{{ cj.id }}"
                 class="custom-select custom-select-sm d-inline-block"
-                style="width: auto;"
-                {% if disabled %}disabled{% endif %}>
+                style="width: auto;">
             {% for val, label in form.hour_choices %}
                 <option value="{{ val }}"
                         {% if ac and ac.hour == val %}selected{% endif %}
@@ -34,8 +32,7 @@
         <label for="minute_{{ cj.id }}">Minute:</label>
         <select name="minute_{{ cj.id }}" id="minute_{{ cj.id }}"
                 class="custom-select custom-select-sm d-inline-block"
-                style="width: auto;"
-                {% if disabled %}disabled{% endif %}>
+                style="width: auto;">
             {% for val, label in form.minute_choices %}
                 <option value="{{ val }}"
                         {% if ac and ac.minute == val %}selected{% endif %}
