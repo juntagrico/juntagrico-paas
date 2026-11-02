@@ -16,7 +16,7 @@ def migrate_various_to_env_vars(apps, schema_editor):
             if not line or '=' not in line:
                 continue
             key, _, value = line.partition('=')
-            AppEnvVar.objects.create(env=env, key=key.strip(), value=value)
+            AppEnvVar.objects.update_or_create(env=env, key=key.strip(), defaults={'value': value})
 
 
 class Migration(migrations.Migration):
