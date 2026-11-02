@@ -168,18 +168,21 @@ class CronjobForm(forms.Form):
         current_ids = {ac.cronjob_id for ac in app.cronjobs.all()}
         current_map = {ac.cronjob_id: ac for ac in app.cronjobs.all()}
 
-        # Group cronjobs by group
+        # Group cronjobs by group, separating required from optional
         groups = {}
         standalone = []
+        required = []
         for cj in available:
-            group = cj.get('group')
-            if group:
-                groups.setdefault(group, []).append(cj)
+            if cj.get('required'):
+                required.append(cj)
+            elif cj.get('group'):
+                groups.setdefault(cj['group'], []).append(cj)
             else:
                 standalone.append(cj)
 
         self.groups = groups
         self.standalone = standalone
+        self.required = required
         self.current_ids = current_ids
         self.current_map = current_map
 
@@ -204,6 +207,10 @@ class CronjobForm(forms.Form):
         # Collect all selected cronjob ids
         selected_ids = set()
 
+        # Required cronjobs are always selected
+        for cj_def in self.required:
+            selected_ids.add(cj_def['id'])
+
         # Grouped cronjobs: radio buttons use name="group_{group_name}" with value=cj.id
         for group_name, cj_list in self.groups.items():
             field_name = f'group_{group_name}'
@@ -217,11 +224,12 @@ class CronjobForm(forms.Form):
             if field_name in self.data and self.data[field_name]:
                 selected_ids.add(cj_def['id'])
 
-        # Delete unselected cronjobs
-        self.app.cronjobs.exclude(cronjob_id__in=selected_ids).delete()
+        # Delete unselected cronjobs (but never delete required ones)
+        required_ids = {cj['id'] for cj in self.required}
+        self.app.cronjobs.exclude(cronjob_id__in=selected_ids).exclude(cronjob_id__in=required_ids).delete()
 
         # Create or update selected cronjobs with timing values
-        all_cronjobs = list(self.groups.values()) + [self.standalone]
+        all_cronjobs = [self.required] + list(self.groups.values()) + [self.standalone]
         for cj_list in all_cronjobs:
             for cj_def in cj_list:
                 if cj_def['id'] not in selected_ids:

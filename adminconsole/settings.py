@@ -195,4 +195,14 @@ CRONJOBS = [
         'timing': 'hourly',
         'command': 'remind_members --skip-checks',
     },
+    {
+        'id': 'clearsessions',
+        'name': 'Abgelaufene Sessions löschen',
+        'group': None,
+        'timing': 'daily',
+        'command': 'clearsessions',
+        'default_hour': 4,
+        'default_minute': 0,
+        'required': True,
+    },
 ]

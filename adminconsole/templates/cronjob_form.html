@@ -10,6 +10,70 @@
     <form action="" method="post">
         {% csrf_token %}
 
+        {% if form.required %}
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5>Benötigte Cronjobs (können nicht deaktiviert werden)</h5>
+                </div>
+                <div class="card-body">
+                    {% for cj in form.required %}
+                        {% with ac=form.current_map|get_item:cj.id %}
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" name="cronjob_{{ cj.id }}" id="cronjob_{{ cj.id }}"
+                                       value="on" checked disabled>
+                                <label class="form-check-label" for="cronjob_{{ cj.id }}">
+                                    {{ cj.name }} <small class="text-muted">({{ cj.command }})</small>
+                                </label>
+                                {% if cj.timing == 'hourly' %}
+                                    <div class="ml-3 mt-1">
+                                        <label for="minute_{{ cj.id }}">Minute:</label>
+                                        <select name="minute_{{ cj.id }}" id="minute_{{ cj.id }}"
+                                                class="custom-select custom-select-sm d-inline-block"
+                                                style="width: auto;">
+                                            {% for val, label in form.minute_choices %}
+                                                <option value="{{ val }}"
+                                                        {% if ac and ac.minute == val %}selected{% endif %}
+                                                        {% if not ac and val == form.default_minute %}selected{% endif %}>
+                                                    {{ label }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                {% elif cj.timing == 'daily' %}
+                                    <div class="ml-3 mt-1">
+                                        <label for="hour_{{ cj.id }}">Stunde:</label>
+                                        <select name="hour_{{ cj.id }}" id="hour_{{ cj.id }}"
+                                                class="custom-select custom-select-sm d-inline-block"
+                                                style="width: auto;">
+                                            {% for val, label in form.hour_choices %}
+                                                <option value="{{ val }}"
+                                                        {% if ac and ac.hour == val %}selected{% endif %}
+                                                        {% if not ac and val == cj.default_hour %}selected{% endif %}>
+                                                    {{ label }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                        <label for="minute_{{ cj.id }}">Minute:</label>
+                                        <select name="minute_{{ cj.id }}" id="minute_{{ cj.id }}"
+                                                class="custom-select custom-select-sm d-inline-block"
+                                                style="width: auto;">
+                                            {% for val, label in form.minute_choices %}
+                                                <option value="{{ val }}"
+                                                        {% if ac and ac.minute == val %}selected{% endif %}
+                                                        {% if not ac and val == cj.default_minute %}selected{% endif %}>
+                                                    {{ label }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endwith %}
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
         {% for group_name, cronjobs in form.groups.items %}
             <div class="card mb-3">
                 <div class="card-header">
