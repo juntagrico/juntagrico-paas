@@ -18,7 +18,7 @@
                 <div class="card-body">
                     {% for cj in form.required %}
                         {% with ac=form.current_map|get_item:cj.id input_name="cronjob_"|add:cj.id %}
-                            {% include "fragments/cronjob_row.html" with input_type="checkbox" input_value="on" checked=True disabled=True %}
+                            {% include "fragments/cronjob_row.html" with input_type="checkbox" input_value="on" checked=True input_disabled=True timing_disabled=False %}
                         {% endwith %}
                     {% endfor %}
                 </div>

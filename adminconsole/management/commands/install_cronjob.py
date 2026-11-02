@@ -1,7 +1,11 @@
+import logging
+
 from crontab import CronTab
 from django.core.management.base import BaseCommand
 
 from adminconsole.models import App, get_cronjob_definition
+
+logger = logging.getLogger(__name__)
 
 
 def install_cronjobs_for_app(app):
@@ -90,5 +94,6 @@ class Command(BaseCommand):
                 print('Entweder app_name oder --all muss angegeben werden')
                 print('Return 1')
         except Exception as e:
-            print(str(e))
+            logger.error(f'Cronjob installation failed for app: {e}', exc_info=True)
+            print('Cronjob-Installation fehlgeschlagen. Bitte kontaktieren Sie den Administrator.')
             print('Return 1')
