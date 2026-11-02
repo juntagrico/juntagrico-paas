@@ -9,7 +9,7 @@ from django.core.exceptions import ValidationError
 from django.core.mail import get_connection
 from django.core.validators import RegexValidator
 from django.forms import CharField, TextInput, CheckboxInput, Textarea, EmailField, BooleanField, RadioSelect, Select, \
-    PasswordInput
+    PasswordInput, ChoiceField
 
 from adminconsole.models import AppEnv, App, Domain, AppCronjob, get_available_cronjobs
 from adminconsole.util import generate_secret_key
@@ -102,6 +102,13 @@ class ProjectForm(forms.Form):
 
 
 class EnvForm(forms.ModelForm):
+    EMAIL_PORT_CHOICES = [(str(p), str(p)) for p in SMTP_CHECK_PORTS]
+    EMAIL_SECURITY_CHOICES = [
+        ('none', 'Keine'),
+        ('tls', 'TLS'),
+        ('ssl', 'SSL'),
+    ]
+
     clear_email_password = BooleanField(
         label='Gespeichertes Passwort entfernen', required=False,
         help_text='Für E-Mail-Server ohne Anmeldung.',
@@ -112,10 +119,24 @@ class EnvForm(forms.ModelForm):
         help_text='Nur im Notfall, z. B. wenn der Schlüssel bekannt wurde. Alle Benutzer der Instanz werden abgemeldet.',
         widget=CheckboxInput(attrs={'class': 'form-control'})
     )
+    juntagrico_email_port = ChoiceField(
+        label='JUNTAGRICO_EMAIL_PORT',
+        widget=Select(attrs={'class': 'form-control'}),
+        choices=EMAIL_PORT_CHOICES,
+        initial='25',
+        help_text='Postausgansserver Port'
+    )
+    juntagrico_email_security = ChoiceField(
+        label='Verschlüsselung',
+        widget=Select(attrs={'class': 'form-control'}),
+        choices=EMAIL_SECURITY_CHOICES,
+        initial='none',
+        help_text='Verschlüsselung der Verbindung zum E-Mail-Server'
+    )
 
     field_order = ['juntagrico_admin_email', 'juntagrico_email_user', 'juntagrico_email_password',
-                   'clear_email_password', 'juntagrico_email_host', 'juntagrico_email_port', 'juntagrico_email_tls',
-                   'juntagrico_email_ssl', 'juntagrico_secret_key', 'new_secret_key', 'various']
+                   'clear_email_password', 'juntagrico_email_host', 'juntagrico_email_port', 'juntagrico_email_security',
+                   'juntagrico_secret_key', 'new_secret_key', 'various']
 
     class Meta:
         model = AppEnv
@@ -124,8 +145,6 @@ class EnvForm(forms.ModelForm):
                   'juntagrico_email_password',
                   'juntagrico_email_host',
                   'juntagrico_email_port',
-                  'juntagrico_email_tls',
-                  'juntagrico_email_ssl',
                   'juntagrico_secret_key',
                   'various']
         # Secrets are never sent to the browser. "new-password" keeps browsers from filling in the saved password
@@ -133,17 +152,28 @@ class EnvForm(forms.ModelForm):
         widgets = {
             'juntagrico_admin_email': TextInput(attrs={'class': 'form-control'}),
             'juntagrico_email_user': TextInput(attrs={'class': 'form-control', 'autocomplete': 'off'}),
-            'juntagrico_email_password': PasswordInput(attrs={'class': 'form-control', 'autocomplete': 'new-password'}),
+            'juntagrico_email_password': PasswordInput(
+                attrs={'class': 'form-control', 'autocomplete': 'new-password', 'placeholder': '(unverändert)'}),
             'juntagrico_email_host': TextInput(attrs={'class': 'form-control'}),
-            'juntagrico_email_port': TextInput(attrs={'class': 'form-control'}),
-            'juntagrico_email_tls': CheckboxInput(attrs={'class': 'form-control'}),
-            'juntagrico_email_ssl': CheckboxInput(attrs={'class': 'form-control'}),
-            'juntagrico_secret_key': PasswordInput(attrs={'class': 'form-control', 'autocomplete': 'new-password'}),
+            'juntagrico_secret_key': PasswordInput(
+                attrs={'class': 'form-control', 'autocomplete': 'new-password', 'placeholder': '(unverändert)'}),
             'various': Textarea(attrs={'class': 'form-control'})
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Set initial value for port field from instance
+        if self.instance and self.instance.pk:
+            port_field = self.fields['juntagrico_email_port']
+            port_field.initial = self.instance.juntagrico_email_port or '25'
+            # Derive security field initial value from tls/ssl booleans
+            security_field = self.fields['juntagrico_email_security']
+            if self.instance.juntagrico_email_tls:
+                security_field.initial = 'tls'
+            elif self.instance.juntagrico_email_ssl:
+                security_field.initial = 'ssl'
+            else:
+                security_field.initial = 'none'
         # an empty field keeps the stored value
         password = self.fields['juntagrico_email_password']
         if self.instance.juntagrico_email_password:
@@ -172,18 +202,22 @@ class EnvForm(forms.ModelForm):
         elif not cleaned_data.get('juntagrico_secret_key'):
             cleaned_data['juntagrico_secret_key'] = self.instance.juntagrico_secret_key
 
-        use_tls = cleaned_data.get('juntagrico_email_tls')
-        use_ssl = cleaned_data.get('juntagrico_email_ssl')
-        if use_tls and use_ssl:
-            raise ValidationError(
-                'Es kann nur entweder TLS oder SSL ausgewählt werden.',
-                code='ssl_error'
-            )
+        security = cleaned_data.get('juntagrico_email_security', 'none')
+        use_tls = security == 'tls'
+        use_ssl = security == 'ssl'
         if 'skip_check' not in self.data:
             error = self.check_smtp_connection(cleaned_data, use_tls, use_ssl)
             if error:
                 raise ValidationError(error, code='smtp_error')
         return cleaned_data
+
+    def save(self, commit=True):
+        security = self.cleaned_data.get('juntagrico_email_security', 'none')
+        if commit:
+            self.instance.juntagrico_email_tls = security == 'tls'
+            self.instance.juntagrico_email_ssl = security == 'ssl'
+        super().save(commit=commit)
+        return self.instance
 
     @staticmethod
     def check_smtp_connection(cleaned_data, use_tls, use_ssl):
