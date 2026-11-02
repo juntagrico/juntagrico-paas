@@ -278,9 +278,13 @@ class AppEnvVarForm(forms.ModelForm):
         cleaned_data = super().clean()
         key = cleaned_data.get('key', '').strip()
         value = cleaned_data.get('value', '')
+        secret = cleaned_data.get('secret', False)
         # For extra (new) forms, skip if key is empty
         if not self.instance.pk and not key:
             return cleaned_data
+        # Once a secret has a value, it cannot be unmarked to prevent exposing the stored value
+        if self.instance.pk and self.instance.secret and self.instance.value and not secret:
+            cleaned_data['secret'] = True
         # For existing secret fields, keep the old value if nothing new is entered
         if self.instance.pk and self.instance.secret and not value:
             cleaned_data['value'] = self.instance.value
@@ -302,7 +306,7 @@ class AppEnvVarFormSet(forms.BaseInlineFormSet):
 
 AppEnvVarFormSet = inlineformset_factory(
     AppEnv, AppEnvVar, form=AppEnvVarForm,
-    extra=1, can_delete=True, max_num=20,
+    extra=4, can_delete=True, max_num=50,
     formset=AppEnvVarFormSet
 )
 
