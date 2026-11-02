@@ -128,6 +128,7 @@ class AppEnv(models.Model):
         yield 'JUNTAGRICO_DATABASE_ENGINE=django.db.backends.postgresql'
         yield 'JUNTAGRICO_STATIC_ROOT=/code/static/'
         yield 'JUNTAGRICO_MEDIA_ROOT=/code/media/'
+        yield 'JUNTAGRICO_DOMAINS=' + ','.join(self.app.domains.values_list('name', flat=True))
         if self.app.staging_of:
             yield 'JUNTAGRICO_STAGING=1'
         for field in self._meta.get_fields():
@@ -154,11 +155,6 @@ class AppCronjob(models.Model):
 class Domain(models.Model):
     app = models.ForeignKey(App, related_name='domains', on_delete=models.CASCADE)
     name = models.CharField('name', max_length=100, unique=True, validators=[validate_domain_name])
-
-    PLATFORM_DOMAINS = (
-        'juntagrico.science',
-        'juntagrico.app',
-    )
 
     def clean(self):
         # nginx and certbot treat domain names case-insensitively and ignore a trailing dot
