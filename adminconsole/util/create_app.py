@@ -40,7 +40,9 @@ def create_database(app_env, db_name, user_name, replace=False):
     user_name = user_name.replace('-', '_')
     with connection.cursor() as cursor:
         if replace:
+            cursor.execute("SET ROLE " + user_name)
             cursor.execute("DROP DATABASE IF EXISTS " + db_name)
+            cursor.execute("RESET ROLE")
             cursor.execute("DROP USER IF EXISTS " + user_name)
         cursor.execute("CREATE USER " + user_name + " WITH PASSWORD '" + password + "'")
         cursor.execute("ALTER ROLE " + user_name + " SET client_encoding TO 'utf8'")
