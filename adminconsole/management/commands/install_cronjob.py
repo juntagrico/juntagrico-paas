@@ -68,12 +68,12 @@ def install_cronjobs_for_app(app):
 class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('app_name', nargs='?', default=None, help='Name of the app')
-        parser.add_argument('--all', action='store_true', help='Reinstall cronjobs for all apps')
+        parser.add_argument('--all', action='store_true', dest='all_apps', help='Reinstall cronjobs for all apps')
 
     # entry point used by manage.py
     def handle(self, *args, **options):
         try:
-            if options['--all']:
+            if options.get('all_apps'):
                 apps = App.objects.all()
                 for app in apps:
                     if install_cronjobs_for_app(app):
