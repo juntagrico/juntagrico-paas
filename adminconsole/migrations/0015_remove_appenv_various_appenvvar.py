@@ -41,9 +41,4 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.RunPython(migrate_various_to_env_vars, migrations.RunPython.noop),
-        # TODO: Remove the 'various' field after confirming data migrated correctly
-        # migrations.RemoveField(
-        #     model_name='appenv',
-        #     name='various',
-        # ),
     ]
