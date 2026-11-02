@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
@@ -40,7 +41,7 @@ def stop(request, app_id):
     return redirect('overview', app.id)
 
 
-@owner_of_app
+@staff_member_required
 @confirm_post('Admin-Passwort neu setzen', 'Neues Passwort setzen')
 @never_cache
 def reset_admin_password(request, app_id):
