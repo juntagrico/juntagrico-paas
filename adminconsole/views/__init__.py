@@ -15,7 +15,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from docker.errors import APIError, DockerException
 
 from adminconsole.decorators import owner_of_app
-from adminconsole.forms import EnvForm, ProfileForm, BranchForm
+from adminconsole.forms import EnvForm, ProfileForm, BranchForm, AppEnvVarFormSet
 from adminconsole.models import App
 from adminconsole.util import pid_finished
 from adminconsole.util.git import git_switch, git_current_branch
@@ -133,8 +133,10 @@ def env(request, app_id):
 
     if request.method == 'POST':
         form = EnvForm(request.POST, instance=app_env)
-        if form.is_valid():
+        formset = AppEnvVarFormSet(request.POST, instance=app_env)
+        if form.is_valid() and formset.is_valid():
             form.save()
+            formset.save()
             if app.version >= 2:
                 with open(app.log_file, 'wb') as out:
                     proc = subprocess.Popen(
@@ -150,8 +152,9 @@ def env(request, app_id):
             return redirect('/env/restart/' + str(app_id) + '/')
     else:
         form = EnvForm(instance=app_env)
+        formset = AppEnvVarFormSet(instance=app_env)
 
-    return render(request, 'env.html', {'form': form})
+    return render(request, 'env.html', {'form': form, 'formset': formset})
 
 
 @owner_of_app
@@ -165,11 +168,12 @@ def env_restart(request, app_id):
         out.write('JUNTAGRICO_DATABASE_ENGINE=django.db.backends.postgresql\n ')
         for field in app_env._meta.get_fields():
             if hasattr(field, 'verbose_name'):
-                if field.verbose_name != 'VARIOUS':
-                    out.write(field.verbose_name)
-                    out.write('=')
-                out.write(str(getattr(app_env, field.name)))
-                out.write('\n')
+                out.write(field.verbose_name)
+                out.write('=')
+            out.write(str(getattr(app_env, field.name)))
+            out.write('\n')
+        for var in app_env.env_vars.all():
+            out.write(f'{var.key}={var.value}\n')
     with open(app.log_file, 'wb') as out:
         proc = subprocess.Popen([settings.PYTHON_BIN, '-m', 'manage', 'reload_env', name, str(app.port)], stdout=out,
                                 stderr=out)

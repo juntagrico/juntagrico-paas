@@ -118,7 +118,6 @@ class AppEnv(models.Model):
     juntagrico_email_tls = models.BooleanField('JUNTAGRICO_EMAIL_TLS', default=False)
     juntagrico_email_ssl = models.BooleanField('JUNTAGRICO_EMAIL_SSL', default=False)
     juntagrico_secret_key = models.CharField('JUNTAGRICO_SECRET_KEY', null=True, max_length=100, help_text='Geheimer Schlüssel (nur im Notfall ändern)', default=generate_secret_key)
-    various = models.TextField('VARIOUS', blank=True)
 
     def __str__(self):
         return self.app.name
@@ -134,9 +133,25 @@ class AppEnv(models.Model):
         for field in self._meta.get_fields():
             if field.name.startswith('juntagrico'):
                 yield f'{field.verbose_name}={getattr(self, field.name)}'
-        for line in self.various.splitlines():
-            if clean_line := line.strip():
-                yield clean_line
+        for var in self.env_vars.all():
+            yield f'{var.key}={var.value}'
+
+
+class AppEnvVar(models.Model):
+    """Individual key-value environment variable entry for an AppEnv."""
+    env = models.ForeignKey(AppEnv, related_name='env_vars', on_delete=models.CASCADE)
+    key = models.CharField(max_length=200)
+    value = models.TextField(blank=True, default='')
+    secret = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('env', 'key')
+        ordering = ['key']
+
+    def __str__(self):
+        if self.secret and self.value:
+            return f'{self.key}=****'
+        return f'{self.key}={self.value}'
 
 
 class AppCronjob(models.Model):

@@ -8,10 +8,10 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.mail import get_connection
 from django.core.validators import RegexValidator
-from django.forms import CharField, TextInput, CheckboxInput, Textarea, EmailField, BooleanField, RadioSelect, Select, \
-    PasswordInput, ChoiceField
+from django.forms import CharField, TextInput, CheckboxInput, EmailField, BooleanField, RadioSelect, Select, \
+    PasswordInput, ChoiceField, inlineformset_factory
 
-from adminconsole.models import AppEnv, App, Domain, AppCronjob, get_available_cronjobs
+from adminconsole.models import AppEnv, App, Domain, AppCronjob, AppEnvVar, get_available_cronjobs
 from adminconsole.util import generate_secret_key
 
 # ports of mail servers, the connection test is only made to these ports (setting SMTP_CHECK_PORTS)
@@ -136,7 +136,7 @@ class EnvForm(forms.ModelForm):
 
     field_order = ['juntagrico_admin_email', 'juntagrico_email_user', 'juntagrico_email_password',
                    'clear_email_password', 'juntagrico_email_host', 'juntagrico_email_port', 'juntagrico_email_security',
-                   'juntagrico_secret_key', 'new_secret_key', 'various']
+                   'juntagrico_secret_key', 'new_secret_key']
 
     class Meta:
         model = AppEnv
@@ -145,8 +145,7 @@ class EnvForm(forms.ModelForm):
                   'juntagrico_email_password',
                   'juntagrico_email_host',
                   'juntagrico_email_port',
-                  'juntagrico_secret_key',
-                  'various']
+                  'juntagrico_secret_key']
         # Secrets are never sent to the browser. "new-password" keeps browsers from filling in the saved password
         # of the console, which would otherwise become the password of the mail account.
         widgets = {
@@ -157,7 +156,6 @@ class EnvForm(forms.ModelForm):
             'juntagrico_email_host': TextInput(attrs={'class': 'form-control'}),
             'juntagrico_secret_key': PasswordInput(
                 attrs={'class': 'form-control', 'autocomplete': 'new-password', 'placeholder': '(unverändert)'}),
-            'various': Textarea(attrs={'class': 'form-control'})
         }
 
     def __init__(self, *args, **kwargs):
@@ -240,6 +238,73 @@ class EnvForm(forms.ModelForm):
             use_ssl=use_ssl,
             timeout=5,
         ))
+
+
+class AppEnvVarForm(forms.ModelForm):
+    """Form for a single AppEnvVar entry."""
+
+    class Meta:
+        model = AppEnvVar
+        fields = ['key', 'value', 'secret']
+        widgets = {
+            'key': TextInput(attrs={'class': 'form-control', 'placeholder': 'Schlüssel'}),
+            'value': TextInput(attrs={'class': 'form-control', 'placeholder': 'Wert'}),
+            'secret': CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # For secret fields, mask the value if it's an existing entry with a non-empty value
+        if self.instance and self.instance.pk and self.instance.secret and self.instance.value:
+            self.fields['value'].widget = PasswordInput(
+                attrs={'class': 'form-control', 'autocomplete': 'new-password', 'placeholder': '(geändert)'}
+            )
+            self.fields['value'].help_text = 'Leer lassen, um den gespeicherten Wert zu behalten.'
+            # fields with a callable default render their initial value in a hidden input
+            self.fields['value'].show_hidden_initial = False
+        elif self.instance and self.instance.pk and self.instance.secret:
+            # Secret field exists but value is empty
+            self.fields['value'].help_text = 'Geheimer Wert'
+        if self.is_bound and self.instance and self.instance.pk and self.instance.secret:
+            self.fields['value'].widget.render_value = True
+
+    def clean_key(self):
+        key = self.cleaned_data.get('key', '').strip()
+        if key and not key.replace('_', '').replace('-', '').isalnum():
+            raise ValidationError('Schlüssel darf nur Buchstaben, Zahlen, Unterstriche und Bindestriche enthalten.')
+        return key
+
+    def clean(self):
+        cleaned_data = super().clean()
+        key = cleaned_data.get('key', '').strip()
+        value = cleaned_data.get('value', '')
+        # For extra (new) forms, skip if key is empty
+        if not self.instance.pk and not key:
+            return cleaned_data
+        # For existing secret fields, keep the old value if nothing new is entered
+        if self.instance.pk and self.instance.secret and not value:
+            cleaned_data['value'] = self.instance.value
+        # Require non-empty key for non-empty forms
+        if not key and value:
+            self.add_error('key', 'Schlüssel ist erforderlich.')
+        return cleaned_data
+
+
+class AppEnvVarFormSet(forms.BaseInlineFormSet):
+    """FormSet that skips saving empty extra forms."""
+
+    def save_new(self, form, commit=True):
+        key = form.cleaned_data.get('key', '').strip()
+        if not key:
+            return None
+        return super().save_new(form, commit=commit)
+
+
+AppEnvVarFormSet = inlineformset_factory(
+    AppEnv, AppEnvVar, form=AppEnvVarForm,
+    extra=1, can_delete=True, max_num=20,
+    formset=AppEnvVarFormSet
+)
 
 
 class AppForm(forms.ModelForm):
