@@ -169,6 +169,10 @@ GITHUB_CLIENT_SECRET = os.environ.get('GITHUB_CLIENT_SECRET')
 PYTHON_BIN = '.venv/bin/python'
 APPS_DOMAIN = '.juntagrico.app'
 
+COOKIECUTTER_URL = 'https://github.com/juntagrico/juntagrico-science-django-cookiecutter'
+# Template version used for new apps. Review the changes of the template before updating the commit.
+COOKIECUTTER_COMMIT = 'main'
+
 CRONJOBS = [
     {
         'id': 'depot_list_future',
