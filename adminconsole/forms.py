@@ -257,7 +257,7 @@ class AppEnvVarForm(forms.ModelForm):
         # For secret fields, mask the value if it's an existing entry with a non-empty value
         if self.instance and self.instance.pk and self.instance.secret and self.instance.value:
             self.fields['value'].widget = PasswordInput(
-                attrs={'class': 'form-control', 'autocomplete': 'new-password', 'placeholder': '(geändert)'}
+                attrs={'class': 'form-control', 'autocomplete': 'new-password', 'placeholder': '(unverändert)'}
             )
             self.fields['value'].help_text = 'Leer lassen, um den gespeicherten Wert zu behalten.'
             # fields with a callable default render their initial value in a hidden input
