@@ -48,7 +48,9 @@ def create_database(app_env, db_name, user_name, replace=False):
         cursor.execute("ALTER ROLE " + user_name + " SET client_encoding TO 'utf8'")
         cursor.execute("ALTER ROLE " + user_name + " SET default_transaction_isolation TO 'read committed'")
         cursor.execute("ALTER ROLE " + user_name + " SET timezone TO 'Europe/Zurich'")
-        cursor.execute("CREATE DATABASE " + db_name + " ENCODING 'UTF8' LC_COLLATE 'en_US.UTF-8' LC_CTYPE 'en_US.UTF-8' OWNER " + user_name)
+        cursor.execute("CREATE DATABASE " + db_name + " OWNER " + user_name +
+                       " TEMPLATE template0 ENCODING 'UTF8'"
+                       " LC_COLLATE 'en_US.UTF-8' LC_CTYPE 'en_US.UTF-8'")
     app_env.juntagrico_database_host = 'localhost'
     app_env.juntagrico_database_name = db_name
     app_env.juntagrico_database_password = password
