@@ -2,6 +2,7 @@
 {# Context: cj (cronjob definition), ac (AppCronjob or None), form, input_type (radio/checkbox), #}
 {#          input_name, input_value, checked (bool), input_disabled (bool, optional for checkbox/radio), #}
 {#          timing_disabled (bool, optional for timing controls, defaults to input_disabled) #}
+{% with input_disabled=input_disabled|default:false timing_disabled=timing_disabled|default:input_disabled %}
 <div class="form-check mb-2">
     <input class="form-check-input" type="{{ input_type }}" name="{{ input_name }}"
            id="cronjob_{{ cj.id }}" value="{{ input_value }}"
@@ -10,5 +11,6 @@
     <label class="form-check-label" for="cronjob_{{ cj.id }}">
         {{ cj.name }} <small class="text-muted">({{ cj.command }})</small>
     </label>
-    {% include "fragments/cronjob_timing.html" with disabled=timing_disabled|default:input_disabled %}
+    {% include "fragments/cronjob_timing.html" with disabled=timing_disabled %}
 </div>
+{% endwith %}
