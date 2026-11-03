@@ -19,7 +19,7 @@
         <div class="card-body p-0">
             {% for setting in settings %}
                 <div class="px-3 py-2{% if forloop.counter|divisibleby:2 %} bg-light{% endif %}">
-                    <div class="fw-semibold"><code class="text-dark">{{ setting.key }}</code></div>
+                    <div style="font-weight: 600;"><code class="text-dark">{{ setting.key }}</code></div>
                     <div class="mt-1">
                         {% if setting.hidden %}
                             <code class="text-muted">****</code>

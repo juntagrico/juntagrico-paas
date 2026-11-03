@@ -31,18 +31,21 @@ def value_type_of(value):
 def render_value(context, value):
     """Recursively render a value as HTML, masking sensitive keys."""
     if value == '****':
-        return '<code class="text-muted">****</code>'
+        return mark_safe('<code class="text-muted">****</code>')
     elif isinstance(value, dict):
         pairs = []
         for k, v in value.items():
             cell = render_value(context, v)
             pairs.append(
-                '<div class="mb-1">'
-                '<span class="text-dark"><small style="font-weight: 500;">' + escape(str(k)) + '</small></span> '
-                + cell + '</div>'
+                '<div class="row mb-1">'
+                '<div class="col-auto" style="min-width: 120px;">'
+                '<code class="text-dark">' + escape(str(k)) + '</code>'
+                '</div>'
+                '<div class="col">' + cell + '</div>'
+                '</div>'
             )
         return mark_safe(
-            '<div class="border-start border-3 border-secondary ps-2 ms-2 bg-light rounded-start mb-1" style="font-size: 0.9em;">'
+            '<div class="card card-body border-left bg-light" style="border-left-width: 3px; border-left-color: #6c757d; font-size: 0.9em; margin-left: 1rem; margin-bottom: 0.5rem;">'
             + ''.join(pairs) + '</div>'
         )
     elif isinstance(value, (list, tuple)):
@@ -50,6 +53,6 @@ def render_value(context, value):
         for item in value:
             cell = render_value(context, item)
             items.append(f'<li>{cell}</li>')
-        return mark_safe('<ul class="mb-0" style="font-size: 0.9em;">' + ''.join(items) + '</ul>')
+        return mark_safe('<ul class="mb-0 pl-3" style="font-size: 0.9em;">' + ''.join(items) + '</ul>')
     else:
         return mark_safe(f'<code class="text-dark">{escape(str(value))}</code>')
