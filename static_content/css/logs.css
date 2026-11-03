@@ -36,7 +36,7 @@
 .log-col-timestamp {
     width: 160px;
     min-width: 160px;
-    color: #b0b0b0;
+    color: #e0e0e0;
     white-space: nowrap;
     font-size: 13px;
 }
@@ -44,7 +44,7 @@
 .log-col-pid {
     width: 50px;
     min-width: 50px;
-    color: #8fbf7a;
+    color: #c0e0c0;
     white-space: nowrap;
     font-size: 13px;
 }
@@ -87,17 +87,17 @@
 
 .badge-trace {
     background-color: transparent;
-    color: #6a9955;
+    color: #c0e0c0;
 }
 
 .badge-unknown {
     background-color: transparent;
-    color: #999999;
+    color: #cccccc;
 }
 
 .badge-heartbeat {
     background-color: transparent;
-    color: #999999;
+    color: #cccccc;
 }
 
 /* Color code entries by level */
@@ -115,15 +115,15 @@
 }
 
 .log-level-debug .log-col-message {
-    color: #b0b0b0;
+    color: #d0d0d0;
 }
 
 .log-level-trace .log-col-message {
-    color: #8fbf7a;
+    color: #c0e0c0;
 }
 
 .log-level-unknown .log-col-message {
-    color: #999999;
+    color: #cccccc;
 }
 
 .log-level-heartbeat {
@@ -132,11 +132,11 @@
 }
 
 .log-level-heartbeat .log-col-timestamp {
-    color: #999999;
+    color: #cccccc;
 }
 
 .log-level-heartbeat .log-col-message {
-    color: #999999;
+    color: #cccccc;
 }
 
 .log-controls {
