@@ -1,6 +1,8 @@
 import ast
+import json
 import re
 import subprocess
+from collections import OrderedDict
 
 import docker
 from django.conf import settings
@@ -278,27 +280,50 @@ def versions(request, app_id):
     except Exception as e:
         errors.append(f'pip-Version: {e}')
 
-    # Get installed packages
+    # Get installed packages using JSON format for reliable parsing
     try:
-        result = container.exec_run(['pip', 'list', '--format', 'columns', '--disable-pip-version-check'])
+        result = container.exec_run(['pip', 'list', '--format', 'json', '--disable-pip-version-check'])
         output = result.output.decode('utf-8').strip()
         if output:
-            lines = output.split('\n')
-            # Skip header lines (first 2 lines: header + separator)
-            # "Package   Version"
-            # "-------   -------"
-            data_lines = lines[2:] if len(lines) > 2 else lines
-            for line in data_lines:
-                line = line.strip()
-                if not line:
-                    continue
-                parts = line.split()
-                if len(parts) >= 2:
-                    packages.append({'name': parts[0], 'version': parts[1]})
-                elif len(parts) == 1:
-                    packages.append({'name': parts[0], 'version': 'unknown'})
+            parsed = json.loads(output)
+            for pkg in parsed:
+                pkg_name = pkg.get('name', 'unknown')
+                version = pkg.get('version', 'unknown')
+                if pkg_name and version:
+                    packages.append({'name': pkg_name, 'version': version})
     except Exception as e:
         errors.append(f'Paketliste: {e}')
+
+    # Categorize packages by prefix into titled groups
+    PACKAGE_CATEGORIES = [
+        ('juntagrico', 'juntagrico'),
+        ('django', 'Django'),
+        ('gunicorn', 'gunicorn'),
+        ('psycopg', 'psycopg'),
+    ]
+
+    categories = OrderedDict()
+    for _, title in PACKAGE_CATEGORIES:
+        categories[title] = []
+    categories['Andere Pakete'] = []
+
+    for pkg in packages:
+        name_lower = pkg['name'].lower()
+        matched = False
+        for prefix, title in PACKAGE_CATEGORIES:
+            if name_lower.startswith(prefix):
+                categories[title].append(pkg)
+                matched = True
+                break
+        if not matched:
+            categories['Andere Pakete'].append(pkg)
+
+    # Sort each group by name and remove empty categories
+    packages_dict = {
+        title: sorted(pkgs, key=lambda p: p['name'].lower())
+        for title, pkgs in categories.items()
+        if pkgs
+    }
 
     return render(
         request,
@@ -307,7 +332,7 @@ def versions(request, app_id):
             'app': app,
             'python_version': python_version,
             'pip_version': pip_version,
-            'packages': packages,
+            'packages': packages_dict,
             'errors': errors,
         },
     )

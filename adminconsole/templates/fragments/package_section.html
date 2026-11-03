@@ -1,0 +1,28 @@
+<div class="card mb-3">
+    <div class="card-header">
+        <strong>{{ title }}</strong>
+        {% if packages %} <span class="text-muted">({{ packages|length }})</span>{% endif %}
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm table-striped mb-0">
+                {% if packages|length > 1 %}
+                    <thead>
+                        <tr>
+                            <th>Paket</th>
+                            <th class="text-nowrap">Version</th>
+                        </tr>
+                    </thead>
+                {% endif %}
+                <tbody>
+                    {% for pkg in packages %}
+                        <tr>
+                            <td>{{ pkg.name }}</td>
+                            <td class="text-nowrap"><code>{{ pkg.version }}</code></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

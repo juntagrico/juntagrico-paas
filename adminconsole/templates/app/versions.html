@@ -28,33 +28,10 @@
             </div>
         </div>
 
-        {% if packages %}
-            <div class="card">
-                <div class="card-header">
-                    <strong>Installierte Pakete</strong> <span class="text-muted">({{ packages|length }})</span>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-sm table-striped mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Paket</th>
-                                    <th class="text-nowrap">Version</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for pkg in packages %}
-                                    <tr>
-                                        <td>{{ pkg.name }}</td>
-                                        <td class="text-nowrap"><code>{{ pkg.version }}</code></td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        {% endif %}
+        {% for title, pkgs in packages.items %}
+            {% include "fragments/package_section.html" with title=title packages=pkgs %}
+        {% endfor %}
+
     {% else %}
         <div class="alert alert-warning">
             Keine Versionsinformationen verfügbar. Der Container könnte nicht erreicht werden.
