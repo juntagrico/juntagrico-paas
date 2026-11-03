@@ -374,6 +374,11 @@ class PythonVersionForm(forms.ModelForm):
 
 class RedeployForm(forms.Form):
     """Form for redeploy where python version and branch can be adjusted before deploying."""
+    git_clone_url = CharField(
+        label='Repository',
+        required=False,
+        widget=TextInput(attrs={'readonly': 'readonly', 'class': 'form-control'}),
+    )
     python_version = ChoiceField(
         label='Python Version',
         required=False,
@@ -389,6 +394,7 @@ class RedeployForm(forms.Form):
         self.app = app
         self.fields['python_version'].choices = get_python_version_choices()
         if not self.is_bound:
+            self.fields['git_clone_url'].initial = app.git_clone_url
             self.fields['python_version'].initial = app.python_version
             current_branch = app.git_clone_url.partition('@')[2] or 'main'
             self.fields['branch'].initial = current_branch

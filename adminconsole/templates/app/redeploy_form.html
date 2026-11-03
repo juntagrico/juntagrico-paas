@@ -4,22 +4,18 @@
 
 {% block inner_content %}
     <div class="alert alert-info">
-        Passe bei Bedarf die Python-Version oder den Branch an.<br>
-        Die Änderungen werden gespeichert und der Redeploy wird anschließend gestartet.
+        Prüfe deine Einstellungen vor dem Redeploy
     </div>
     <form action="" method="post">
         {% csrf_token %}
 
         <div class="form-group row">
-            <label class="col-form-label col-md-3" for="{{ form.python_version.id_for_label }}">Python Version</label>
+            <label class="col-form-label col-md-3" for="{{ form.git_clone_url.id_for_label }}">Repository</label>
 
             <div class="col-md-9">
-                {{ form.python_version }}
+                {{ form.git_clone_url }}
             </div>
         </div>
-        {% if form.python_version.errors %}
-            <div class="alert alert-danger col-md-12">{{form.python_version.errors}}</div>
-        {% endif %}
 
         <div class="form-group row">
             <label class="col-form-label col-md-3" for="{{ form.branch.id_for_label }}">Branch</label>
@@ -30,6 +26,17 @@
         </div>
         {% if form.branch.errors %}
             <div class="alert alert-danger col-md-12">{{form.branch.errors}}</div>
+        {% endif %}
+
+        <div class="form-group row">
+            <label class="col-form-label col-md-3" for="{{ form.python_version.id_for_label }}">Python Version</label>
+
+            <div class="col-md-9">
+                {{ form.python_version }}
+            </div>
+        </div>
+        {% if form.python_version.errors %}
+            <div class="alert alert-danger col-md-12">{{form.python_version.errors}}</div>
         {% endif %}
 
         <div class="form-group row">

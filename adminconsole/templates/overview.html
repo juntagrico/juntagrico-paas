@@ -176,6 +176,15 @@
     <div class="row mb-4">
         <div class="col-md-12">
             <h3>Setup</h3>
+            {% if app.version == 3 %}
+                <div class="alert alert-info mb-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                         class="bi bi-info-circle me-2" viewBox="0 0 16 16">
+                        <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1m0 10.5a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1m0-9a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V3A.5.5 0 0 1 8 2.5"/>
+                    </svg>
+                    Python-Version und Branch können beim Redeploy angepasst werden.
+                </div>
+            {% endif %}
             <div class="row">
                 {% if staging %}
                     <div class="col-md-6">
@@ -218,6 +227,7 @@
                         </div>
                     </div>
                 </div>
+                {% if app.version < 3 %}
                 <div class="col-md-6">
                     <div class="card mb-3">
                         <h4 class="card-header">Python Version</h4>
@@ -247,6 +257,7 @@
                         </div>
                     </div>
                 </div>
+                {% endif %}
                 <div class="col-md-6">
                     <div class="card mb-3">
                         <h4 class="card-header">Domains verwalten</h4>
