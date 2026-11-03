@@ -8,6 +8,8 @@ fi
 
 port=${2:-"22"}
 
-sftp -P "${port}" "$1" <<< "put $backup_file"
+backup_file="$(cat -)"
+# batch mode: abort and exit non-zero if the upload fails
+sftp -b - -P "${port}" "$1" <<< "put \"$backup_file\""
 
 echo "$backup_file"
