@@ -53,7 +53,7 @@ $(document).ready(function() {
 
     $sortToggle.on('click', function() {
         newestFirst = !newestFirst;
-        $sortLabel.text(newestFirst ? 'Newest first' : 'Oldest first');
+        $sortLabel.text(newestFirst ? 'Neueste zuerst' : 'Älteste zuerst');
         reorderLogs();
     });
 

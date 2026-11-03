@@ -6,15 +6,15 @@
 {% endblock %}
 
 {% block page_subtitle %}
-    <h4>Docker Logs</h4>
+    <h4>Protokoll</h4>
 {% endblock %}
 
 {% block inner_content %}
     <div class="log-controls card card-body mb-3">
         <div class="row align-items-center">
-            <div class="col-md-5">
+            <div class="col-md-6">
                 <div class="btn-group btn-group-sm flex-wrap" role="group" id="level-filters">
-                    <button type="button" class="btn btn-primary log-filter-btn active" data-level="all">All</button>
+                    <button type="button" class="btn btn-primary log-filter-btn active" data-level="all">Alle</button>
                     {% for level in levels %}
                         <button type="button" class="btn btn-outline-secondary log-filter-btn" data-level="{{ level }}">
                             {{ level }}
@@ -22,16 +22,16 @@
                     {% endfor %}
                 </div>
             </div>
-            <div class="col-md-4">
-                <input type="text" class="form-control form-control-sm" id="log-search" placeholder="Search logs..." />
-            </div>
             <div class="col-md-3 text-right">
                 <button type="button" class="btn btn-sm btn-outline-secondary" id="sort-toggle" title="Toggle sort order">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-arrow-down-up" viewBox="0 0 16 16">
                         <path fill-rule="evenodd" d="M7.247 1.347a.5.5 0 0 1 .506 0l6 4a.5.5 0 0 1 0 .846l-6 4a.5.5 0 0 1-.506 0l-6-4a.5.5 0 0 1 0-.846l6-4zm-6 4.846 5 3.5 5-3.5-5-3.5-5 3.5zm6 8.454a.5.5 0 0 1-.506 0l-6-4a.5.5 0 0 1 0-.846l6-4a.5.5 0 0 1 .506 0l6 4a.5.5 0 0 1 0 .846l-6 4zm-6-4.846 5-3.5 5 3.5-5 3.5-5-3.5z"/>
                     </svg>
-                    <span id="sort-label">Newest first</span>
+                    <span id="sort-label">Neueste zuerst</span>
                 </button>
+            </div>
+            <div class="col-md-3">
+                <input type="text" class="form-control form-control-sm" id="log-search" placeholder="Protokoll durchsuchen..." />
             </div>
         </div>
     </div>
@@ -40,10 +40,10 @@
         <table class="table table-sm table-dark table-hover log-table mb-0">
             <thead class="thead-dark">
                 <tr>
-                    <th class="log-col-timestamp">Time</th>
+                    <th class="log-col-timestamp">Zeit</th>
                     <th class="log-col-pid">PID</th>
-                    <th class="log-col-level">Level</th>
-                    <th class="log-col-message">Message</th>
+                    <th class="log-col-level">Stufe</th>
+                    <th class="log-col-message">Nachricht</th>
                 </tr>
             </thead>
             <tbody id="log-tbody">
@@ -59,7 +59,7 @@
                         <td class="log-col-message">{{ entry.message }}</td>
                     </tr>
                 {% empty %}
-                    <tr><td colspan="4" class="text-muted">No log entries found.</td></tr>
+                    <tr><td colspan="4" class="text-muted">Keine Protokolleinträge gefunden.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
