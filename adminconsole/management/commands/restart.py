@@ -25,11 +25,12 @@ class Command(BaseCommand):
             # check the network before stopping the running container, so a problem does not take the app down
             network = ensure_apps_network(client)
             # the server is reachable at the gateway of the network; the last value of a variable wins
-            environment.append(f'JUNTAGRICO_DATABASE_HOST={apps_network()["gateway"]}')
+            gateway = apps_network()["gateway"]
+            environment.append(f'JUNTAGRICO_DATABASE_HOST={gateway}')
             network_options = {
                 'network': network.name,
                 'ports': {f'{app.port}/tcp': ('127.0.0.1', app.port)},
-                'command': ['gunicorn', '--bind', f'0.0.0.0:{app.port}', '-t', '600', app.wsgi_path],
+                'command': ['gunicorn', '--forwarded-allow-ips', gateway, '--bind', f'0.0.0.0:{app.port}', '-t', '600', app.wsgi_path],
                 'mem_limit': apps_memory_limit(),
             }
             print(f'network isolation: {network.name}', flush=True)
