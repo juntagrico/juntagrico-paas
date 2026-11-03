@@ -2,7 +2,7 @@ import ast
 import json
 import re
 import subprocess
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 
 import docker
 from django.conf import settings
@@ -27,15 +27,21 @@ from adminconsole.views.generic import confirm_post, confirm_password, security_
 def home(request):
     superuser = request.user.is_superuser
     if superuser:
-        available_apps = App.objects.filter(staging_of__isnull=True).order_by('id')
+        available_apps = App.objects.filter(staging_of__isnull=True).order_by('name')
     else:
-        available_apps = request.user.app.filter(staging_of__isnull=True)
+        available_apps = request.user.app.filter(staging_of__isnull=True).order_by('name')
     number_of_apps = available_apps.count()
     if number_of_apps == 1 and not superuser:
         return redirect('overview', app_id=available_apps[0].id)
 
+    # Group apps by their first letter
+    grouped_apps = defaultdict(list)
+    for app in available_apps:
+        first_letter = app.name[0].upper() if app.name else '#'
+        grouped_apps[first_letter].append(app)
+
     return render(request, 'home.html', {
-        'apps': available_apps,
+        'grouped_apps': dict(sorted(grouped_apps.items())),
         'can_add_app': number_of_apps < 1 or superuser,
     })
 

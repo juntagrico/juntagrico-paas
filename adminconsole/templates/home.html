@@ -10,21 +10,24 @@
             </div>
         </div>
     {% endif %}
-    {% if apps %}
+    {% if grouped_apps %}
         <div class="row mb-3">
             <div class="col-md-12">
                 <h2>Apps</h2>
-                <ol>
-                    {% for app in apps %}
-                        <li>
-                            <a href="{% url "overview" app.id %}">{{ app.name }}</a>
-                            {% if app.python_version %}<span class="badge badge-secondary">python {{ app.python_version }}</span>{% endif %}
-                            {% for staging in app.stagings.all %}
-                                / <a href="{% url "overview" staging.id %}">{{ staging.name }}</a>
-                            {% endfor %}
-                        </li>
-                    {% endfor %}
-                </ol>
+                {% for letter, apps in grouped_apps.items %}
+                    <h3>{{ letter }}</h3>
+                    <ul>
+                        {% for app in apps %}
+                            <li>
+                                <a href="{% url "overview" app.id %}">{{ app.name }}</a>
+                                {% if app.python_version %}<span class="badge badge-secondary">python {{ app.python_version }}</span>{% endif %}
+                                {% for staging in app.stagings.all %}
+                                    / <a href="{% url "overview" staging.id %}">{{ staging.name }}</a>
+                                {% endfor %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endfor %}
             </div>
         </div>
     {% endif %}
