@@ -142,6 +142,16 @@ ln -s /etc/nginx/sites-available/admin.juntagrico.app /etc/nginx/sites-enabled/
 nginx -t && systemctl reload nginx
 ```
 
+If nginx is the public facing proxy it is recommended to set `X-Forwarded-For` to the real IP address.
+Modify `/etc/nginx/proxy_params` and change this line:
+```
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+```
+to:
+```
+proxy_set_header X-Forwarded-For $remote_addr;
+```
+
 ### Enable HTTPS
 
 using certbot
