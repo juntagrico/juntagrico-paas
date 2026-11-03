@@ -31,7 +31,6 @@ class AppAdmin(admin.ModelAdmin):
     search_fields = ['name', 'port']
     list_filter = ('python_version', 'version', 'isolated_network')
     inlines = [AppCronjobInline, DomainInline, AppEnvInline]
-    readonly_fields = ['overview_link']
 
     @admin.display(description="repo")
     def repo(self, obj):
