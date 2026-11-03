@@ -148,7 +148,7 @@ def _mask_value(value, secret_values=None):
     
     Args:
         value: The value to mask.
-        secret_values: A set of string values that should be masked if found.
+        secret_values: A set of string values that should be masked if found as substrings.
     """
     if secret_values is None:
         secret_values = set()
@@ -163,8 +163,11 @@ def _mask_value(value, secret_values=None):
     elif isinstance(value, (list, tuple)):
         masked = [_mask_value(item, secret_values) for item in value]
         return type(value)(masked)
-    elif isinstance(value, str) and value in secret_values:
-        return '****'
+    elif isinstance(value, str):
+        masked = value
+        for secret in secret_values:
+            masked = masked.replace(secret, '****')
+        return masked
     else:
         return value
 
@@ -208,9 +211,12 @@ def show_env(request, app_id):
                 key = key.strip()
                 value_str = value_str.strip()
                 is_sensitive = any(pattern in key.upper() for pattern in sensitive_key_patterns)
-                # Also mask if the value matches a secret AppEnvVar value
-                if value_str in secret_values:
-                    is_sensitive = True
+                # Also mask if the value contains a secret AppEnvVar value as a substring
+                if not is_sensitive:
+                    for secret in secret_values:
+                        if secret in value_str:
+                            is_sensitive = True
+                            break
                 # Try to parse the value as a Python literal (dict, list, tuple, etc.)
                 parsed_value = None
                 value_type = 'string'
