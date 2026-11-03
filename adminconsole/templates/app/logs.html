@@ -1,0 +1,53 @@
+{% extends "app_base.html" %}
+{% load static %}
+
+{% block page_subtitle %}
+    <h4>Docker Logs</h4>
+{% endblock %}
+
+<link href="{% static 'css/logs.css' %}" rel="stylesheet">
+
+{% block inner_content %}
+    <div class="log-controls mb-3">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <div class="btn-group btn-group-sm" role="group" id="level-filters">
+                    <button type="button" class="btn btn-outline-secondary log-filter-btn active" data-level="all">All</button>
+                    {% for level in levels %}
+                        <button type="button" class="btn btn-outline-secondary log-filter-btn" data-level="{{ level }}">
+                            {{ level }}
+                        </button>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <input type="text" class="form-control form-control-sm" id="log-search" placeholder="Search logs..." />
+            </div>
+        </div>
+    </div>
+
+    <div class="log-container" id="log-container">
+        {% for entry in log_entries %}
+            <div class="log-entry log-level-{{ entry.level|lower }}" data-level="{{ entry.level }}">
+                {% if entry.timestamp %}
+                    <span class="log-timestamp">{{ entry.timestamp }}</span>
+                {% endif %}
+                {% if entry.pid %}
+                    <span class="log-pid">[{{ entry.pid }}]</span>
+                {% endif %}
+                {% if not entry.is_continuation %}
+                    <span class="log-level badge badge-{{ entry.level|lower }}">{{ entry.level }}</span>
+                {% else %}
+                    <span class="log-level-placeholder"></span>
+                {% endif %}
+                <span class="log-message">{{ entry.message }}</span>
+            </div>
+        {% empty %}
+            <div class="text-muted">No log entries found.</div>
+        {% endfor %}
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script type="text/javascript" src="{% static 'js/logs.js' %}"></script>
+{% endblock %}

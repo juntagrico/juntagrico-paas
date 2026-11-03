@@ -227,6 +227,76 @@ def pgdump(request, app_id):
     return response
 
 
+# Regex patterns for log line parsing
+# Gunicorn: [2026-11-03 08:51:05 +0000] [1] [INFO] Starting gunicorn 25.1.0
+# Django: [2026-11-03 10:07:37,854] WARNING Not Found: //wp-includes/wlwmanifest.xml
+# Stack trace lines: indented or continuation lines
+LOG_LINE_RE = re.compile(
+    r'^\[(?P<timestamp>[^\]]+)\]\s+'
+    r'(?:\[(?P<pid>\d+)\]\s+)?'
+    r'(?:\[(?P<level>INFO|WARNING|ERROR|CRITICAL|DEBUG)\]\s+)?'
+    r'(?P<message>.*)',
+    re.IGNORECASE
+)
+
+DJANGO_LOG_RE = re.compile(
+    r'^\[(?P<timestamp>[^\]]+)\]\s+'
+    r'(?P<level>INFO|WARNING|ERROR|CRITICAL|DEBUG)\s+'
+    r'(?P<message>.*)',
+    re.IGNORECASE
+)
+
+
+def parse_log_line(line):
+    """Parse a single log line into structured data.
+    Returns a dict with timestamp, level, pid, message, and is_continuation fields.
+    """
+    line = line.rstrip('\r\n')
+    if not line:
+        return None
+
+    # Try Gunicorn format first
+    match = LOG_LINE_RE.match(line)
+    if match and (match.group('level') or match.group('pid')):
+        return {
+            'timestamp': match.group('timestamp') or '',
+            'level': (match.group('level') or 'INFO').upper(),
+            'pid': match.group('pid') or '',
+            'message': match.group('message') or '',
+            'is_continuation': False,
+        }
+
+    # Try Django format
+    match = DJANGO_LOG_RE.match(line)
+    if match:
+        return {
+            'timestamp': match.group('timestamp') or '',
+            'level': (match.group('level') or 'INFO').upper(),
+            'pid': '',
+            'message': match.group('message') or '',
+            'is_continuation': False,
+        }
+
+    # Check if it's a stack trace / continuation line (starts with whitespace or traceback pattern)
+    if line.startswith((' ', '\t', 'Traceback', 'File "', '  ')):
+        return {
+            'timestamp': '',
+            'level': 'TRACE',
+            'pid': '',
+            'message': line,
+            'is_continuation': True,
+        }
+
+    # Fallback: treat as plain info message
+    return {
+        'timestamp': '',
+        'level': 'INFO',
+        'pid': '',
+        'message': line,
+        'is_continuation': False,
+    }
+
+
 @owner_of_app
 def logs(request, app_id):
     app = get_object_or_404(App, pk=app_id)
@@ -234,10 +304,24 @@ def logs(request, app_id):
     client = docker.from_env()
     container = client.containers.get(name)
     result_text = container.logs(tail=1000)
-    result_text = result_text.decode('utf-8') 
-    return render(request, 'app/show_result.html', {'app': app, 'sections': {
-        'Docker Logs': {'text': result_text, 'result': 0},
-    }})
+    result_text = result_text.decode('utf-8')
+
+    # Parse raw log text into structured entries
+    raw_lines = result_text.split('\n')
+    entries = []
+    for line in raw_lines:
+        parsed = parse_log_line(line)
+        if parsed is not None:
+            entries.append(parsed)
+
+    # Collect unique levels for filter buttons
+    levels = sorted(set(e['level'] for e in entries))
+
+    return render(request, 'app/logs.html', {
+        'app': app,
+        'log_entries': entries,
+        'levels': levels,
+    })
 
 
 @owner_of_app
