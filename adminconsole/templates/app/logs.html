@@ -1,11 +1,13 @@
 {% extends "app_base.html" %}
 {% load static %}
 
+{% block extra_css %}
+<link href="{% static 'css/logs.css' %}" rel="stylesheet">
+{% endblock %}
+
 {% block page_subtitle %}
     <h4>Docker Logs</h4>
 {% endblock %}
-
-<link href="{% static 'css/logs.css' %}" rel="stylesheet">
 
 {% block inner_content %}
     <div class="log-controls mb-3">
