@@ -33,6 +33,19 @@ def get_available_cronjobs(app_name=None):
     return results
 
 
+def get_python_version_choices():
+    """Return Python version choices with an automatic (default) option prepended."""
+    fixed = [
+        ("3.10", "3.10"),
+        ("3.11", "3.11"),
+        ("3.12", "3.12 (Nur mit Juntagrico >= 2.0)"),
+        ("3.13", "3.13 (Nur mit Juntagrico >= 2.0)"),
+        ("3.14", "3.14 (Nur mit Juntagrico >= 2.0)"),
+    ]
+    default_label = f'Automatisch ({settings.DEFAULT_PYTHON_VERSION})'
+    return [("", default_label)] + fixed
+
+
 class GitHubKey(models.Model):
     user = models.OneToOneField(User, related_name='githubkey', null=True, blank=True, on_delete=models.CASCADE)
     key = models.CharField(max_length=500)
@@ -42,20 +55,12 @@ class GitHubKey(models.Model):
 
 
 class App(models.Model):
-    PYTHON_VERSION = [
-        ("3.10", "3.10"),
-        ("3.11", "3.11"),
-        ("3.12", "3.12 (Nur mit Juntagrico >= 2.0)"),
-        ("3.13", "3.13 (Nur mit Juntagrico >= 2.0)"),
-        ("3.14", "3.14 (Nur mit Juntagrico >= 2.0)"),
-    ]
-
     user = models.ForeignKey(User, related_name='app', null=True, blank=True, on_delete=models.CASCADE)
     git_clone_url = models.CharField('github', max_length=100, blank=True)
     name = models.CharField('name', max_length=100, unique=True, validators=[RegexValidator(regex='^[a-z0-9-]+$')])
     port = models.IntegerField('port', unique=True)
     wsgi = models.CharField('wsgi', max_length=100, blank=True)
-    python_version = models.CharField('python', max_length=100, blank=True, choices=PYTHON_VERSION)
+    python_version = models.CharField('python', max_length=100, blank=True, choices=get_python_version_choices)
     juntagrico_version = models.CharField('juntagrico', max_length=50, blank=True)
     managed = models.BooleanField('Managed', default=True)
     version = models.PositiveIntegerField('version', default=2)

@@ -11,7 +11,7 @@ from django.core.validators import RegexValidator
 from django.forms import CharField, TextInput, CheckboxInput, EmailField, BooleanField, RadioSelect, Select, \
     PasswordInput, ChoiceField, inlineformset_factory
 
-from adminconsole.models import AppEnv, App, Domain, AppCronjob, AppEnvVar, get_available_cronjobs
+from adminconsole.models import AppEnv, App, Domain, AppCronjob, AppEnvVar, get_available_cronjobs, get_python_version_choices
 from adminconsole.util import generate_secret_key
 
 # ports of mail servers, the connection test is only made to these ports (setting SMTP_CHECK_PORTS)
@@ -385,7 +385,7 @@ class RedeployForm(forms.Form):
     def __init__(self, *args, app, **kwargs):
         super().__init__(*args, **kwargs)
         self.app = app
-        self.fields['python_version'].choices = App.PYTHON_VERSION
+        self.fields['python_version'].choices = get_python_version_choices()
         if not self.is_bound:
             self.fields['python_version'].initial = app.python_version
             current_branch = app.git_clone_url.partition('@')[2] or 'main'

@@ -1,6 +1,7 @@
 import subprocess
 
 import docker
+from django.conf import settings
 from django.core.management import call_command
 
 from django.core.management.base import BaseCommand
@@ -57,7 +58,7 @@ class Command(BaseCommand):
             result = subprocess.run(
                 cmd,
                 input=get_template(f'infra/v{app.version}/Dockerfile').render(
-                    {'app': app}
+                    {'app': app, 'default_python_version': settings.DEFAULT_PYTHON_VERSION}
                 ),
                 text=True,
                 check=False,

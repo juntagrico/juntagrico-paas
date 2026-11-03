@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.4
-ARG pythonversion=3.11
+ARG pythonversion={{ default_python_version }}
 FROM python:$pythonversion-slim AS git
 
 RUN apt-get update && apt-get install -y --no-install-recommends git
