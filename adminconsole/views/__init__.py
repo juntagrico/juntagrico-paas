@@ -231,6 +231,7 @@ def pgdump(request, app_id):
 # Gunicorn: [2026-11-03 08:51:05 +0000] [1] [INFO] Starting gunicorn 25.1.0
 # Django: [2026-11-03 10:07:37,854] WARNING Not Found: //wp-includes/wlwmanifest.xml
 # Stack trace lines: indented or continuation lines
+# Timestamp-only lines: 2026-11-03 12:47:37.895945+01:00 (health checks, log flushes, keep-alives)
 LOG_LINE_RE = re.compile(
     r'^\[(?P<timestamp>[^\]]+)\]\s+'
     r'(?:\[(?P<pid>\d+)\]\s+)?'
@@ -245,6 +246,32 @@ DJANGO_LOG_RE = re.compile(
     r'(?P<message>.*)',
     re.IGNORECASE
 )
+
+# Timestamp-only lines (ISO 8601 with microseconds and timezone offset)
+# e.g. 2026-11-03 12:47:37.895945+01:00
+TIMESTAMP_ONLY_RE = re.compile(
+    r'^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d+[+-]\d{2}:\d{2}$'
+)
+
+# Time portion extraction for display
+# Matches HH:MM:SS from various timestamp formats
+TIME_RE = re.compile(r'(\d{2}:\d{2}:\d{2})')
+
+
+def format_timestamp(raw):
+    """Format a raw timestamp string for compact display.
+    Returns a shortened version showing just the time portion, e.g. '08:51:05'.
+    """
+    if not raw:
+        return ''
+    match = TIME_RE.search(raw)
+    if match:
+        return match.group(1)
+    # Fallback: if it looks like a date+time, try to extract the time
+    parts = raw.split()
+    if len(parts) >= 2:
+        return parts[1].split('.')[0]  # e.g. '12:47:37' from '12:47:37.895945+01:00'
+    return raw
 
 
 def parse_log_line(line):
@@ -288,6 +315,16 @@ def parse_log_line(line):
             'is_continuation': True,
         }
 
+    # Check if it's a timestamp-only line (health check, log flush, keep-alive)
+    if TIMESTAMP_ONLY_RE.match(line):
+        return {
+            'timestamp': line,
+            'level': 'HEARTBEAT',
+            'pid': '',
+            'message': '',
+            'is_continuation': False,
+        }
+
     # Fallback: treat as unknown level
     return {
         'timestamp': '',
@@ -317,6 +354,10 @@ def logs(request, app_id):
 
     # Collect unique levels for filter buttons
     levels = sorted(set(e['level'] for e in entries))
+
+    # Format timestamps for display
+    for entry in entries:
+        entry['timestamp_display'] = format_timestamp(entry['timestamp'])
 
     return render(request, 'app/logs.html', {
         'app': app,

@@ -1,10 +1,14 @@
 $(document).ready(function() {
+    var $tbody = $('#log-tbody');
     var $entries = $('.log-entry');
     var $filterBtns = $('.log-filter-btn');
     var $searchInput = $('#log-search');
+    var $sortToggle = $('#sort-toggle');
+    var $sortLabel = $('#sort-label');
 
     var activeLevel = 'all';
     var searchQuery = '';
+    var newestFirst = true;
 
     function filterLogs() {
         $entries.each(function() {
@@ -23,6 +27,14 @@ $(document).ready(function() {
         });
     }
 
+    function reorderLogs() {
+        var rows = $tbody.find('.log-entry').detach();
+        if (!newestFirst) {
+            rows = rows.get().reverse();
+        }
+        $tbody.append(rows);
+    }
+
     $filterBtns.on('click', function() {
         $filterBtns.removeClass('active btn-primary').addClass('btn-outline-secondary');
         $(this).removeClass('btn-outline-secondary').addClass('active btn-primary');
@@ -35,6 +47,12 @@ $(document).ready(function() {
         filterLogs();
     });
 
-    // Set initial active button style
-    $filterBtns.first().removeClass('btn-outline-secondary').addClass('btn-primary');
+    $sortToggle.on('click', function() {
+        newestFirst = !newestFirst;
+        $sortLabel.text(newestFirst ? 'Newest first' : 'Oldest first');
+        reorderLogs();
+    });
+
+    // Reorder on page load (Docker returns oldest first)
+    reorderLogs();
 });
