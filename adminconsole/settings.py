@@ -235,6 +235,15 @@ CRONJOBS = [
         'required': True,
     },
     {
+        'id': 'cleartokens',
+        'name': 'Abgelaufene OAuth-Tokens aufräumen (aktiviere dies, falls du das django-oauth-toolkit verwendest)',
+        'group': None,
+        'timing': 'daily',
+        'command': 'cleartokens',
+        'default_hour': 3,
+        'default_minute': 0,
+    },
+    {
         'id': 'upcoming_jobs',
         'name': 'Koordinator:innen über bevorstehende Jobs ihrer Tätigkeitsbereiche informieren',
         'group': None,
