@@ -113,7 +113,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-LOGIN_URL = 'two_factor:login'
+LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'home'
 OTP_TOTP_ISSUER = 'juntagrico Admin'
 

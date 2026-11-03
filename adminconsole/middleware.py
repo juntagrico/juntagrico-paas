@@ -1,17 +1,16 @@
 from django.contrib.auth import logout
 from django.contrib.auth.views import redirect_to_login
-from django.shortcuts import redirect
 from django.urls import Resolver404, resolve
 from django_otp import user_has_device
 
 
 class RequireOTPMiddleware:
     """
-    Requires every authenticated user to complete two-factor authentication.
+    Enforces two-factor authentication for users who have configured an OTP device.
 
-    Users without an OTP device are sent to the setup wizard. Sessions that are
-    authenticated but not OTP verified (e.g. created before 2FA was enforced) are
-    logged out, so the user has to log in again with a token.
+    2FA is optional: users without an OTP device can access the console with
+    password-only login. Users who have set up 2FA must complete OTP verification
+    on each login; unverified sessions with a device are logged out.
     """
 
     ALLOWED_VIEWS = {
@@ -24,6 +23,7 @@ class RequireOTPMiddleware:
         'password_reset_done',
         'password_reset_confirm',
         'password_reset_complete',
+        'login',
     }
 
     def __init__(self, get_response):
@@ -31,9 +31,7 @@ class RequireOTPMiddleware:
 
     def __call__(self, request):
         user = request.user
-        if user.is_authenticated and not user.is_verified() and not self.is_allowed(request):
-            if not user_has_device(user):
-                return redirect('two_factor:setup')
+        if user.is_authenticated and user_has_device(user) and not user.is_verified() and not self.is_allowed(request):
             logout(request)
             return redirect_to_login(request.get_full_path())
         return self.get_response(request)
