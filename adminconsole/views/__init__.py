@@ -9,6 +9,7 @@ from django.http import JsonResponse, HttpResponse
 from django.urls import reverse
 from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
+from django_otp import user_has_device
 from docker.errors import APIError, DockerException
 
 from adminconsole.decorators import owner_of_app
@@ -54,7 +55,8 @@ def overview(request, app_id):
     renderdict = {
         'app': app,
         'status': status,
-        'staging': staging
+        'staging': staging,
+        'has_2fa': user_has_device(request.user),
     }
     return render(request, 'overview.html', renderdict)
 
