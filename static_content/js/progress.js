@@ -15,6 +15,9 @@ $(function () {
 
     function wait_for_pid() {
         $.getJSON(current_url, function( data ) {
+            if (data.expected_steps) {
+                expected_steps =data.expected_steps
+            }
             if (!(data.finished)) {
                 // update title
                 if (data.title!==null) {

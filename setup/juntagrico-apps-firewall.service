@@ -1,0 +1,13 @@
+[Unit]
+Description=Firewall rule for juntagrico apps with network isolation
+# set the rule before Docker starts the app containers
+Wants=network-pre.target
+Before=network-pre.target docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/juntagrico-apps-firewall
+
+[Install]
+WantedBy=multi-user.target

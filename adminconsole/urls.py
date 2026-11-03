@@ -7,7 +7,7 @@ from two_factor.admin import AdminSiteOTPRequired
 from two_factor.urls import urlpatterns as two_factor_urls
 
 from adminconsole import views
-from adminconsole.views import git, create, staging, v2, app, tools, domain
+from adminconsole.views import git, create, staging, v2, app, tools, domain, cronjob
 
 admin.site.__class__ = AdminSiteOTPRequired
 
@@ -22,6 +22,7 @@ urlpatterns = [
     path('overview/<int:app_id>/', views.overview, name='overview'),
     path('app/<int:app_id>/start/', app.start, name='app-start'),
     path('app/<int:app_id>/stop/', app.stop, name='app-stop'),
+    path('app/<int:app_id>/admin-password/', app.reset_admin_password, name='app-admin-password'),
     path('mailtexts/<int:app_id>/', views.mailtexts),
     path('show/<int:app_id>/result/', views.show_result, name='show-result'),
     path('logs/<int:app_id>/', views.logs, name='logs'),
@@ -30,15 +31,10 @@ urlpatterns = [
     path('dom/add/<int:app_id>/<int:pid>/', domain.add, name='domain-add'),
     path('dom/renew/<int:domain_id>/', domain.renew, name='domain-renew'),
     path('dom/remove/<int:domain_id>/', domain.remove, name='domain-remove'),
+    path('cron/form/<int:app_id>/', cronjob.manage, name='cronjob-manage'),
     path('pid/<int:pid>/', views.pidcheck),
-    path('reload/<int:app_id>/', views.reload, name='redeploy'),
     path('env/<int:app_id>/', views.env),
-    path('env/restart/<int:app_id>/', views.env_restart),
     path('gdl/<int:app_id>/', views.generate_depot_list),
-    path('migrate/<int:app_id>/', views.migrate),
-    path('collectstatic/<int:app_id>/', views.collectstatic),
-    path('crestart/<int:app_id>/', views.restart),
-    path('rebuild/<int:app_id>/', views.rebuild_image, name='rebuild-image'),
     path('branch/change/<int:app_id>/', views.change_branch, name='change-branch'),
     path('dumpdata/<int:app_id>/', views.dumpdata, name='dumpdata'),
     path('pgdump/<int:app_id>/', views.pgdump, name='pgdump'),

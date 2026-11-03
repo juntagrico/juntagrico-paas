@@ -1,8 +1,10 @@
+import subprocess
+
 import docker
 from django.core.management import call_command
 
 from django.core.management.base import BaseCommand
-from docker.errors import BuildError
+from django.template.loader import get_template
 
 from adminconsole.models import App
 from adminconsole.util.create_app import create_docker_file
@@ -28,29 +30,93 @@ class Command(BaseCommand):
         if python_version:
             build_args['pythonversion'] = python_version
 
-        create_docker_file(app)
+        if app.version >= 3:
+            build_args['appuser'] = app.name
+            build_args['appuid'] = 10000 + app.port
+            if '@' in app.git_clone_url:
+                build_args['git_repo'], build_args['git_ref'] = app.git_clone_url.split('@')
+            else:
+                build_args['git_repo'] = app.git_clone_url
 
-        response = client.api.build(
-            path=str(app.dir),
-            tag=app.image_tag,
-            buildargs=build_args,
-            nocache=options.get('nocache'),
-            decode=True,
-            rm=True,
-        )
-        code = 0
-        for line in response:
-            error = line.get('error')
-            stream = line.get('stream')
-            if error:
-                stream = error
-                code = 1
-            if stream:
-                print(stream, end='', flush=True)
+            cmd = (
+                ['docker', 'buildx', 'build', '-f', '-']
+                + ['--no-cache-filter', 'fetcher']  # always pull latest changes from branch
+                + ['--tag', app.image_tag]
+            )
 
-        print(f'Return {code}', flush=True)
-        if code == 1:
-            return None
+            if options.get('nocache', False):
+                cmd.append('--no-cache')
+
+            for key, value in build_args.items():
+                cmd.extend(['--build-arg', f'{key}={value}'])
+
+            # Make the built image available to the local Docker daemon.
+            cmd.append('--load')
+            cmd.append(str(app.dir))
+
+            result = subprocess.run(
+                cmd,
+                input=get_template(f'infra/v{app.version}/Dockerfile').render(
+                    {'app': app}
+                ),
+                text=True,
+                check=False,
+            )
+            code = result.returncode
+
+            if code != 0:
+                print(f'Return {code}', flush=True)
+                return None
+
+            # fix volume permissions
+            cmd = ['chown', '-R', str(build_args['appuid'])]
+            client.containers.run(
+                image=app.image_tag,
+                user='0:0',
+                command=cmd + ['/code/internal_files', '/code/media'],
+                volumes={
+                    f'{app.name}-internal': {
+                        'bind': '/code/internal_files/',
+                        'mode': 'rw',
+                    },
+                    app.dir / 'media': {
+                        "bind": "/code/media",
+                        "mode": "rw",
+                    },
+                },
+                remove=True,
+                stdout=True,
+                stderr=True,
+            )
+
+            print(f'Return {code}', flush=True)
+            if code != 0:
+                return None
+
+        else:
+            create_docker_file(app)
+            
+            response = client.api.build(
+                path=str(app.dir),
+                tag=app.image_tag,
+                buildargs=build_args,
+                nocache=options.get('nocache', False),
+                decode=True,
+                rm=True,
+            )
+            code = 0
+            for line in response:
+                error = line.get('error')
+                stream = line.get('stream')
+                if error:
+                    stream = error
+                    code = 1
+                if stream:
+                    print(stream, end='', flush=True)
+    
+            print(f'Return {code}', flush=True)
+            if code == 1:
+                return None
 
         if options.get('restart'):
             return call_command('restart', app.name)

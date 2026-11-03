@@ -27,6 +27,13 @@ DEBUG = False
 
 ALLOWED_HOSTS = ['admin.juntagrico.app', 'admin.juntagrico.science']
 
+# The console is only served via HTTPS. nginx passes the scheme in X-Forwarded-Proto, which gunicorn trusts on its
+# unix socket, so Django recognises HTTPS requests without SECURE_PROXY_SSL_HEADER.
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+# browsers use only HTTPS for the console for this many seconds; raise to 31536000 (one year) once it works
+SECURE_HSTS_SECONDS = 3600
+
 
 # Application definition
 
@@ -160,6 +167,12 @@ LOGGING = {
             'handlers': ['console'],
             'level': 'WARNING',
         },
+        # exports and failed password confirmations, in the log of gunicorn (journalctl -u gunicorn)
+        'adminconsole.security': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
     },
 }
 
@@ -178,3 +191,99 @@ GITHUB_CLIENT_SECRET = os.environ.get('GITHUB_CLIENT_SECRET')
 
 PYTHON_BIN = '.venv/bin/python'
 APPS_DOMAIN = '.juntagrico.app'
+
+COOKIECUTTER_URL = 'https://github.com/juntagrico/juntagrico-science-django-cookiecutter'
+# Template version used for new apps. Review the changes of the template before updating the commit.
+COOKIECUTTER_COMMIT = 'main'
+
+# Docker network for apps with network isolation (setting APPS_NETWORK overrides single values).
+# The gateway is the server as seen from the apps: Postgres listens on it, and the firewall rule
+# (setup/juntagrico-apps-firewall) refers to the bridge name. See README "App network isolation".
+APPS_NETWORK = {
+    'name': 'juntagrico-apps',
+    'subnet': '172.30.0.0/22',
+    'gateway': '172.30.0.1',
+    'bridge': 'br-juntagrico',
+}
+# memory limit of an isolated app (setting APPS_MEMORY_LIMIT)
+APPS_MEMORY_LIMIT = '600m'
+
+CRONJOBS = [
+    {
+        'id': 'depot_list_future',
+        'name': 'Depotänderungen annehmen und Depotliste erstellen',
+        'group': 'Depotlisten generieren',
+        'timing': 'daily',
+        'command': 'generate_depot_list --future',
+        'default_hour': 23,
+        'default_minute': 'spread',
+        'default': True,
+    },
+    {
+        'id': 'depot_list_no_future',
+        'name': 'Depotliste erstellen ohne Depotänderungen anzunehmen',
+        'group': 'Depotlisten generieren',
+        'timing': 'daily',
+        'command': 'generate_depot_list --no-future',
+        'default_hour': 23,
+        'default_minute': 'spread',
+    },
+    {
+        'id': 'remind_members',
+        'name': 'Mitglieder an Einsätze erinnern',
+        'group': None,
+        'timing': 'hourly',
+        'command': 'remind_members --skip-checks',
+        'default_minute': 'spread',
+        'default': True,
+    },
+    {
+        'id': 'clearsessions',
+        'name': 'Abgelaufene Sessionen aufräumen',
+        'group': None,
+        'timing': 'daily',
+        'command': 'clearsessions',
+        'default_hour': 4,
+        'default_minute': 'spread',
+        'required': True,
+    },
+    {
+        'id': 'cleartokens',
+        'name': 'Abgelaufene OAuth-Tokens aufräumen (aktiviere dies, falls du das django-oauth-toolkit verwendest)',
+        'group': None,
+        'timing': 'daily',
+        'command': 'cleartokens',
+        'default_hour': 3,
+        'default_minute': 'spread',
+    },
+    {
+        'id': 'upcoming_jobs',
+        'name': 'Koordinator:innen über bevorstehende Jobs ihrer Tätigkeitsbereiche informieren',
+        'group': None,
+        'timing': 'daily',
+        'command': 'upcoming_jobs',
+        'default_hour': 8,
+        'default_minute': 'spread',
+        'apps': ['ortoloco'],
+    },
+    {
+        'id': 'sendmails',
+        'name': 'Emails im Postausgang versenden',
+        'group': None,
+        'timing': 'fixed',
+        'command': 'sendmails --skip-checks -l 50',
+        'hour': '*',
+        'minute': '*/5',
+        'apps': ['mehalsgmues'],
+    },
+    {
+        'id': 'redeploy',
+        'name': 'Automatische Updates (redeploy)',
+        'group': None,
+        'timing': 'daily',
+        'type': 'shell',
+        'command': '/var/django/adminconsole/tasks/redeploy-v2.sh',
+        'default_hour': 2,
+        'default_minute': 'spread',
+    },
+]

@@ -12,6 +12,26 @@ from django.utils import timezone
 from adminconsole.util import generate_secret_key
 
 
+def get_cronjob_definition(cronjob_id):
+    """Look up a cronjob definition from settings.CRONJOBS by id."""
+    for cj in settings.CRONJOBS:
+        if cj['id'] == cronjob_id:
+            return cj
+    return None
+
+
+def get_available_cronjobs(app_name=None):
+    """Return cronjob definitions filtered by app availability.
+    If app_name is provided, only return cronjobs where apps is not set or app_name is in the list.
+    """
+    results = []
+    for cj in settings.CRONJOBS:
+        apps = cj.get('apps')
+        if apps is None or app_name in apps:
+            results.append(cj)
+    return results
+
+
 class GitHubKey(models.Model):
     user = models.OneToOneField(User, related_name='githubkey', null=True, blank=True, on_delete=models.CASCADE)
     key = models.CharField(max_length=500)
@@ -22,7 +42,6 @@ class GitHubKey(models.Model):
 
 class App(models.Model):
     PYTHON_VERSION = [
-        ("3.9", "3.9 (Nur mit Juntagrico < 2.0)"),
         ("3.10", "3.10"),
         ("3.11", "3.11"),
         ("3.12", "3.12 (Nur mit Juntagrico >= 2.0)"),
@@ -41,6 +60,11 @@ class App(models.Model):
     version = models.PositiveIntegerField('version', default=2)
     staging_of = models.ForeignKey('App', null=True, blank=True, on_delete=models.CASCADE, related_name='stagings')
     run_until = models.DateTimeField('run until', null=True, blank=True, default=None)
+    isolated_network = models.BooleanField(
+        'network isolation', default=False,
+        help_text='Run the app in its own Docker network instead of the host network. '
+                  'Takes effect at the next restart (manage.py restart), see README "App network isolation".'
+    )
 
     def __str__(self):
         return self.name
@@ -63,17 +87,11 @@ class App(models.Model):
 
     @property
     def image_tag(self):
-        version = self.version if self.version >= 2 else 'latest'
-        return f'{self.name}:{version}'
+        return f'{self.name}:{self.version}'
 
     @property
     def container(self):
         return docker.from_env().containers.get(self.name)
-
-    def min_version(self):
-        if (self.dir / 'build').is_dir():
-            return 1
-        return 2
 
     def set_branch(self, branch_name):
         self.git_clone_url = self.git_clone_url.split('@')[0] + '@' + branch_name
@@ -99,7 +117,6 @@ class AppEnv(models.Model):
     juntagrico_email_tls = models.BooleanField('JUNTAGRICO_EMAIL_TLS', default=False)
     juntagrico_email_ssl = models.BooleanField('JUNTAGRICO_EMAIL_SSL', default=False)
     juntagrico_secret_key = models.CharField('JUNTAGRICO_SECRET_KEY', null=True, max_length=100, help_text='Geheimer Schlüssel (nur im Notfall ändern)', default=generate_secret_key)
-    various = models.TextField('VARIOUS', blank=True)
 
     def __str__(self):
         return self.app.name
@@ -107,14 +124,46 @@ class AppEnv(models.Model):
     def get_lines(self):
         yield 'JUNTAGRICO_DEBUG=False'
         yield 'JUNTAGRICO_DATABASE_ENGINE=django.db.backends.postgresql'
+        yield 'JUNTAGRICO_STATIC_ROOT=/code/static/'
+        yield 'JUNTAGRICO_MEDIA_ROOT=/code/media/'
+        yield 'JUNTAGRICO_DOMAINS=' + ','.join(self.app.domains.values_list('name', flat=True))
         if self.app.staging_of:
             yield 'JUNTAGRICO_STAGING=1'
         for field in self._meta.get_fields():
             if field.name.startswith('juntagrico'):
                 yield f'{field.verbose_name}={getattr(self, field.name)}'
-        for line in self.various.splitlines():
-            if clean_line := line.strip():
-                yield clean_line
+        for var in self.env_vars.all():
+            yield f'{var.key}={var.value}'
+
+
+class AppEnvVar(models.Model):
+    """Individual key-value environment variable entry for an AppEnv."""
+    env = models.ForeignKey(AppEnv, related_name='env_vars', on_delete=models.CASCADE)
+    key = models.CharField(max_length=200)
+    value = models.TextField(blank=True, default='')
+    secret = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('env', 'key')
+        ordering = ['key']
+
+    def __str__(self):
+        if self.secret and self.value:
+            return f'{self.key}=****'
+        return f'{self.key}={self.value}'
+
+
+class AppCronjob(models.Model):
+    app = models.ForeignKey(App, related_name='cronjobs', on_delete=models.CASCADE)
+    cronjob_id = models.CharField(max_length=100)
+    minute = models.PositiveIntegerField(null=True, blank=True, help_text='Minute (0-59)')
+    hour = models.PositiveIntegerField(null=True, blank=True, help_text='Hour (0-23)')
+
+    class Meta:
+        unique_together = ('app', 'cronjob_id')
+
+    def __str__(self):
+        return f'{self.app.name}: {self.cronjob_id}'
 
 
 class Domain(models.Model):

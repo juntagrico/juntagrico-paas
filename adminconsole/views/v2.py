@@ -1,6 +1,6 @@
+import re
 import subprocess
 
-import psutil
 from django.conf import settings
 from django.contrib import messages
 from django.http import Http404, JsonResponse
@@ -22,10 +22,7 @@ def set_version(request, app_id):
         version = int(request.POST.get('version'))
         app.version = version
         app.save()
-        if version == 1:
-            messages.success(request, 'V1 aktiviert. Mache einen Rebuild um die Änderungen anzuwenden.')
-        elif version == 2:
-            messages.success(request, 'V2 aktiviert. Mache einen Redeploy um die Änderungen anzuwenden.')
+        messages.success(request, f'V{version} aktiviert. Mache einen Redeploy um die Änderungen anzuwenden.')
     except ValueError:
         messages.error(request, 'Version nicht definiert.')
     return redirect('overview', app_id)
@@ -34,8 +31,6 @@ def set_version(request, app_id):
 @owner_of_app
 def redeploy(request, app_id, upgrade=False):
     app = get_object_or_404(App, pk=app_id)
-    if app.version != 2:
-        raise Http404
 
     if request.method == 'POST':
         if app.staging_of:
@@ -73,10 +68,23 @@ def show_progress(request, app_id, pid):
     current_section = 0
     current_section_progress = None
     current_title = None
+    docker_build_header = re.compile(r'^#(\d+)\s+\[([^\]]+)\]\s*(.*)$')
+    docker_build_done = re.compile(r'^#(\d+)\s+(DONE|CACHED)')
     with open(app.log_file, 'r') as file:
         file.seek(start)
         while line := file.readline():
             line = line.lstrip()
+
+            match = docker_build_header.match(line)
+            if match:
+                current_title = line
+                continue
+            
+            match = docker_build_done.match(line)
+            if match:
+                current_section += 1
+                continue
+            
             if line.startswith('# '):
                 current_section += 1
                 current_section_progress = 0
@@ -95,6 +103,7 @@ def show_progress(request, app_id, pid):
         'finished': pid_finished(pid),
         'section': current_section,
         'section_progress': current_section_progress,
+        'expected_steps':  ((21 + 5.1) if app.version >= 3 else 6.1),  # v3 counts each docker build step
         'title': current_title,
         'read': read_until,
     })
@@ -103,8 +112,6 @@ def show_progress(request, app_id, pid):
 @owner_of_app
 def set_python_version(request, app_id):
     app = get_object_or_404(App, pk=app_id)
-    if app.version != 2:
-        raise Http404
 
     success = False
     if request.method == 'POST':

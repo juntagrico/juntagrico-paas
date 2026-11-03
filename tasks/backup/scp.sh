@@ -7,6 +7,7 @@ if [ "$#" -ne 1 ]; then
 fi
 
 backup_file="$(cat -)"
-scp "$backup_file" "$1"
+scp -B -o StrictHostKeyChecking=yes "$backup_file" "$1" || scp_status=$?
 
 echo "$backup_file"
+exit "${scp_status:-0}"

@@ -1,8 +1,5 @@
 import ast
 import subprocess
-from datetime import datetime
-from time import sleep
-from zoneinfo import ZoneInfo
 
 import docker
 from django.conf import settings
@@ -15,10 +12,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 from docker.errors import APIError, DockerException
 
 from adminconsole.decorators import owner_of_app
-from adminconsole.forms import EnvForm, ProfileForm, BranchForm
+from adminconsole.forms import EnvForm, ProfileForm, BranchForm, AppEnvVarFormSet
 from adminconsole.models import App
 from adminconsole.util import pid_finished
 from adminconsole.util.git import git_switch, git_current_branch
+from adminconsole.views.generic import confirm_post, confirm_password, security_log, client_address
 
 
 @login_required
@@ -69,19 +67,6 @@ def pidcheck(request, pid):
 
 
 @owner_of_app
-def reload(request, app_id):
-    app = get_object_or_404(App, pk=app_id)
-    with open(app.log_file, 'wb') as out:
-        proc = subprocess.Popen([settings.PYTHON_BIN, '-m', 'manage', 'rebuild_docker', app.name], stdout=out, stderr=out)
-    render_dict = {
-        'step': 'Redeploy',
-        'pid': proc.pid,
-        'next': reverse('show-result', args=[app_id])
-    }
-    return render(request, 'wait_next.html', render_dict)
-
-
-@owner_of_app
 def show_result(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     # parse log
@@ -113,72 +98,31 @@ def show_result(request, app_id):
 
 
 @owner_of_app
-def rebuild_image(request, app_id):
-    app = get_object_or_404(App, pk=app_id)
-    with open(app.log_file, 'wb') as out:
-        proc = subprocess.Popen([settings.PYTHON_BIN, '-m', 'manage', 'rebuild_image', app.name, str(app.port)],
-                                stdout=out, stderr=out)
-    render_dict = {
-        'step': 'Rebuild',
-        'pid': proc.pid,
-        'next': reverse('show-result', args=[app.id])
-    }
-    return render(request, 'wait_next.html', render_dict)
-
-
-@owner_of_app
 def env(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     app_env = app.env
 
     if request.method == 'POST':
         form = EnvForm(request.POST, instance=app_env)
-        if form.is_valid():
+        formset = AppEnvVarFormSet(request.POST, instance=app_env)
+        if form.is_valid() and formset.is_valid():
             form.save()
-            if app.version == 2:
-                with open(app.log_file, 'wb') as out:
-                    proc = subprocess.Popen(
-                        [settings.PYTHON_BIN, '-m', 'manage', 'restart', app.name],
-                        stdout=out, stderr=out
-                    )
-                return render(request, 'wait_next.html', {
-                    'step': 'Einstellungen anwenden',
-                    'pid': proc.pid,
-                    'next': reverse('overview', args=[app.id])
-                })
-
-            return redirect('/env/restart/' + str(app_id) + '/')
+            formset.save()
+            with open(app.log_file, 'wb') as out:
+                proc = subprocess.Popen(
+                    [settings.PYTHON_BIN, '-m', 'manage', 'restart', app.name],
+                    stdout=out, stderr=out
+                )
+            return render(request, 'wait_next.html', {
+                'step': 'Einstellungen anwenden',
+                'pid': proc.pid,
+                'next': reverse('overview', args=[app.id])
+            })
     else:
         form = EnvForm(instance=app_env)
+        formset = AppEnvVarFormSet(instance=app_env)
 
-    return render(request, 'env.html', {'form': form})
-
-
-@owner_of_app
-def env_restart(request, app_id):
-    app = get_object_or_404(App, pk=app_id)
-    name = app.name
-    app_env = app.env
-    fn = app.dir / 'build' / f'{name}.env'
-    with open(fn, 'w') as out:
-        out.write('JUNTAGRICO_DEBUG=False\n ')
-        out.write('JUNTAGRICO_DATABASE_ENGINE=django.db.backends.postgresql\n ')
-        for field in app_env._meta.get_fields():
-            if hasattr(field, 'verbose_name'):
-                if field.verbose_name != 'VARIOUS':
-                    out.write(field.verbose_name)
-                    out.write('=')
-                out.write(str(getattr(app_env, field.name)))
-                out.write('\n')
-    with open(app.log_file, 'wb') as out:
-        proc = subprocess.Popen([settings.PYTHON_BIN, '-m', 'manage', 'reload_env', name, str(app.port)], stdout=out,
-                                stderr=out)
-    render_dict = {
-        'step': 'Einstellungen anwenden',
-        'pid': proc.pid,
-        'next': reverse('overview', args=[app.id])
-    }
-    return render(request, 'wait_next.html', render_dict)
+    return render(request, 'env.html', {'form': form, 'formset': formset})
 
 
 @owner_of_app
@@ -199,6 +143,7 @@ def change_branch(request, app_id):
 
 
 @owner_of_app
+@confirm_post('Depotliste generieren', 'Depotliste erzeugen')
 def generate_depot_list(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     name = app.name
@@ -242,9 +187,11 @@ def mailtexts(request, app_id):
 
 
 @owner_of_app
+@confirm_password('Daten exportieren (JSON)', 'Exportieren')
 def dumpdata(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     name = app.name
+    security_log.info('%s exports JSON of %s from %s', request.user, name, client_address(request))
     client = docker.from_env()
     container = client.containers.get(name)
     cmd = ['python', '-m', 'manage', 'dumpdata', '--natural-foreign', '--natural-primary', '-e', 'sessions']
@@ -255,8 +202,10 @@ def dumpdata(request, app_id):
 
 
 @owner_of_app
+@confirm_password('Daten exportieren (SQL)', 'Exportieren')
 def pgdump(request, app_id):
     app = get_object_or_404(App, pk=app_id)
+    security_log.info('%s exports SQL of %s from %s', request.user, app.name, client_address(request))
     db_user = settings.DATABASES['default']['USER']
     db_pw = settings.DATABASES['default']['PASSWORD']
 
@@ -288,57 +237,20 @@ def versions(request, app_id):
     name = app.name
     client = docker.from_env()
     container = client.containers.get(name)
-    result1 = container.exec_run(['python', '--version'])
-    result2 = container.exec_run(['pip', 'list'])
-    result_text = result1.output.decode('utf-8') + "\n" + result2.output.decode('utf-8')
+    commands = [
+        ['python', '--version'],
+        ['pip', '--version'],
+        ['pip', 'list'],
+    ]
+
+    results = [container.exec_run(command) for command in commands]
+    result_text = '\n'.join(result.output.decode('utf-8') for result in results)
+    exit_code = sum(result.exit_code or 0 for result in results)
     return render(request, 'show_result.html', {'app': app, 'sections': {
-        'Installierte App Versionen': {'text': result_text, 'result': result1.exit_code + result2.exit_code},
+        'Installierte App Versionen': {'text': result_text, 'result': exit_code},
     }})
 
 
-@owner_of_app
-def migrate(request, app_id):
-    app = get_object_or_404(App, pk=app_id)
-    name = app.name
-    client = docker.from_env()
-    container = client.containers.get(name)
-    cmd = ['python', '-m', 'manage', 'migrate']
-    result = container.exec_run(cmd)
-    result_text = result.output.decode('utf-8')
-    return render(request, 'show_result.html', {'app': app, 'sections': {
-        'Django Migrate': {'text': result_text, 'result': result.exit_code},
-    }})
-
-
-@owner_of_app
-def collectstatic(request, app_id):
-    app = get_object_or_404(App, pk=app_id)
-    name = app.name
-    client = docker.from_env()
-    container = client.containers.get(name)
-    cmd = ['python', '-m', 'manage', 'collectstatic', '--noinput', '-c']
-    result = container.exec_run(cmd)
-    result_text = result.output.decode('utf-8')
-    return render(request, 'show_result.html', {'app': app, 'sections': {
-        'Django Collectstatic': {'text': result_text, 'result': result.exit_code},
-    }})
-
-
-@owner_of_app
-def restart(request, app_id):
-    app = get_object_or_404(App, pk=app_id)
-    name = app.name
-    client = docker.from_env()
-    container = client.containers.get(name)
-    container.restart()
-    sleep(3)
-    result_text = container.attrs['State']['StartedAt'].split('.')[0]+' UTC+0000'
-    dt = datetime.strptime(result_text, '%Y-%m-%dT%H:%M:%S %Z%z')
-    dt = dt.astimezone(ZoneInfo('Europe/Zurich'))
-    result_text = dt.strftime('%d-%m-%Y %H:%M:%S %Z%z')
-    return render(request, 'show_result.html', {'app': app, 'sections': {
-        'Docker Restart': {'text': result_text, 'result': 0},
-    }})
 
 @login_required
 def profile(request):

@@ -1,6 +1,6 @@
 import subprocess
 
-from django.db import connection, transaction
+from django.db import connection
 from django.template.loader import get_template
 
 from adminconsole.models import App
@@ -38,15 +38,23 @@ def create_database(app_env, db_name, user_name, replace=False):
     password = generate_password()
     db_name = db_name.replace('-', '_')
     user_name = user_name.replace('-', '_')
+    # these statements take no parameters: quote the names, and the password may only contain letters and digits
+    if not (password.isascii() and password.isalnum()):
+        raise ValueError('generated password must only contain letters and digits')
+    db, user = connection.ops.quote_name(db_name), connection.ops.quote_name(user_name)
     with connection.cursor() as cursor:
         if replace:
-            cursor.execute("DROP DATABASE IF EXISTS " + db_name)
-            cursor.execute("DROP USER IF EXISTS " + user_name)
-        cursor.execute("CREATE USER " + user_name + " WITH PASSWORD '" + password + "'")
-        cursor.execute("ALTER ROLE " + user_name + " SET client_encoding TO 'utf8'")
-        cursor.execute("ALTER ROLE " + user_name + " SET default_transaction_isolation TO 'read committed'")
-        cursor.execute("ALTER ROLE " + user_name + " SET timezone TO 'Europe/Zurich'")
-        cursor.execute("CREATE DATABASE " + db_name + " OWNER " + user_name)
+            cursor.execute(f"SET ROLE {user}")
+            cursor.execute(f"DROP DATABASE IF EXISTS {db}")
+            cursor.execute("RESET ROLE")
+            cursor.execute(f"DROP USER IF EXISTS {user}")
+        cursor.execute(f"CREATE USER {user} WITH PASSWORD '{password}'")
+        cursor.execute(f"ALTER ROLE {user} SET client_encoding TO 'utf8'")
+        cursor.execute(f"ALTER ROLE {user} SET default_transaction_isolation TO 'read committed'")
+        cursor.execute(f"ALTER ROLE {user} SET timezone TO 'Europe/Zurich'")
+        cursor.execute(f"CREATE DATABASE {db} OWNER {user} "
+                       f"TEMPLATE template0 ENCODING 'UTF8' "
+                       f"LC_COLLATE 'en_US.UTF-8' LC_CTYPE 'en_US.UTF-8'")
     app_env.juntagrico_database_host = 'localhost'
     app_env.juntagrico_database_name = db_name
     app_env.juntagrico_database_password = password
@@ -57,4 +65,4 @@ def create_database(app_env, db_name, user_name, replace=False):
 
 def create_docker_file(app):
     with open(app.dir / 'Dockerfile', "w") as docker_file:
-        docker_file.write(get_template('infra/Dockerfile').render({'app': app}))
+        docker_file.write(get_template(f'infra/v{app.version}/Dockerfile').render({'app': app}))

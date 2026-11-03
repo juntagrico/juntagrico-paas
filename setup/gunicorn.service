@@ -7,7 +7,7 @@ User=juntagrico
 Group=www-data
 EnvironmentFile=/var/django/adminconsole/.venv/env.env
 WorkingDirectory=/var/django/adminconsole/
-ExecStart=/var/django/adminconsole/.venv/bin/gunicorn --access-logfile - --workers 1 --bind unix:/var/django/adminconsole/adminconsole.sock adminconsole.wsgi:application -t 60000
+ExecStart=/var/django/adminconsole/.venv/bin/gunicorn --access-logfile - --workers 1 --bind unix:/run/adminconsole/gunicorn.sock adminconsole.wsgi:application -t 60000
 
 [Install]
 WantedBy=multi-user.target
