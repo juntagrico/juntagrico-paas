@@ -34,8 +34,10 @@ class AppAdmin(admin.ModelAdmin):
 
     @admin.display(description="AppEnv bearbeiten")
     def appenv_link(self, obj):
-        url = reverse('admin:adminconsole_appenv_change', args=[obj.id])
-        return format_html('<a href="{url}">AppEnv bearbeiten</a>', url=url)
+        if hasattr(obj, 'env'):
+            url = reverse('admin:adminconsole_appenv_change', args=[obj.env.id])
+            return format_html('<a href="{url}">AppEnv bearbeiten</a>', url=url)
+        return 'Keine AppEnv vorhanden'
 
     @admin.display(description="repo")
     def repo(self, obj):
