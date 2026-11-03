@@ -33,19 +33,23 @@ def render_value(context, value):
     if value == '****':
         return '<code class="text-muted">****</code>'
     elif isinstance(value, dict):
-        rows = []
+        pairs = []
         for k, v in value.items():
             cell = render_value(context, v)
-            rows.append(f'<tr><td><code>{escape(str(k))}</code></td><td>{cell}</td></tr>')
+            pairs.append(
+                '<div class="mb-1">'
+                '<span class="text-muted"><small>' + escape(str(k)) + '</small></span> '
+                + cell + '</div>'
+            )
         return mark_safe(
-            '<table class="table table-sm table-borderless mb-0" style="font-size: 0.85em;">'
-            '<tbody>' + ''.join(rows) + '</tbody></table>'
+            '<div class="border-start border-2 border-secondary ps-2 ms-1" style="font-size: 0.9em;">'
+            + ''.join(pairs) + '</div>'
         )
     elif isinstance(value, (list, tuple)):
         items = []
         for item in value:
             cell = render_value(context, item)
             items.append(f'<li>{cell}</li>')
-        return mark_safe('<ul class="mb-0" style="font-size: 0.85em;">' + ''.join(items) + '</ul>')
+        return mark_safe('<ul class="mb-0" style="font-size: 0.9em;">' + ''.join(items) + '</ul>')
     else:
         return mark_safe(f'<code>{escape(str(value))}</code>')
