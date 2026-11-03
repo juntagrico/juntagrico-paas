@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
-from adminconsole.models import GitHubKey, App, AppEnv, Domain, AppCronjob
+from adminconsole.models import GitHubKey, App, AppEnv, AppEnvVar, Domain, AppCronjob
 
 
 class AppCronjobInline(admin.TabularInline):
@@ -9,11 +9,20 @@ class AppCronjobInline(admin.TabularInline):
     extra = 1
 
 
+class AppEnvVarInline(admin.TabularInline):
+    model = AppEnvVar
+    extra = 1
+
+
+class AppEnvAdmin(admin.ModelAdmin):
+    inlines = [AppEnvVarInline]
+
+
 class AppAdmin(admin.ModelAdmin):
     list_display = ['name', 'port', 'wsgi', 'python_version', 'juntagrico_version', 'managed', 'version', 'staging_of',
-                    'run_until', 'repo']
+                    'run_until', 'isolated_network', 'repo']
     search_fields = ['name', 'port']
-    list_filter = ('python_version', 'version')
+    list_filter = ('python_version', 'version', 'isolated_network')
     inlines = [AppCronjobInline]
 
     @admin.display(description="repo")
@@ -33,6 +42,6 @@ class DomainAdmin(admin.ModelAdmin):
 
 admin.site.register(GitHubKey)
 admin.site.register(App, AppAdmin)
-admin.site.register(AppEnv)
+admin.site.register(AppEnv, AppEnvAdmin)
 admin.site.register(Domain, DomainAdmin)
 admin.site.register(AppCronjob)

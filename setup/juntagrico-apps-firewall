@@ -1,0 +1,19 @@
+#!/bin/sh
+# Apps with network isolation may reach only Postgres on this server, no other service (e.g. sshd).
+# Answers to connections from the server (nginx to the apps) stay allowed. Can be run again at any time.
+# The rule refers to the name of the bridge of the app network, so it works before Docker creates the network.
+# Install a root-owned copy (no symlink into the repository) and enable the unit:
+#   install -o root -g root -m 0755 setup/juntagrico-apps-firewall /usr/local/sbin/juntagrico-apps-firewall
+#   install -o root -g root -m 0644 setup/juntagrico-apps-firewall.service /etc/systemd/system/
+#   systemctl daemon-reload && systemctl enable --now juntagrico-apps-firewall
+set -eu
+BRIDGE=br-juntagrico
+POSTGRES_PORT=5432
+CHAIN=JUNTAGRICO-APPS
+
+iptables -N "$CHAIN" 2>/dev/null || true
+iptables -F "$CHAIN"
+iptables -A "$CHAIN" -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+iptables -A "$CHAIN" -p tcp --dport "$POSTGRES_PORT" -j ACCEPT
+iptables -A "$CHAIN" -j DROP
+iptables -C INPUT -i "$BRIDGE" -j "$CHAIN" 2>/dev/null || iptables -I INPUT -i "$BRIDGE" -j "$CHAIN"

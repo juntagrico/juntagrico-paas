@@ -18,7 +18,6 @@
                     {% for app in apps %}
                         <li>
                             <a href="{% url "overview" app.id %}">{{ app.name }}</a>
-                            {% if app.version == 1 %}<span class="badge badge-info">v1</span>{% endif %}
                             {% if app.python_version %}<span class="badge badge-secondary">python {{ app.python_version }}</span>{% endif %}
                             {% for staging in app.stagings.all %}
                                 / <a href="{% url "overview" staging.id %}">{{ staging.name }}</a>

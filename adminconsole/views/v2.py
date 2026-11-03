@@ -1,7 +1,6 @@
 import re
 import subprocess
 
-import psutil
 from django.conf import settings
 from django.contrib import messages
 from django.http import Http404, JsonResponse
@@ -23,10 +22,7 @@ def set_version(request, app_id):
         version = int(request.POST.get('version'))
         app.version = version
         app.save()
-        if version == 1:
-            messages.success(request, 'V1 aktiviert. Mache einen Rebuild um die Änderungen anzuwenden.')
-        elif version >= 2:
-            messages.success(request, 'V2 aktiviert. Mache einen Redeploy um die Änderungen anzuwenden.')
+        messages.success(request, f'V{version} aktiviert. Mache einen Redeploy um die Änderungen anzuwenden.')
     except ValueError:
         messages.error(request, 'Version nicht definiert.')
     return redirect('overview', app_id)
@@ -35,8 +31,6 @@ def set_version(request, app_id):
 @owner_of_app
 def redeploy(request, app_id, upgrade=False):
     app = get_object_or_404(App, pk=app_id)
-    if app.version < 2:
-        raise Http404
 
     if request.method == 'POST':
         if app.staging_of:
@@ -118,8 +112,6 @@ def show_progress(request, app_id, pid):
 @owner_of_app
 def set_python_version(request, app_id):
     app = get_object_or_404(App, pk=app_id)
-    if app.version < 2:
-        raise Http404
 
     success = False
     if request.method == 'POST':

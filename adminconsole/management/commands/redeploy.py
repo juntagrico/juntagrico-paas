@@ -29,7 +29,7 @@ class Command(BaseCommand):
         name = options['app_name'][0]
         app = App.objects.get(name=name)
 
-        if app.version <3:
+        if app.version < 3:
             upgrade_nonce = timezone.now()
             if not options['upgrade']:
                 # if we don't want to force an upgrade, store the current nonce to use again.
@@ -76,7 +76,7 @@ class Command(BaseCommand):
         volumes = {
             static_dir: {'bind': '/code/static/', 'mode': 'rw'}
         }
-        if app.version <3:
+        if app.version < 3:
             volumes[app.dir / 'code'] = {'bind': '/code/', 'mode': 'rw'}
         try:
             output = client.containers.run(
