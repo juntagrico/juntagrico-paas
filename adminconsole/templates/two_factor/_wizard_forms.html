@@ -1,0 +1,16 @@
+{{ wizard.management_form }}
+{% for field_name in wizard.form.fields %}
+  <div class="form-group mb-3">
+    <label for="{{ wizard.form.prefix }}-{{ field_name }}">{{ wizard.form[field_name].label }}</label>
+    {% if wizard.form[field_name].field.widget.input_type == 'textarea' %}
+      <textarea name="{{ wizard.form[field_name].name }}" id="{{ wizard.form.prefix }}-{{ field_name }}" class="form-control" rows="3">{{ wizard.form[field_name].value|default:'' }}</textarea>
+    {% else %}
+      <input type="{{ wizard.form[field_name].field.widget.input_type|default:'text' }}" name="{{ wizard.form[field_name].name }}" id="{{ wizard.form.prefix }}-{{ field_name }}" class="form-control" value="{{ wizard.form[field_name].value|default:'' }}" {% if wizard.form[field_name].field.required %}required{% endif %} />
+    {% endif %}
+    {% if wizard.form[field_name].errors %}
+      <div class="invalid-feedback d-block">
+        {{ wizard.form[field_name].errors|join:", " }}
+      </div>
+    {% endif %}
+  </div>
+{% endfor %}
