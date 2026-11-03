@@ -67,6 +67,7 @@ def redeploy_with_form(request, app):
             # Save the adjusted values
             app.python_version = form.cleaned_data['python_version']
             app.set_branch(form.cleaned_data['branch'])
+            app.wsgi = form.cleaned_data['wsgi']
             app.save()
 
             # Perform the redeploy

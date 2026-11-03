@@ -373,7 +373,7 @@ class PythonVersionForm(forms.ModelForm):
 
 
 class RedeployForm(forms.Form):
-    """Form for redeploy where python version and branch can be adjusted before deploying."""
+    """Form for redeploy where python version, branch, and wsgi path can be adjusted before deploying."""
     git_clone_url = CharField(
         label='Repository',
         required=False,
@@ -388,6 +388,10 @@ class RedeployForm(forms.Form):
         label='Branch', max_length=100,
         widget=TextInput(attrs={'class': 'form-control'}),
     )
+    wsgi = CharField(
+        label='WSGI Pfad', max_length=100, required=False,
+        widget=TextInput(attrs={'class': 'form-control'}),
+    )
 
     def __init__(self, *args, app, **kwargs):
         super().__init__(*args, **kwargs)
@@ -397,6 +401,9 @@ class RedeployForm(forms.Form):
             self.fields['git_clone_url'].initial = app.git_clone_url
             self.fields['python_version'].initial = app.python_version
             self.fields['branch'].initial = app.git_branch or 'main'
+            default_wsgi = app.name.partition('-')[0] + '.wsgi'
+            self.fields['wsgi'].initial = app.wsgi
+            self.fields['wsgi'].widget.attrs['placeholder'] = default_wsgi
 
     def clean_branch(self):
         branch = self.cleaned_data['branch']

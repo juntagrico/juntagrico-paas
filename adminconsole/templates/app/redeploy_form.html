@@ -29,6 +29,14 @@
         {% endif %}
 
         <div class="form-group row">
+            <label class="col-form-label col-md-3" for="{{ form.wsgi.id_for_label }}">WSGI Pfad</label>
+
+            <div class="col-md-9">
+                {{ form.wsgi }}
+            </div>
+        </div>
+
+        <div class="form-group row">
             <label class="col-form-label col-md-3" for="{{ form.python_version.id_for_label }}">Python Version</label>
 
             <div class="col-md-9">
