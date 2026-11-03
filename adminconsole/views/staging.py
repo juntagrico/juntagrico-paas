@@ -26,6 +26,7 @@ def create(request, app_id):
         staging_app = App.objects.create(
             name=prod_app.name + '-staging',
             git_clone_url=prod_app.git_clone_url,
+            git_branch=prod_app.git_branch,
             user=request.user,
             port=10000 + prod_app.port,
             staging_of=prod_app,

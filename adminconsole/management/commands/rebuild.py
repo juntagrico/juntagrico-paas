@@ -34,10 +34,9 @@ class Command(BaseCommand):
         if app.version >= 3:
             build_args['appuser'] = app.name
             build_args['appuid'] = 10000 + app.port
-            if '@' in app.git_clone_url:
-                build_args['git_repo'], build_args['git_ref'] = app.git_clone_url.split('@')
-            else:
-                build_args['git_repo'] = app.git_clone_url
+            build_args['git_repo'] = app.git_clone_url
+            if app.git_branch:
+                build_args['git_ref'] = app.git_branch
 
             cmd = (
                 ['docker', 'buildx', 'build', '-f', '-']

@@ -35,7 +35,7 @@ class CsrfProtectionTests(TestCase):
     def setUp(self):
         self.owner = User.objects.create_user('owner', password='pw')
         self.other = User.objects.create_user('other', password='pw')
-        self.app = App.objects.create(name='foo', port=8010, user=self.owner, version=1, git_clone_url='https://x/y.git')
+        self.app = App.objects.create(name='foo', port=8010, user=self.owner, version=1, git_clone_url='https://x/y.git', git_branch='main')
         AppEnv.objects.create(app=self.app)
 
         tmp = Path(tempfile.mkdtemp())

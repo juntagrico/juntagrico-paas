@@ -39,8 +39,7 @@ class AppAdmin(admin.ModelAdmin):
 
     @admin.display(description="repo")
     def repo(self, obj):
-        url = obj.git_clone_url.split('@')[0]
-        return format_html('<a href="{url}">Github</a>', url=url)
+        return format_html('<a href="{url}">Github</a>', url=obj.git_clone_url)
 
 
 class DomainAdmin(admin.ModelAdmin):

@@ -57,6 +57,7 @@ class GitHubKey(models.Model):
 class App(models.Model):
     user = models.ForeignKey(User, related_name='app', null=True, blank=True, on_delete=models.CASCADE)
     git_clone_url = models.CharField('github', max_length=100, blank=True)
+    git_branch = models.CharField('branch', max_length=100, blank=True, default='main')
     name = models.CharField('name', max_length=100, unique=True, validators=[RegexValidator(regex='^[a-z0-9-]+$')])
     port = models.IntegerField('port', unique=True)
     wsgi = models.CharField('wsgi', max_length=100, blank=True)
@@ -100,7 +101,7 @@ class App(models.Model):
         return docker.from_env().containers.get(self.name)
 
     def set_branch(self, branch_name):
-        self.git_clone_url = self.git_clone_url.split('@')[0] + '@' + branch_name
+        self.git_branch = branch_name
         self.save()
 
     def renew(self):

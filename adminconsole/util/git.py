@@ -38,9 +38,8 @@ def remove_credentials(url):
 
 def git_clone(app, key=None, output=None):
     if not Config.test_localhost():
-        clone_url, _, branch = app.git_clone_url.partition('@')
-        branch = ['-b', branch] if branch else []
-        proc = subprocess.run(['git', 'clone', *branch, '--depth=1', clone_url, 'code'],
+        branch = ['-b', app.git_branch] if app.git_branch else []
+        proc = subprocess.run(['git', 'clone', *branch, '--depth=1', app.git_clone_url, 'code'],
                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=app.dir,
                               env=github_auth_env(key) if key else None)
         if output is not None:
@@ -57,10 +56,9 @@ def run_git(args, cdir, **kwargs):
 
 def git_pull(app):
     cdir = app.code_dir
-    git_repo, _, ref = app.git_clone_url.partition('@')
-    if ref:
+    if app.git_branch:
         fetch = run_git(
-            ['fetch', '--no-tags', '--depth=1', git_repo, ref],
+            ['fetch', '--no-tags', '--depth=1', app.git_clone_url, app.git_branch],
             cdir,
             stderr=subprocess.STDOUT,
         )
@@ -99,9 +97,8 @@ def validate_branch(app, branch):
         return proc.stdout.decode(errors='replace')
 
     if app.version >= 3:
-        repo, _, _ = app.git_clone_url.partition('@')
         proc = subprocess.run(
-            ['git', 'ls-remote', '--exit-code', '--heads', repo, f'refs/heads/{branch}'],
+            ['git', 'ls-remote', '--exit-code', '--heads', app.git_clone_url, f'refs/heads/{branch}'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
         )
@@ -165,6 +162,6 @@ def git_status(app, errors=None):
 
 def git_current_branch(app):
     if app.version >= 3:
-        return app.git_clone_url.partition('@')[2] or 'main'
+        return app.git_branch or 'main'
     proc = subprocess.Popen(['git', 'branch', '--show-current'], stdout=subprocess.PIPE, cwd=app.code_dir)
     return proc.stdout.read().decode().strip()

@@ -396,8 +396,7 @@ class RedeployForm(forms.Form):
         if not self.is_bound:
             self.fields['git_clone_url'].initial = app.git_clone_url
             self.fields['python_version'].initial = app.python_version
-            current_branch = app.git_clone_url.partition('@')[2] or 'main'
-            self.fields['branch'].initial = current_branch
+            self.fields['branch'].initial = app.git_branch or 'main'
 
     def clean_branch(self):
         branch = self.cleaned_data['branch']

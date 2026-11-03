@@ -313,22 +313,6 @@
                         </div>
                     </div>
                 </div>
-                {% if request.user.is_staff %}
-                    <div class="col-md-6">
-                        <div class="card mb-3">
-                            <h4 class="card-header bg-warning">Admin-Passwort neu setzen</h4>
-                            <div class="card-body">
-                                <p class="card-text">
-                                    Setzt ein neues, zufälliges Passwort für den Benutzer admin deiner Instanz,
-                                    z. B. wenn das Passwort verloren ging. Das bisherige Passwort wird ungültig.
-                                </p>
-                                <a href="{% url "app-admin-password" app.id %}" class="btn btn-outline-primary">
-                                    Admin-Passwort neu setzen
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                {% endif %}
                 <div class="col-md-6">
                     <div class="card mb-3">
                         <h4 class="card-header">Daten exportieren</h4>
@@ -336,7 +320,7 @@
                             <p class="card-text">
                                 Exportiert die Datenbankdaten mit django dumpdata.
                                 Diese können mit django
-                                <a href="https://docs.djangoproject.com/en/4.2/ref/django-admin/#loaddata">loaddata</a>
+                                <a href="https://docs.djangoproject.com/en/5.2/ref/django-admin/#loaddata">loaddata</a>
                                 importiert werden.
                             </p>
                             <a href="{% url "dumpdata" app.id %}" class="btn btn-outline-primary">exportieren als JSON</a>
@@ -366,6 +350,22 @@
                         </div>
                     </div>
                 </div>
+                {% if request.user.is_staff %}
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <h4 class="card-header bg-warning">Admin-Passwort neu setzen</h4>
+                            <div class="card-body">
+                                <p class="card-text">
+                                    Setzt ein neues, zufälliges Passwort für den Benutzer admin deiner Instanz,
+                                    z. B. wenn das Passwort verloren ging. Das bisherige Passwort wird ungültig.
+                                </p>
+                                <a href="{% url "app-admin-password" app.id %}" class="btn btn-outline-primary">
+                                    Admin-Passwort neu setzen
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
