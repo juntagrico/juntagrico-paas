@@ -143,19 +143,28 @@ def _is_sensitive_key(key):
     return any(pattern in str(key).upper() for pattern in sensitive_patterns)
 
 
-def _mask_value(value):
-    """Return a masked representation of a value, recursively handling nested structures."""
+def _mask_value(value, secret_values=None):
+    """Return a masked representation of a value, recursively handling nested structures.
+    
+    Args:
+        value: The value to mask.
+        secret_values: A set of string values that should be masked if found.
+    """
+    if secret_values is None:
+        secret_values = set()
     if isinstance(value, dict):
         masked = {}
         for k, v in value.items():
             if _is_sensitive_key(k):
                 masked[k] = '****'
             else:
-                masked[k] = _mask_value(v)
+                masked[k] = _mask_value(v, secret_values)
         return masked
     elif isinstance(value, (list, tuple)):
-        masked = [_mask_value(item) for item in value]
+        masked = [_mask_value(item, secret_values) for item in value]
         return type(value)(masked)
+    elif isinstance(value, str) and value in secret_values:
+        return '****'
     else:
         return value
 
@@ -167,6 +176,9 @@ def show_env(request, app_id):
 
     # Patterns that mark a setting key as sensitive
     sensitive_key_patterns = {'SECRET', 'PASSWORD'}
+
+    # Collect values from secret AppEnvVars so we can mask settings that match them
+    secret_values = set(app.env.env_vars.filter(secret=True).exclude(value='').values_list('value', flat=True))
 
     # Run diffsettings inside the container to get the actual Django settings
     try:
@@ -196,6 +208,9 @@ def show_env(request, app_id):
                 key = key.strip()
                 value_str = value_str.strip()
                 is_sensitive = any(pattern in key.upper() for pattern in sensitive_key_patterns)
+                # Also mask if the value matches a secret AppEnvVar value
+                if value_str in secret_values:
+                    is_sensitive = True
                 # Try to parse the value as a Python literal (dict, list, tuple, etc.)
                 parsed_value = None
                 value_type = 'string'
@@ -203,8 +218,8 @@ def show_env(request, app_id):
                     try:
                         parsed = ast.literal_eval(value_str)
                         if isinstance(parsed, (dict, list, tuple)):
-                            # Recursively mask sensitive keys within nested structures
-                            parsed_value = _mask_value(parsed)
+                            # Recursively mask sensitive keys and secret values within nested structures
+                            parsed_value = _mask_value(parsed, secret_values)
                             value_type = type(parsed).__name__
                     except (ValueError, SyntaxError, TypeError):
                         pass
