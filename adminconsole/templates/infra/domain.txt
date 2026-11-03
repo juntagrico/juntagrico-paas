@@ -13,7 +13,11 @@ server {
     }
     # end Maintenance Mode
 
-    location = /favicon.ico { access_log off; log_not_found off; }
+    location ~* ^/(?:favicon(?:-[^/]+)?\.(?:ico|png|svg)|apple-touch-icon(?:-[^/]+)?\.png|robots\.txt|site\.webmanifest|manifest\.json|browserconfig\.xml)$ {
+        access_log off;
+        log_not_found off;
+    }
+
     location /static/ {
         root /var/django/projects/{{name}};
     }
