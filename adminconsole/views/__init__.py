@@ -258,9 +258,10 @@ def parse_log_line(line):
     # Try Gunicorn format first
     match = LOG_LINE_RE.match(line)
     if match and (match.group('level') or match.group('pid')):
+        level = match.group('level')
         return {
             'timestamp': match.group('timestamp') or '',
-            'level': (match.group('level') or 'INFO').upper(),
+            'level': level.upper() if level else 'UNKNOWN',
             'pid': match.group('pid') or '',
             'message': match.group('message') or '',
             'is_continuation': False,
@@ -287,10 +288,10 @@ def parse_log_line(line):
             'is_continuation': True,
         }
 
-    # Fallback: treat as plain info message
+    # Fallback: treat as unknown level
     return {
         'timestamp': '',
-        'level': 'INFO',
+        'level': 'UNKNOWN',
         'pid': '',
         'message': line,
         'is_continuation': False,

@@ -1,7 +1,6 @@
 .log-container {
     background-color: #1e1e1e;
     border-radius: 4px;
-    padding: 10px;
     font-family: 'Courier New', Courier, monospace;
     font-size: 13px;
     line-height: 1.5;
@@ -10,11 +9,29 @@
     border: 1px solid #dee2e6;
 }
 
-.log-entry {
-    padding: 2px 4px;
-    white-space: pre-wrap;
-    word-break: break-all;
+.log-table {
+    width: 100%;
+    border-collapse: collapse;
     color: #d4d4d4;
+}
+
+.log-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.log-table thead th {
+    background-color: #2d2d2d;
+    color: #808080;
+    padding: 6px 8px;
+    text-align: left;
+    font-weight: bold;
+    border-bottom: 2px solid #404040;
+    white-space: nowrap;
+}
+
+.log-entry {
     border-bottom: 1px solid #2d2d2d;
 }
 
@@ -22,29 +39,31 @@
     background-color: #2d2d2d;
 }
 
-.log-timestamp {
+.log-entry td {
+    padding: 2px 8px;
+    vertical-align: top;
+}
+
+.log-col-timestamp {
+    width: 220px;
     color: #808080;
-    margin-right: 6px;
+    white-space: nowrap;
 }
 
-.log-pid {
+.log-col-pid {
+    width: 60px;
     color: #6a9955;
-    margin-right: 6px;
+    white-space: nowrap;
 }
 
-.log-level {
-    font-size: 11px;
-    padding: 2px 6px;
-    margin-right: 8px;
-    font-weight: normal;
-    min-width: 60px;
-    display: inline-block;
-    text-align: center;
+.log-col-level {
+    width: 90px;
+    white-space: nowrap;
 }
 
-.log-level-placeholder {
-    display: inline-block;
-    min-width: 74px;
+.log-col-message {
+    white-space: pre-wrap;
+    word-break: break-all;
 }
 
 .badge-info {
@@ -77,31 +96,48 @@
     color: #6a9955;
 }
 
-.log-message {
-    color: #d4d4d4;
+.badge-unknown {
+    background-color: transparent;
+    color: #555555;
 }
 
 /* Color code entries by level */
-.log-level-info .log-message {
+.log-level-info .log-col-message {
     color: #d4d4d4;
 }
 
-.log-level-warning .log-message {
+.log-level-warning .log-col-message {
     color: #ffc107;
 }
 
-.log-level-error .log-message,
-.log-level-critical .log-message {
+.log-level-error .log-col-message,
+.log-level-critical .log-col-message {
     color: #f48771;
 }
 
-.log-level-debug .log-message {
+.log-level-debug .log-col-message {
     color: #808080;
 }
 
-.log-level-trace .log-message {
+.log-level-trace .log-col-message {
     color: #6a9955;
-    padding-left: 20px;
+}
+
+.log-level-unknown .log-col-message {
+    color: #555555;
+}
+
+.log-level-heartbeat {
+    opacity: 0.4;
+    font-style: italic;
+}
+
+.log-level-heartbeat .log-col-timestamp {
+    color: #555555;
+}
+
+.log-level-heartbeat .log-col-message {
+    color: #555555;
 }
 
 .log-controls {

@@ -27,24 +27,32 @@
     </div>
 
     <div class="log-container" id="log-container">
-        {% for entry in log_entries %}
-            <div class="log-entry log-level-{{ entry.level|lower }}" data-level="{{ entry.level }}">
-                {% if entry.timestamp %}
-                    <span class="log-timestamp">{{ entry.timestamp }}</span>
-                {% endif %}
-                {% if entry.pid %}
-                    <span class="log-pid">[{{ entry.pid }}]</span>
-                {% endif %}
-                {% if not entry.is_continuation %}
-                    <span class="log-level badge badge-{{ entry.level|lower }}">{{ entry.level }}</span>
-                {% else %}
-                    <span class="log-level-placeholder"></span>
-                {% endif %}
-                <span class="log-message">{{ entry.message }}</span>
-            </div>
-        {% empty %}
-            <div class="text-muted">No log entries found.</div>
-        {% endfor %}
+        <table class="log-table">
+            <thead>
+                <tr>
+                    <th class="log-col-timestamp">Timestamp</th>
+                    <th class="log-col-pid">PID</th>
+                    <th class="log-col-level">Level</th>
+                    <th class="log-col-message">Message</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in log_entries %}
+                    <tr class="log-entry log-level-{{ entry.level|lower }}" data-level="{{ entry.level }}">
+                        <td class="log-col-timestamp">{{ entry.timestamp }}</td>
+                        <td class="log-col-pid">{{ entry.pid }}</td>
+                        <td class="log-col-level">
+                            {% if not entry.is_continuation %}
+                                <span class="badge badge-{{ entry.level|lower }}">{{ entry.level }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="log-col-message">{{ entry.message }}</td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="4" class="text-muted">No log entries found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 {% endblock %}
 
