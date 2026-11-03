@@ -23,11 +23,11 @@ class TwoFactorTests(TestCase):
 
     def test_anonymous_is_sent_to_login(self):
         response = self.client.get(reverse('home'))
-        self.assertRedirects(response, reverse('login') + '?next=/', fetch_redirect_response=False)
+        self.assertRedirects(response, reverse('two_factor:login') + '?next=/', fetch_redirect_response=False)
 
     def test_owner_decorator_sends_anonymous_to_login(self):
         response = self.client.get(reverse('overview', args=[1]))
-        self.assertRedirects(response, reverse('login') + '?next=/overview/1/', fetch_redirect_response=False)
+        self.assertRedirects(response, reverse('two_factor:login') + '?next=/overview/1/', fetch_redirect_response=False)
 
     def test_user_without_device_has_access(self):
         """Users without a 2FA device can access the console with password-only login."""
@@ -41,7 +41,7 @@ class TwoFactorTests(TestCase):
         self.add_device()
         self.client.force_login(self.user)
         response = self.client.get(reverse('profile'))
-        self.assertRedirects(response, reverse('login') + '?next=/profile', fetch_redirect_response=False)
+        self.assertRedirects(response, reverse('two_factor:login') + '?next=/profile', fetch_redirect_response=False)
         self.assertNotIn('_auth_user_id', self.client.session)
 
     def test_verified_user_has_access(self):

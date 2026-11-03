@@ -70,7 +70,9 @@ If no superuser can log in anymore, use the Django shell on the server (`python 
 
 Anonymous requests are not touched; the existing `@login_required` and `owner_of_*` decorators send them to the login.
 
-Views that must be reachable before 2FA is complete are listed in `RequireOTPMiddleware.ALLOWED_VIEWS` (login, logout, password reset). Add a URL name there only if the page must work for users without a verified session.
+Views that must be reachable before 2FA is complete are listed in `RequireOTPMiddleware.ALLOWED_VIEWS` (2FA login and setup, logout, password reset). Add a URL name there only if the page must work for users without a verified session.
+
+The login always routes through `two_factor:login` (`LOGIN_URL`). This view handles both cases: users without a device skip straight to the password step, while users with a device complete the password and OTP steps.
 
 ### Templates
 
