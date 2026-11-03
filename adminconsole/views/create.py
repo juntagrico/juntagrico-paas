@@ -135,20 +135,25 @@ def init_domain(request, app_id):
 def init_cronjob(request, app_id):
     app = get_object_or_404(App, pk=app_id)
 
-    # Set default cronjobs for new apps: depot_list_no_future with daily timing
+    # Install default and required cronjobs for new apps
     from adminconsole.models import get_available_cronjobs
     available = get_available_cronjobs(app.name)
     for cj_def in available:
-        if cj_def.get('group') == 'depot_list' and '--no-future' in cj_def.get('command', ''):
+        if cj_def.get('default') or cj_def.get('required'):
+            timing = cj_def.get('timing', 'fixed')
+            defaults = {}
+            if timing == 'daily':
+                defaults['hour'] = cj_def.get('default_hour', 23)
+                dm = cj_def.get('default_minute', 0)
+                defaults['minute'] = app.port % 60 if dm == 'spread' else dm
+            elif timing == 'hourly':
+                dm = cj_def.get('default_minute', 0)
+                defaults['minute'] = app.port % 60 if dm == 'spread' else dm
             AppCronjob.objects.get_or_create(
                 app=app,
                 cronjob_id=cj_def['id'],
-                defaults={
-                    'hour': cj_def.get('default_hour', 23),
-                    'minute': cj_def.get('default_minute', 50),
-                }
+                defaults=defaults
             )
-            break
 
     with open(app.log_file, 'wb') as out:
         proc = subprocess.Popen(

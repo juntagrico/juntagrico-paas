@@ -206,7 +206,8 @@ CRONJOBS = [
         'timing': 'daily',
         'command': 'generate_depot_list --future',
         'default_hour': 23,
-        'default_minute': 50,
+        'default_minute': 'spread',
+        'default': True,
     },
     {
         'id': 'depot_list_no_future',
@@ -215,7 +216,7 @@ CRONJOBS = [
         'timing': 'daily',
         'command': 'generate_depot_list --no-future',
         'default_hour': 23,
-        'default_minute': 50,
+        'default_minute': 'spread',
     },
     {
         'id': 'remind_members',
@@ -223,6 +224,8 @@ CRONJOBS = [
         'group': None,
         'timing': 'hourly',
         'command': 'remind_members --skip-checks',
+        'default_minute': 'spread',
+        'default': True,
     },
     {
         'id': 'clearsessions',
@@ -231,7 +234,7 @@ CRONJOBS = [
         'timing': 'daily',
         'command': 'clearsessions',
         'default_hour': 4,
-        'default_minute': 0,
+        'default_minute': 'spread',
         'required': True,
     },
     {
@@ -241,7 +244,7 @@ CRONJOBS = [
         'timing': 'daily',
         'command': 'cleartokens',
         'default_hour': 3,
-        'default_minute': 0,
+        'default_minute': 'spread',
     },
     {
         'id': 'upcoming_jobs',
@@ -250,7 +253,7 @@ CRONJOBS = [
         'timing': 'daily',
         'command': 'upcoming_jobs',
         'default_hour': 8,
-        'default_minute': 0,
+        'default_minute': 'spread',
         'apps': ['ortoloco'],
     },
     {
@@ -259,8 +262,8 @@ CRONJOBS = [
         'group': None,
         'timing': 'fixed',
         'command': 'sendmails --skip-checks -l 50',
-        'minute': '*/5',
         'hour': '*',
+        'minute': '*/5',
         'apps': ['mehalsgmues'],
     },
 ]

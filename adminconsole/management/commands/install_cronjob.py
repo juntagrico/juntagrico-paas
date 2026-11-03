@@ -57,7 +57,7 @@ def install_cronjobs_for_app(app):
         elif timing == 'daily':
             # Once a day at the specified hour and minute
             hour = app_cronjob.hour if app_cronjob.hour is not None else definition.get('default_hour', 23)
-            minute = app_cronjob.minute if app_cronjob.minute is not None else definition.get('default_minute', 0)
+            minute = app_cronjob.minute if app_cronjob.minute is not None else app.port % 60
             job.hour.on(hour)
             job.minute.on(minute)
 

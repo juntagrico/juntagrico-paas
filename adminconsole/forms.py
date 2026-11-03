@@ -417,6 +417,11 @@ class CronjobForm(forms.Form):
         self.hour_choices = hour_choices
         self.default_minute = app.port % 60
 
+    def get_default_minute(self, cj_def):
+        """Return the default minute for a cronjob definition."""
+        dm = cj_def.get('default_minute', 0)
+        return self.app.port % 60 if dm == 'spread' else dm
+
     def save(self):
         """Save cronjob selections to the database."""
         # Collect all selected cronjob ids
@@ -453,12 +458,12 @@ class CronjobForm(forms.Form):
                 defaults = {}
                 if timing == 'hourly':
                     minute = self.data.get(f'minute_{cj_def["id"]}')
-                    defaults['minute'] = int(minute) if minute else self.app.port % 60
+                    defaults['minute'] = int(minute) if minute else self.get_default_minute(cj_def)
                 elif timing == 'daily':
                     hour = self.data.get(f'hour_{cj_def["id"]}')
                     minute = self.data.get(f'minute_{cj_def["id"]}')
                     defaults['hour'] = int(hour) if hour else cj_def.get('default_hour', 23)
-                    defaults['minute'] = int(minute) if minute else cj_def.get('default_minute', 0)
+                    defaults['minute'] = int(minute) if minute else self.get_default_minute(cj_def)
                 AppCronjob.objects.update_or_create(
                     app=self.app,
                     cronjob_id=cj_def['id'],

@@ -16,6 +16,7 @@
         </select>
     </div>
 {% elif cj.timing == 'daily' %}
+    {% with dm=form|get_default_minute:cj %}
     <div class="ml-3 mt-1">
         <label for="hour_{{ cj.id }}">Stunde:</label>
         <select name="hour_{{ cj.id }}" id="hour_{{ cj.id }}"
@@ -36,10 +37,11 @@
             {% for val, label in form.minute_choices %}
                 <option value="{{ val }}"
                         {% if ac and ac.minute == val %}selected{% endif %}
-                        {% if not ac and val == cj.default_minute %}selected{% endif %}>
+                        {% if not ac and val == dm %}selected{% endif %}>
                     {{ label }}
                 </option>
             {% endfor %}
         </select>
     </div>
+    {% endwith %}
 {% endif %}
