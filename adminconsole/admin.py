@@ -19,7 +19,7 @@ class AppEnvVarInline(admin.TabularInline):
     extra = 1
 
 
-class AppEnvInline(admin.TabularInline):
+class AppEnvInline(admin.StackedInline):
     model = AppEnv
     inlines = [AppEnvVarInline]
     can_delete = False
