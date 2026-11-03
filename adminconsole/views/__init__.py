@@ -137,6 +137,92 @@ def env(request, app_id):
     return render(request, 'app/env.html', {'form': form, 'formset': formset, 'app': app})
 
 
+def _is_sensitive_key(key):
+    """Check if a key name contains sensitive patterns."""
+    sensitive_patterns = {'SECRET', 'PASSWORD'}
+    return any(pattern in str(key).upper() for pattern in sensitive_patterns)
+
+
+def _mask_value(value):
+    """Return a masked representation of a value, recursively handling nested structures."""
+    if isinstance(value, dict):
+        masked = {}
+        for k, v in value.items():
+            if _is_sensitive_key(k):
+                masked[k] = '****'
+            else:
+                masked[k] = _mask_value(v)
+        return masked
+    elif isinstance(value, (list, tuple)):
+        masked = [_mask_value(item) for item in value]
+        return type(value)(masked)
+    else:
+        return value
+
+
+@owner_of_app
+def show_env(request, app_id):
+    """Display current Django settings by running diffsettings in the container, hiding sensitive values."""
+    app = get_object_or_404(App, pk=app_id)
+
+    # Patterns that mark a setting key as sensitive
+    sensitive_key_patterns = {'SECRET', 'PASSWORD'}
+
+    # Run diffsettings inside the container to get the actual Django settings
+    try:
+        container = app.container
+        result = container.exec_run(['python', '-m', 'manage', 'diffsettings'], stderr=False)
+        output = result.output.decode('utf-8')
+    except DockerException as e:
+        messages.error(request, f'Container nicht erreichbar: {e}')
+        output = ''
+
+    # Parse the diffsettings output
+    # Format: "SETTING_NAME = value" or "SETTING_NAME = value ###"
+    # The ### marker means the setting is not in Django defaults
+    settings_entries = []
+    if output.strip():
+        for line in output.strip().splitlines():
+            line = line.strip()
+            if not line or line.startswith('---') or line.startswith('+++'):
+                # Skip diff separators in unified format
+                continue
+            # Remove the ### marker if present (indicates setting not in Django defaults)
+            is_custom = '###' in line
+            line = line.replace('###', '').strip()
+            # Parse "SETTING_NAME = value"
+            if '=' in line:
+                key, _, value_str = line.partition('=')
+                key = key.strip()
+                value_str = value_str.strip()
+                is_sensitive = any(pattern in key.upper() for pattern in sensitive_key_patterns)
+                # Try to parse the value as a Python literal (dict, list, tuple, etc.)
+                parsed_value = None
+                value_type = 'string'
+                if not is_sensitive:
+                    try:
+                        parsed = ast.literal_eval(value_str)
+                        if isinstance(parsed, (dict, list, tuple)):
+                            # Recursively mask sensitive keys within nested structures
+                            parsed_value = _mask_value(parsed)
+                            value_type = type(parsed).__name__
+                    except (ValueError, SyntaxError, TypeError):
+                        pass
+                settings_entries.append({
+                    'key': key,
+                    'value': value_str if not is_sensitive else '****',
+                    'parsed_value': parsed_value,
+                    'value_type': value_type,
+                    'hidden': is_sensitive,
+                    'custom': is_custom,
+                })
+
+    return render(request, 'app/show_env.html', {
+        'settings': settings_entries,
+        'app': app,
+    })
+
+
 @owner_of_app
 def change_branch(request, app_id):
     app = get_object_or_404(App, pk=app_id)

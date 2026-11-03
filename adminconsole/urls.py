@@ -28,6 +28,7 @@ urlpatterns = [
     path('cron/form/<int:app_id>/', cronjob.manage, name='cronjob-manage'),
     path('pid/<int:pid>/', views.pidcheck),
     path('env/<int:app_id>/', views.env),
+    path('env/show/<int:app_id>/', views.show_env, name='show-env'),
     path('gdl/<int:app_id>/', views.generate_depot_list),
     path('branch/change/<int:app_id>/', views.change_branch, name='change-branch'),
     path('dumpdata/<int:app_id>/', views.dumpdata, name='dumpdata'),
