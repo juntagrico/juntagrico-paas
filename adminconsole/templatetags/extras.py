@@ -38,11 +38,11 @@ def render_value(context, value):
             cell = render_value(context, v)
             pairs.append(
                 '<div class="mb-1">'
-                '<span class="text-muted"><small>' + escape(str(k)) + '</small></span> '
+                '<span class="text-dark"><small style="font-weight: 500;">' + escape(str(k)) + '</small></span> '
                 + cell + '</div>'
             )
         return mark_safe(
-            '<div class="border-start border-2 border-secondary ps-2 ms-1" style="font-size: 0.9em;">'
+            '<div class="border-start border-3 border-secondary ps-2 ms-2 bg-light rounded-start mb-1" style="font-size: 0.9em;">'
             + ''.join(pairs) + '</div>'
         )
     elif isinstance(value, (list, tuple)):
@@ -52,4 +52,4 @@ def render_value(context, value):
             items.append(f'<li>{cell}</li>')
         return mark_safe('<ul class="mb-0" style="font-size: 0.9em;">' + ''.join(items) + '</ul>')
     else:
-        return mark_safe(f'<code>{escape(str(value))}</code>')
+        return mark_safe(f'<code class="text-dark">{escape(str(value))}</code>')

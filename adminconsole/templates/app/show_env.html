@@ -19,14 +19,14 @@
         <div class="card-body p-0">
             {% for setting in settings %}
                 <div class="px-3 py-2{% if forloop.counter|divisibleby:2 %} bg-light{% endif %}">
-                    <div class="fw-semibold"><code>{{ setting.key }}</code></div>
+                    <div class="fw-semibold"><code class="text-dark">{{ setting.key }}</code></div>
                     <div class="mt-1">
                         {% if setting.hidden %}
                             <code class="text-muted">****</code>
                         {% elif setting.parsed_value is not None %}
                             {% render_value setting.parsed_value %}
                         {% else %}
-                            <code>{{ setting.value }}</code>
+                            <code class="text-dark">{{ setting.value }}</code>
                         {% endif %}
                     </div>
                 </div>
