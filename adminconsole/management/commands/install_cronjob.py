@@ -21,10 +21,12 @@ def install_cronjobs_for_app(app):
         if definition is None:
             continue
 
-        job = cron.new(
-            command=f'docker exec {app_name} python -m manage {definition["command"]}',
-            comment=comment
-        )
+        cmd_type = definition.get('type', 'management')
+        if cmd_type == 'shell':
+            cmd = f'{definition["command"]} {app_name}'
+        else:
+            cmd = f'docker exec {app_name} python -m manage {definition["command"]}'
+        job = cron.new(command=cmd, comment=comment)
 
         timing = definition.get('timing', 'fixed')
 

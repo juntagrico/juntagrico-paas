@@ -266,4 +266,14 @@ CRONJOBS = [
         'minute': '*/5',
         'apps': ['mehalsgmues'],
     },
+    {
+        'id': 'redeploy',
+        'name': 'Automatische Updates (redeploy)',
+        'group': None,
+        'timing': 'daily',
+        'type': 'shell',
+        'command': '/var/django/adminconsole/tasks/redeploy-v2.sh',
+        'default_hour': 2,
+        'default_minute': 'spread',
+    },
 ]
