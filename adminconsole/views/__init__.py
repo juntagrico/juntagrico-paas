@@ -282,7 +282,7 @@ def versions(request, app_id):
 
     # Get installed packages using JSON format for reliable parsing
     try:
-        result = container.exec_run(['pip', 'list', '--format', 'json', '--disable-pip-version-check'])
+        result = container.exec_run(['python', '-W', 'ignore', '-m', 'pip', 'list', '--format', 'json', '--disable-pip-version-check'])
         output = result.output.decode('utf-8').strip()
         if output:
             parsed = json.loads(output)
