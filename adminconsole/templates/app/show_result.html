@@ -1,6 +1,6 @@
 {% extends "app_base.html" %}
 
-{% block page_subtitle %}<h4>Aufgabe-Ergebnis</h4>{% endblock %}
+{% block page_subtitle %}{% if title %}<h4>{{ title }}</h4>{% endif %}{% endblock %}
 
 {% block inner_content %}
     <div class="accordion" id="result-accordion">

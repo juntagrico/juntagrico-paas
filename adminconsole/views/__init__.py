@@ -1,4 +1,5 @@
 import ast
+import re
 import subprocess
 
 import docker
@@ -185,7 +186,11 @@ def mailtexts(request, app_id):
             current['text'] += line + '\n'
     if not sections['Log']['text']:
         del sections['Log']
-    return render(request, 'app/show_result.html', {'app': app, 'sections': sections})
+    return render(
+        request,
+        'app/show_result.html',
+        {'app': app, 'sections': sections, 'title': 'Email-Texte'},
+    )
 
 
 @owner_of_app
@@ -239,18 +244,73 @@ def versions(request, app_id):
     name = app.name
     client = docker.from_env()
     container = client.containers.get(name)
-    commands = [
-        ['python', '--version'],
-        ['pip', '--version'],
-        ['pip', 'list'],
-    ]
 
-    results = [container.exec_run(command) for command in commands]
-    result_text = '\n'.join(result.output.decode('utf-8') for result in results)
-    exit_code = sum(result.exit_code or 0 for result in results)
-    return render(request, 'app/show_result.html', {'app': app, 'sections': {
-        'Installierte App Versionen': {'text': result_text, 'result': exit_code},
-    }})
+    python_version = None
+    pip_version = None
+    packages = []
+    errors = []
+
+    # Get Python version (python --version writes to stderr, so merge streams)
+    try:
+        result = container.exec_run(['python', '--version'], stderr=True)
+        output = result.output.decode('utf-8').strip()
+        if output:
+            # "Python 3.11.18" -> "3.11.18"
+            match = re.search(r'Python\s+(\S+)', output)
+            if match:
+                python_version = match.group(1)
+            else:
+                python_version = output
+    except Exception as e:
+        errors.append(f'Python-Version: {e}')
+
+    # Get pip version
+    try:
+        result = container.exec_run(['pip', '--version'])
+        output = result.output.decode('utf-8').strip()
+        if result.exit_code == 0 or output:
+            # "pip 26.2.2 from /usr/local/lib/python3.11/site-packages/pip (python 3.11)"
+            match = re.search(r'pip\s+(\S+)', output)
+            if match:
+                pip_version = match.group(1)
+            elif output:
+                pip_version = output
+    except Exception as e:
+        errors.append(f'pip-Version: {e}')
+
+    # Get installed packages
+    try:
+        result = container.exec_run(['pip', 'list', '--format', 'columns', '--disable-pip-version-check'])
+        output = result.output.decode('utf-8').strip()
+        if output:
+            lines = output.split('\n')
+            # Skip header lines (first 2 lines: header + separator)
+            # "Package   Version"
+            # "-------   -------"
+            data_lines = lines[2:] if len(lines) > 2 else lines
+            for line in data_lines:
+                line = line.strip()
+                if not line:
+                    continue
+                parts = line.split()
+                if len(parts) >= 2:
+                    packages.append({'name': parts[0], 'version': parts[1]})
+                elif len(parts) == 1:
+                    packages.append({'name': parts[0], 'version': 'unknown'})
+    except Exception as e:
+        errors.append(f'Paketliste: {e}')
+
+    return render(
+        request,
+        'app/versions.html',
+        {
+            'app': app,
+            'python_version': python_version,
+            'pip_version': pip_version,
+            'packages': packages,
+            'errors': errors,
+        },
+    )
 
 
 

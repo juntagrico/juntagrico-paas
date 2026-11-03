@@ -1,0 +1,75 @@
+{% extends "app_base.html" %}
+
+{% block page_subtitle %}<h4>Installierte Versionen</h4>{% endblock %}
+
+{% block inner_content %}
+    {% if python_version or pip_version or packages %}
+        <div class="card mb-3">
+            <div class="card-header">
+                <strong>Runtime</strong>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-borderless mb-0">
+                    <tbody>
+                        {% if python_version %}
+                            <tr>
+                                <td><strong>Python</strong></td>
+                                <td><code>{{ python_version }}</code></td>
+                            </tr>
+                        {% endif %}
+                        {% if pip_version %}
+                            <tr>
+                                <td><strong>pip</strong></td>
+                                <td><code>{{ pip_version }}</code></td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% if packages %}
+            <div class="card">
+                <div class="card-header">
+                    <strong>Installierte Pakete</strong> <span class="text-muted">({{ packages|length }})</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Paket</th>
+                                    <th class="text-nowrap">Version</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pkg in packages %}
+                                    <tr>
+                                        <td>{{ pkg.name }}</td>
+                                        <td class="text-nowrap"><code>{{ pkg.version }}</code></td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="alert alert-warning">
+            Keine Versionsinformationen verfügbar. Der Container könnte nicht erreicht werden.
+        </div>
+    {% endif %}
+
+    {% if errors %}
+        <div class="alert alert-danger mt-3">
+            <strong>Fehler bei der Abfrage:</strong>
+            <ul class="mb-0">
+                {% for error in errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+{% endblock %}
