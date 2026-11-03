@@ -13,6 +13,7 @@ from django.forms import CharField, TextInput, CheckboxInput, EmailField, Boolea
 
 from adminconsole.models import AppEnv, App, Domain, AppCronjob, AppEnvVar, get_available_cronjobs, get_python_version_choices
 from adminconsole.util import generate_secret_key
+from adminconsole.util.git import validate_branch
 
 # ports of mail servers, the connection test is only made to these ports (setting SMTP_CHECK_PORTS)
 SMTP_CHECK_PORTS = (25, 465, 587, 2525)
@@ -375,6 +376,7 @@ class RedeployForm(forms.Form):
     """Form for redeploy where python version and branch can be adjusted before deploying."""
     python_version = ChoiceField(
         label='Python Version',
+        required=False,
         widget=Select(attrs={'class': 'form-control'}),
     )
     branch = CharField(
@@ -390,6 +392,14 @@ class RedeployForm(forms.Form):
             self.fields['python_version'].initial = app.python_version
             current_branch = app.git_clone_url.partition('@')[2] or 'main'
             self.fields['branch'].initial = current_branch
+
+    def clean_branch(self):
+        branch = self.cleaned_data['branch']
+        if self.app.version >= 3:
+            error = validate_branch(self.app, branch)
+            if error:
+                raise ValidationError(error)
+        return branch
 
 
 class ProfileForm(forms.Form):
