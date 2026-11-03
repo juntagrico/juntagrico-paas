@@ -1,6 +1,5 @@
 $(document).ready(function() {
     var $tbody = $('#log-tbody');
-    var $entries = $('.log-entry');
     var $filterBtns = $('.log-filter-btn');
     var $searchInput = $('#log-search');
     var $sortToggle = $('#sort-toggle');
@@ -10,8 +9,11 @@ $(document).ready(function() {
     var searchQuery = '';
     var newestFirst = true;
 
+    // Cache all rows on load so reorder always starts from a stable order
+    var $allEntries = $('.log-entry');
+
     function filterLogs() {
-        $entries.each(function() {
+        $allEntries.each(function() {
             var $entry = $(this);
             var level = $entry.data('level');
             var text = $entry.text().toLowerCase();
@@ -28,7 +30,8 @@ $(document).ready(function() {
     }
 
     function reorderLogs() {
-        var rows = $tbody.find('.log-entry').detach();
+        // Detach and re-append in the desired order
+        var rows = $allEntries.detach();
         // Docker returns oldest-first; reverse when newestFirst is true
         if (newestFirst) {
             rows = rows.get().reverse();
