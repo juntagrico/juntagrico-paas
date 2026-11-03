@@ -42,6 +42,7 @@ def home(request):
 
     return render(request, 'home.html', {
         'grouped_apps': dict(sorted(grouped_apps.items())),
+        'number_of_apps': number_of_apps,
         'can_add_app': number_of_apps < 1 or superuser,
     })
 

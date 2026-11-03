@@ -13,7 +13,7 @@
     {% if grouped_apps %}
         <div class="row mb-3">
             <div class="col-md-12">
-                <h2>Apps</h2>
+                <h2>Apps ({{ number_of_apps }})</h2>
                 {% for letter, apps in grouped_apps.items %}
                     <h3>{{ letter }}</h3>
                     <ul>
