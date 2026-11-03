@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.urls import reverse
 from django.utils.html import format_html
 
 from adminconsole.models import GitHubKey, App, AppEnv, AppEnvVar, Domain, AppCronjob
@@ -19,10 +20,8 @@ class AppEnvVarInline(admin.TabularInline):
     extra = 1
 
 
-class AppEnvInline(admin.StackedInline):
-    model = AppEnv
+class AppEnvAdmin(admin.ModelAdmin):
     inlines = [AppEnvVarInline]
-    can_delete = False
 
 
 class AppAdmin(admin.ModelAdmin):
@@ -30,7 +29,13 @@ class AppAdmin(admin.ModelAdmin):
                     'run_until', 'isolated_network', 'repo']
     search_fields = ['name', 'port']
     list_filter = ('python_version', 'version', 'isolated_network')
-    inlines = [AppCronjobInline, DomainInline, AppEnvInline]
+    inlines = [AppCronjobInline, DomainInline]
+    readonly_fields = ['appenv_link']
+
+    @admin.display(description="AppEnv bearbeiten")
+    def appenv_link(self, obj):
+        url = reverse('admin:adminconsole_appenv_change', args=[obj.id])
+        return format_html('<a href="{url}">AppEnv bearbeiten</a>', url=url)
 
     @admin.display(description="repo")
     def repo(self, obj):
@@ -49,5 +54,6 @@ class DomainAdmin(admin.ModelAdmin):
 
 admin.site.register(GitHubKey)
 admin.site.register(App, AppAdmin)
+admin.site.register(AppEnv, AppEnvAdmin)
 admin.site.register(Domain, DomainAdmin)
 admin.site.register(AppCronjob)

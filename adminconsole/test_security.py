@@ -118,7 +118,7 @@ class CsrfProtectionTests(TestCase):
             'juntagrico_email_port': '25', 'juntagrico_secret_key': 'x' * 50, 'skip_check': '1',
         })
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'wait_next.html')
+        self.assertTemplateUsed(response, 'app/wait_next.html')
         self.assertIn('reload_env', self.mocks['popen'].call_args.args[0])
 
     def test_overview_uses_forms_for_actions(self):
