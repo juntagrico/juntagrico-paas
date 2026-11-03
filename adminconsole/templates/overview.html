@@ -72,6 +72,9 @@
             {% endif %}
             <a href="/logs/{{ app.id }}/" class="btn btn-outline-primary mb-1">Logs anzeigen</a>
             <a href="{% url "versions" app.id %}" class="btn btn-outline-primary mb-1">Versionen anzeigen</a>
+            {% if 'adminconsole.view_app' in perms %}
+                <a href="{% url 'admin:adminconsole_app_change' app.id %}" class="btn btn-outline-secondary mb-1">Im Admin bearbeiten</a>
+            {% endif %}
             <a href="https://{{ app.domains.first.name }}" class="btn btn-primary mb-1" target="_blank">
                 Seite öffnen
             </a>

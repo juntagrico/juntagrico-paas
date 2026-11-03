@@ -9,13 +9,20 @@ class AppCronjobInline(admin.TabularInline):
     extra = 1
 
 
+class DomainInline(admin.TabularInline):
+    model = Domain
+    extra = 1
+
+
 class AppEnvVarInline(admin.TabularInline):
     model = AppEnvVar
     extra = 1
 
 
-class AppEnvAdmin(admin.ModelAdmin):
+class AppEnvInline(admin.TabularInline):
+    model = AppEnv
     inlines = [AppEnvVarInline]
+    can_delete = False
 
 
 class AppAdmin(admin.ModelAdmin):
@@ -23,7 +30,8 @@ class AppAdmin(admin.ModelAdmin):
                     'run_until', 'isolated_network', 'repo']
     search_fields = ['name', 'port']
     list_filter = ('python_version', 'version', 'isolated_network')
-    inlines = [AppCronjobInline]
+    inlines = [AppCronjobInline, DomainInline, AppEnvInline]
+    readonly_fields = ['overview_link']
 
     @admin.display(description="repo")
     def repo(self, obj):
@@ -42,6 +50,5 @@ class DomainAdmin(admin.ModelAdmin):
 
 admin.site.register(GitHubKey)
 admin.site.register(App, AppAdmin)
-admin.site.register(AppEnv, AppEnvAdmin)
 admin.site.register(Domain, DomainAdmin)
 admin.site.register(AppCronjob)

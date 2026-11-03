@@ -7,6 +7,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator, validate_domain_name
+from django.urls import reverse
 from django.utils import timezone
 
 from adminconsole.util import generate_secret_key
@@ -100,6 +101,9 @@ class App(models.Model):
     def renew(self):
         self.run_until = timezone.now() + datetime.timedelta(days=1)
         self.save()
+
+    def get_absolute_url(self):
+        return reverse('overview', args=[self.id])
 
 
 class AppEnv(models.Model):
