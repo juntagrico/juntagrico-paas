@@ -29,7 +29,8 @@ $(document).ready(function() {
 
     function reorderLogs() {
         var rows = $tbody.find('.log-entry').detach();
-        if (!newestFirst) {
+        // Docker returns oldest-first; reverse when newestFirst is true
+        if (newestFirst) {
             rows = rows.get().reverse();
         }
         $tbody.append(rows);

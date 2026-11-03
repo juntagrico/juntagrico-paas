@@ -253,24 +253,31 @@ TIMESTAMP_ONLY_RE = re.compile(
     r'^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d+[+-]\d{2}:\d{2}$'
 )
 
-# Time portion extraction for display
-# Matches HH:MM:SS from various timestamp formats
-TIME_RE = re.compile(r'(\d{2}:\d{2}:\d{2})')
+# Date and time extraction for display
+# Matches YYYY-MM-DD HH:MM:SS from various timestamp formats
+DATETIME_RE = re.compile(r'(\d{4})-(\d{2})-(\d{2})\s+(\d{2}:\d{2}:\d{2})')
+
+MONTH_ABBR = {
+    '01': 'Jan', '02': 'Feb', '03': 'Mar', '04': 'Apr',
+    '05': 'May', '06': 'Jun', '07': 'Jul', '08': 'Aug',
+    '09': 'Sep', '10': 'Oct', '11': 'Nov', '12': 'Dec'
+}
 
 
 def format_timestamp(raw):
     """Format a raw timestamp string for compact display.
-    Returns a shortened version showing just the time portion, e.g. '08:51:05'.
+    Returns a shortened version showing date and time, e.g. '03 Nov 08:51:05'.
     """
     if not raw:
         return ''
-    match = TIME_RE.search(raw)
+    match = DATETIME_RE.search(raw)
     if match:
-        return match.group(1)
-    # Fallback: if it looks like a date+time, try to extract the time
-    parts = raw.split()
-    if len(parts) >= 2:
-        return parts[1].split('.')[0]  # e.g. '12:47:37' from '12:47:37.895945+01:00'
+        year, month, day, time = match.groups()
+        month_str = MONTH_ABBR.get(month, month)
+        # Strip trailing zeros from day for compactness
+        day_int = int(day)
+        return f'{day_int} {month_str} {time}'
+    # Fallback: return raw
     return raw
 
 

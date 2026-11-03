@@ -34,27 +34,30 @@
 }
 
 .log-col-timestamp {
-    width: 130px;
+    width: 155px;
+    min-width: 155px;
     color: #808080;
     white-space: nowrap;
     font-size: 11px;
 }
 
 .log-col-pid {
-    width: 45px;
+    width: 50px;
+    min-width: 50px;
     color: #6a9955;
     white-space: nowrap;
     font-size: 11px;
 }
 
 .log-col-level {
-    width: 75px;
+    width: 85px;
+    min-width: 85px;
     white-space: nowrap;
 }
 
 .log-col-message {
     white-space: pre-wrap;
-    word-break: break-all;
+    word-break: break-word;
 }
 
 .badge-info {

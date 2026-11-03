@@ -11,8 +11,8 @@
 
 {% block inner_content %}
     <div class="log-controls card card-body mb-3">
-        <div class="row align-items-center">
-            <div class="col-md-5">
+        <div class="row align-items-center no-gutters">
+            <div class="col-md-4 pr-2">
                 <div class="btn-group btn-group-sm" role="group" id="level-filters">
                     <button type="button" class="btn btn-primary log-filter-btn active" data-level="all">All</button>
                     {% for level in levels %}
@@ -22,10 +22,10 @@
                     {% endfor %}
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-4 px-2">
                 <input type="text" class="form-control form-control-sm" id="log-search" placeholder="Search logs..." />
             </div>
-            <div class="col-md-3 text-right">
+            <div class="col-md-4 text-right pl-2">
                 <button type="button" class="btn btn-sm btn-outline-secondary" id="sort-toggle" title="Toggle sort order">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-arrow-down-up" viewBox="0 0 16 16">
                         <path fill-rule="evenodd" d="M7.247 1.347a.5.5 0 0 1 .506 0l6 4a.5.5 0 0 1 0 .846l-6 4a.5.5 0 0 1-.506 0l-6-4a.5.5 0 0 1 0-.846l6-4zm-6 4.846 5 3.5 5-3.5-5-3.5-5 3.5zm6 8.454a.5.5 0 0 1-.506 0l-6-4a.5.5 0 0 1 0-.846l6-4a.5.5 0 0 1 .506 0l6 4a.5.5 0 0 1 0 .846l-6 4zm-6-4.846 5-3.5 5 3.5-5 3.5-5-3.5z"/>
