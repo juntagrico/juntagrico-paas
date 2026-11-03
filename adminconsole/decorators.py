@@ -1,5 +1,6 @@
 from functools import wraps
 
+from django.contrib.auth.views import redirect_to_login
 from django.shortcuts import get_object_or_404, redirect
 
 from adminconsole.models import App, Domain
@@ -16,7 +17,7 @@ def owner_of_app(view):
             else:
                 return redirect('home')
         else:
-            return redirect('login')
+            return redirect_to_login(request.get_full_path())
 
     return wrapper
 
@@ -31,6 +32,6 @@ def owner_of_domain(view):
             else:
                 return redirect('home')
         else:
-            return redirect('login')
+            return redirect_to_login(request.get_full_path())
 
     return wrapper
