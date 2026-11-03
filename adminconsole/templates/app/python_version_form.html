@@ -1,6 +1,8 @@
-{% extends "base.html" %}
+{% extends "app_base.html" %}
 
-{% block content %}
+{% block page_subtitle %}<h4>Python Version ändern</h4>{% endblock %}
+
+{% block inner_content %}
     {% if success %}
         <div class="alert alert-success">
             Python Version wurde erfolgreich geändert.<br>

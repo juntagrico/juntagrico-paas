@@ -1,11 +1,12 @@
-{% extends "base.html" %}
+{% extends "app_base.html" %}
 
-{% block content %}
+{% block page_subtitle %}<h4>Branch wechseln</h4>{% endblock %}
+
+{% block inner_content %}
     {% if success %}
         <div class="alert alert-success">
             Branch wurde erfolgreich geändert.<br>
             Mache einen Redeploy um den neuen Branch zu verwenden.<br>
-            <a href="{% url "overview" app.id %}" class="btn btn-success">Zurück</a>
         </div>
     {% else %}
         <div class="alert alert-info">

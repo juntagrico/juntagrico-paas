@@ -1,7 +1,8 @@
-{% extends "base.html" %}
+{% extends "app_base.html" %}
 
-{% block content %}
-    <h4>Domains verwalten</h4>
+{% block page_subtitle %}<h4>Domains verwalten</h4>{% endblock %}
+
+{% block inner_content %}
     <ul>
         {% for domain in domains %}
             <li>

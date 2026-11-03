@@ -109,7 +109,7 @@ def env_form(request, app_id):
             return redirect('ca-init-domain', app_id=app_id)
     else:
         form = EnvForm(instance=app.env)
-    return render(request, 'env.html', {'form': form})
+    return render(request, 'app/env.html', {'form': form, 'app': app})
 
 
 @owner_of_app
@@ -207,4 +207,4 @@ def create_admin(request, app_id):
         'pid': proc.pid,
         'next': reverse('overview', args=[app.id])
     }
-    return render(request, 'wait_next.html', render_dict)
+    return render(request, 'app/wait_next.html', render_dict)

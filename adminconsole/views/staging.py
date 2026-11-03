@@ -120,7 +120,7 @@ def clone_db(request, app_id):
             [settings.PYTHON_BIN, '-m', 'manage', 'clone_db', app.name], stdout=out, stderr=out
         )
 
-    return render(request, 'wait_next.html', {
+    return render(request, 'app/wait_next.html', {
         'step': 'Datenbank neu erstellen und kopieren',
         'pid': proc.pid,
         'next': reverse('show-result', args=[app.id])

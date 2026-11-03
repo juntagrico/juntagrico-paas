@@ -32,7 +32,7 @@ def update_permissions(request, app_id):
             if line.startswith('Rename permission: '):
                 rename_perms.append(line[len('Rename permission: '):])
 
-    return render(request, 'tools/update_permissions.html', {
+    return render(request, 'app/update_permissions.html', {
         'app': app,
         'delete_perms': delete_perms,
         'rename_perms': rename_perms,

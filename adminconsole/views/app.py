@@ -57,4 +57,4 @@ def reset_admin_password(request, app_id):
         return redirect('overview', app.id)
 
     # shown once and never stored, also not in messages, which may end up in a cookie
-    return render(request, 'admin_password.html', {'app': app, 'username': ADMIN_USERNAME, 'password': password})
+    return render(request, 'app/admin_password.html', {'app': app, 'username': ADMIN_USERNAME, 'password': password})

@@ -107,7 +107,7 @@ def clone_repo(request, app_id):
     if success:
         success &= git_clone(app, key, errors)
 
-    return render(request, 'done_next.html', {
+    return render(request, 'app/done_next.html', {
         'errors': '' if success else errors,
         'step': 'Repo Klonen',
         'next': reverse('ca-overwrite', args=[app_id]),

@@ -27,9 +27,10 @@ def manage(request, app_id):
     else:
         form = DomainForm(app=app)
 
-    return render(request, 'domain_form.html', {
+    return render(request, 'app/domain_form.html', {
         'domains': app.domains.all(),
-        'form': form
+        'form': form,
+        'app': app
     })
 
 
@@ -42,7 +43,7 @@ def add(request, app_id, pid):
         'pid': pid,
         'next': reverse('show-result', args=[app.id])
     }
-    return render(request, 'wait_next.html', render_dict)
+    return render(request, 'app/wait_next.html', render_dict)
 
 
 @owner_of_domain

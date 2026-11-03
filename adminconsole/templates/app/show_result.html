@@ -1,10 +1,8 @@
-{% extends "base.html" %}
+{% extends "app_base.html" %}
 
-{% block page_title %}
-    <h1>{{ app.name }}</h1>
-{% endblock %}
+{% block page_subtitle %}<h4>Aufgabe-Ergebnis</h4>{% endblock %}
 
-{% block content %}
+{% block inner_content %}
     <div class="accordion" id="result-accordion">
         {% for title, section in sections.items %}
             {% if section.text %}
@@ -56,7 +54,4 @@
         {% endfor %}
     </div>
 
-    <div class="mt-3">
-        <a href="{% url "overview" app.id %}" class="btn btn-success">zurück zur Übersicht</a>
-    </div>
 {% endblock %}

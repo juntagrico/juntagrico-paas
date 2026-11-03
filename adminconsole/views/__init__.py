@@ -95,7 +95,7 @@ def show_result(request, app_id):
                 current['text'] += '\n'
     if not sections['Log']['text']:
         del sections['Log']
-    return render(request, 'show_result.html',
+    return render(request, 'app/show_result.html',
                   {'app': app, 'sections': sections})
 
 
@@ -115,7 +115,7 @@ def env(request, app_id):
                     [settings.PYTHON_BIN, '-m', 'manage', 'restart', app.name],
                     stdout=out, stderr=out
                 )
-            return render(request, 'wait_next.html', {
+            return render(request, 'app/wait_next.html', {
                 'step': 'Einstellungen anwenden',
                 'pid': proc.pid,
                 'next': reverse('overview', args=[app.id])
@@ -124,7 +124,7 @@ def env(request, app_id):
         form = EnvForm(instance=app_env)
         formset = AppEnvVarFormSet(instance=app_env)
 
-    return render(request, 'env.html', {'form': form, 'formset': formset})
+    return render(request, 'app/env.html', {'form': form, 'formset': formset, 'app': app})
 
 
 @owner_of_app
@@ -139,7 +139,7 @@ def change_branch(request, app_id):
             success = not error
 
     form = BranchForm(initial={'branch': git_current_branch(app)})
-    return render(request, 'branch_form.html', {
+    return render(request, 'app/branch_form.html', {
         'form': form, 'success': success, 'error': error, 'app': app
     })
 
@@ -157,7 +157,7 @@ def generate_depot_list(request, app_id):
         'step': 'Depotliste generieren',
         'next': reverse('overview', args=[app.id])
     }
-    return render(request, 'done_next.html', render_dict)
+    return render(request, 'app/done_next.html', render_dict)
 
 
 @owner_of_app
@@ -185,7 +185,7 @@ def mailtexts(request, app_id):
             current['text'] += line + '\n'
     if not sections['Log']['text']:
         del sections['Log']
-    return render(request, 'show_result.html', {'app': app, 'sections': sections})
+    return render(request, 'app/show_result.html', {'app': app, 'sections': sections})
 
 
 @owner_of_app
@@ -228,7 +228,7 @@ def logs(request, app_id):
     container = client.containers.get(name)
     result_text = container.logs(tail=1000)
     result_text = result_text.decode('utf-8') 
-    return render(request, 'show_result.html', {'app': app, 'sections': {
+    return render(request, 'app/show_result.html', {'app': app, 'sections': {
         'Docker Logs': {'text': result_text, 'result': 0},
     }})
 
@@ -248,7 +248,7 @@ def versions(request, app_id):
     results = [container.exec_run(command) for command in commands]
     result_text = '\n'.join(result.output.decode('utf-8') for result in results)
     exit_code = sum(result.exit_code or 0 for result in results)
-    return render(request, 'show_result.html', {'app': app, 'sections': {
+    return render(request, 'app/show_result.html', {'app': app, 'sections': {
         'Installierte App Versionen': {'text': result_text, 'result': exit_code},
     }})
 

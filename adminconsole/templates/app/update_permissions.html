@@ -1,6 +1,8 @@
-{% extends "base.html" %}
+{% extends "app_base.html" %}
 
-{% block content %}
+{% block page_subtitle %}<h4>Berechtigungen aktualisieren</h4>{% endblock %}
+
+{% block inner_content %}
     {% if delete_perms or rename_perms %}
         {% if delete_perms %}
             <p>Diese Berechtigungen werden nicht mehr benötigt und werden gelöscht:</p>
@@ -21,7 +23,6 @@
         <div>
             <form method="POST">
                 {% csrf_token %}
-                <a href="{% url "overview" app.id %}" class="btn btn-secondary">zurück</a>
                 <input type="submit" class="btn btn-success" value="anwenden"/>
             </form>
         </div>
@@ -31,8 +32,5 @@
         {% else %}
             <p>Die Berechtigungen sind schon aktuell.</p>
         {% endif %}
-        <div>
-            <a href="{% url "overview" app.id %}" class="btn btn-secondary">zurück</a>
-        </div>
     {% endif %}
 {% endblock %}

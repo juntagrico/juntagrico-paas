@@ -21,7 +21,7 @@ def manage(request, app_id):
                     [settings.PYTHON_BIN, '-m', 'manage', 'install_cronjob', app.name],
                     stdout=out, stderr=out
                 )
-            return render(request, 'wait_next.html', {
+            return render(request, 'app/wait_next.html', {
                 'step': 'Cronjobs installieren',
                 'pid': proc.pid,
                 'next': reverse('show-result', args=[app.id]),
@@ -29,7 +29,7 @@ def manage(request, app_id):
     else:
         form = CronjobForm(app=app)
 
-    return render(request, 'cronjob_form.html', {
+    return render(request, 'app/cronjob_form.html', {
         'form': form,
         'app': app,
     })

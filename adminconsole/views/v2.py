@@ -122,6 +122,6 @@ def set_python_version(request, app_id):
     else:
         form = PythonVersionForm(instance=app)
 
-    return render(request, 'python_version_form.html', {
+    return render(request, 'app/python_version_form.html', {
         'form': form, 'success': success, 'app': app,
     })

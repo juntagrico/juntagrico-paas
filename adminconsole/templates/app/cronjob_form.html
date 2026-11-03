@@ -1,8 +1,9 @@
-{% extends "base.html" %}
+{% extends "app_base.html" %}
 {% load extras %}
 
-{% block content %}
-    <h4>Cronjobs verwalten</h4>
+{% block page_subtitle %}<h4>Cronjobs verwalten</h4>{% endblock %}
+
+{% block inner_content %}
     <p class="card-text">
         Wähle die Cronjobs aus, die für diese App installiert werden sollen.
     </p>
