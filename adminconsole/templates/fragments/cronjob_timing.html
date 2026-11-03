@@ -1,5 +1,6 @@
 {# Timing controls for a cronjob entry #}
 {# Context: cj (cronjob definition), ac (AppCronjob instance or None), form #}
+{% load extras %}
 {% if cj.timing == 'hourly' %}
     <div class="ml-3 mt-1">
         <label for="minute_{{ cj.id }}">Jede Stunde in Minute:</label>
