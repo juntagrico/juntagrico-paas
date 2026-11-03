@@ -3,13 +3,13 @@ import subprocess
 
 from django.conf import settings
 from django.contrib import messages
-from django.http import Http404, JsonResponse
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from adminconsole.decorators import owner_of_app
-from adminconsole.forms import PythonVersionForm
+from adminconsole.forms import PythonVersionForm, RedeployForm
 from adminconsole.models import App
 from adminconsole.util import pid_finished
 
@@ -32,6 +32,9 @@ def set_version(request, app_id):
 def redeploy(request, app_id, upgrade=False):
     app = get_object_or_404(App, pk=app_id)
 
+    if app.version >= 3:
+        return redeploy_with_form(request, app)
+
     if request.method == 'POST':
         if app.staging_of:
             app.renew()
@@ -53,6 +56,40 @@ def redeploy(request, app_id, upgrade=False):
     return render(request, 'generic/submit.html', {
         'page_title': f'Redeploy {app.name}',
         'button_text': 'Redeploy starten',
+    })
+
+
+def redeploy_with_form(request, app):
+    """Redeploy flow with a form to adjust python version and branch before deploying."""
+    if request.method == 'POST':
+        form = RedeployForm(request.POST, app=app)
+        if form.is_valid():
+            # Save the adjusted values
+            app.python_version = form.cleaned_data['python_version']
+            app.set_branch(form.cleaned_data['branch'])
+            app.save()
+
+            # Perform the redeploy
+            if app.staging_of:
+                app.renew()
+
+            command = [settings.PYTHON_BIN, '-m', 'manage', 'redeploy', app.name]
+            with open(app.log_file, 'wb') as out:
+                proc = subprocess.Popen(command, stdout=out, stderr=out)
+
+            return render(request, 'wait_redeploy.html', {
+                'page_title': app.name,
+                'step': 'Redeploy',
+                'url': reverse('progress', args=[app.id, proc.pid]),
+                'pid': proc.pid,
+                'next': reverse('show-result', args=[app.id])
+            })
+    else:
+        form = RedeployForm(app=app)
+
+    return render(request, 'app/redeploy_form.html', {
+        'form': form,
+        'app': app,
     })
 
 

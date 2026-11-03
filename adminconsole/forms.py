@@ -371,6 +371,27 @@ class PythonVersionForm(forms.ModelForm):
         }
 
 
+class RedeployForm(forms.Form):
+    """Form for redeploy where python version and branch can be adjusted before deploying."""
+    python_version = ChoiceField(
+        label='Python Version',
+        widget=Select(attrs={'class': 'form-control'}),
+    )
+    branch = CharField(
+        label='Branch', max_length=100,
+        widget=TextInput(attrs={'class': 'form-control'}),
+    )
+
+    def __init__(self, *args, app, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.app = app
+        self.fields['python_version'].choices = App.PYTHON_VERSION
+        if not self.is_bound:
+            self.fields['python_version'].initial = app.python_version
+            current_branch = app.git_clone_url.partition('@')[2] or 'main'
+            self.fields['branch'].initial = current_branch
+
+
 class ProfileForm(forms.Form):
     email = EmailField(label='email adresse', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))
 
