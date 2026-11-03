@@ -287,6 +287,19 @@
                         </div>
                     </div>
                 </div>
+                {% if perms.adminconsole.view_appcronjob %}
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <h4 class="card-header">Cronjobs verwalten</h4>
+                            <div class="card-body">
+                                <p class="card-text">
+                                    Wähle die Cronjobs aus, die ausgeführt werden sollen.
+                                </p>
+                                <a href="{% url 'cronjob-manage' app.id %}" class="btn btn-outline-primary">verwalten</a>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>

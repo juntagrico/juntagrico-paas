@@ -168,3 +168,61 @@ GITHUB_CLIENT_SECRET = os.environ.get('GITHUB_CLIENT_SECRET')
 
 PYTHON_BIN = '.venv/bin/python'
 APPS_DOMAIN = '.juntagrico.app'
+
+CRONJOBS = [
+    {
+        'id': 'depot_list_future',
+        'name': 'Depotänderungen annehmen und Depotliste erstellen',
+        'group': 'Depotlisten generieren',
+        'timing': 'daily',
+        'command': 'generate_depot_list --future',
+        'default_hour': 23,
+        'default_minute': 50,
+    },
+    {
+        'id': 'depot_list_no_future',
+        'name': 'Depotliste erstellen ohne Depotänderungen anzunehmen',
+        'group': 'Depotlisten generieren',
+        'timing': 'daily',
+        'command': 'generate_depot_list --no-future',
+        'default_hour': 23,
+        'default_minute': 50,
+    },
+    {
+        'id': 'remind_members',
+        'name': 'Mitglieder an Einsätze erinnern',
+        'group': None,
+        'timing': 'hourly',
+        'command': 'remind_members --skip-checks',
+    },
+    {
+        'id': 'clearsessions',
+        'name': 'Abgelaufene Sessionen aufräumen',
+        'group': None,
+        'timing': 'daily',
+        'command': 'clearsessions',
+        'default_hour': 4,
+        'default_minute': 0,
+        'required': True,
+    },
+    {
+        'id': 'upcoming_jobs',
+        'name': 'Koordinator:innen über bevorstehende Jobs ihrer Tätigkeitsbereiche informieren',
+        'group': None,
+        'timing': 'daily',
+        'command': 'upcoming_jobs',
+        'default_hour': 8,
+        'default_minute': 0,
+        'apps': ['ortoloco'],
+    },
+    {
+        'id': 'sendmails',
+        'name': 'Emails im Postausgang versenden',
+        'group': None,
+        'timing': 'fixed',
+        'command': 'sendmails --skip-checks -l 50',
+        'minute': '*/5',
+        'hour': '*',
+        'apps': ['mehalsgmues'],
+    },
+]

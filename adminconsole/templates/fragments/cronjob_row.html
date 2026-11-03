@@ -1,0 +1,13 @@
+{# A single cronjob row with input, label, command, and timing controls #}
+{# Context: cj (cronjob definition), ac (AppCronjob or None), form, input_type (radio/checkbox), #}
+{#          input_name, input_value, checked (bool), disabled (bool, optional) #}
+<div class="form-check mb-2">
+    <input class="form-check-input" type="{{ input_type }}" name="{{ input_name }}"
+           id="cronjob_{{ cj.id }}" value="{{ input_value }}"
+           {% if checked %}checked{% endif %}
+           {% if disabled %}disabled{% endif %}>
+    <label class="form-check-label" for="cronjob_{{ cj.id }}">
+        {{ cj.name }} <small class="text-muted">({{ cj.command }})</small>
+    </label>
+    {% include "fragments/cronjob_timing.html" %}
+</div>

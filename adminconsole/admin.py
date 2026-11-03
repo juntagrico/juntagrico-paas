@@ -1,7 +1,12 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
-from adminconsole.models import GitHubKey, App, AppEnv, Domain
+from adminconsole.models import GitHubKey, App, AppEnv, Domain, AppCronjob
+
+
+class AppCronjobInline(admin.TabularInline):
+    model = AppCronjob
+    extra = 1
 
 
 class AppAdmin(admin.ModelAdmin):
@@ -9,6 +14,7 @@ class AppAdmin(admin.ModelAdmin):
                     'run_until', 'repo']
     search_fields = ['name', 'port']
     list_filter = ('python_version', 'version')
+    inlines = [AppCronjobInline]
 
     @admin.display(description="repo")
     def repo(self, obj):
@@ -29,3 +35,4 @@ admin.site.register(GitHubKey)
 admin.site.register(App, AppAdmin)
 admin.site.register(AppEnv)
 admin.site.register(Domain, DomainAdmin)
+admin.site.register(AppCronjob)

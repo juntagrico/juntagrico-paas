@@ -3,7 +3,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from adminconsole import views
-from adminconsole.views import git, create, staging, v2, app, tools, domain
+from adminconsole.views import git, create, staging, v2, app, tools, domain, cronjob
 
 urlpatterns = [
     
@@ -22,6 +22,7 @@ urlpatterns = [
     path('dom/add/<int:app_id>/<int:pid>/', domain.add, name='domain-add'),
     path('dom/renew/<int:domain_id>/', domain.renew, name='domain-renew'),
     path('dom/remove/<int:domain_id>/', domain.remove, name='domain-remove'),
+    path('cron/form/<int:app_id>/', cronjob.manage, name='cronjob-manage'),
     path('pid/<int:pid>/', views.pidcheck),
     path('reload/<int:app_id>/', views.reload, name='redeploy'),
     path('env/<int:app_id>/', views.env),
