@@ -83,8 +83,8 @@
             <a href="/logs/{{ app.id }}/" class="btn btn-outline-primary mb-1">Logs anzeigen</a>
             <a href="{% url "versions" app.id %}" class="btn btn-outline-primary mb-1">Versionen anzeigen</a>
             {% else %}
-            <button class="btn btn-outline-primary mb-1" disabled>Logs anzeigen</button>
-            <button class="btn btn-outline-primary mb-1" disabled>Versionen anzeigen</button>
+            <button class="btn btn-outline-secondary mb-1" disabled>Logs anzeigen</button>
+            <button class="btn btn-outline-secondary mb-1" disabled>Versionen anzeigen</button>
             {% endif %}
             {% if 'adminconsole.view_app' in perms %}
                 <a href="{% url 'admin:adminconsole_app_change' app.id %}" class="btn btn-outline-secondary mb-1">Im Admin bearbeiten</a>
@@ -238,13 +238,23 @@
                                 </svg>
                                 konfigurieren
                             </a>
-                            <a href="{% url 'show-env' app.id %}" class="btn btn-outline-primary me-2">
+                            {% if active %}
+                            <a href="{% url 'show-env' app.id %}" class="btn btn-outline-secondary me-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
                                     <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/>
                                     <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
                                 </svg>
                                 anzeigen
                             </a>
+                            {% else %}
+                            <button class="btn btn-outline-secondary me-2" disabled>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
+                                    <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/>
+                                    <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
+                                </svg>
+                                anzeigen
+                            </button>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -352,7 +362,7 @@
                             {% if active %}
                             <a href="/mailtexts/{{ app.id }}/" class="btn btn-outline-primary">Email-Texte</a>
                             {% else %}
-                            <button class="btn btn-outline-primary" disabled>Email-Texte</button>
+                            <button class="btn btn-outline-secondary" disabled>Email-Texte</button>
                             {% endif %}
                         </div>
                     </div>
@@ -369,7 +379,7 @@
                                 Berechtigungen aktualisieren
                             </a>
                             {% else %}
-                            <button class="btn btn-outline-primary" disabled>
+                            <button class="btn btn-outline-secondary" disabled>
                                 Berechtigungen aktualisieren
                             </button>
                             {% endif %}
@@ -412,7 +422,7 @@
                                 <button type="submit" class="btn btn-outline-primary">erzeugen</button>
                             </form>
                             {% else %}
-                            <button class="btn btn-outline-primary" disabled>erzeugen</button>
+                            <button class="btn btn-outline-secondary" disabled>erzeugen</button>
                             {% endif %}
                         </div>
                     </div>
@@ -431,7 +441,7 @@
                                     Admin-Passwort neu setzen
                                 </a>
                                 {% else %}
-                                <button class="btn btn-outline-primary" disabled>
+                                <button class="btn btn-outline-secondary" disabled>
                                     Admin-Passwort neu setzen
                                 </button>
                                 {% endif %}
