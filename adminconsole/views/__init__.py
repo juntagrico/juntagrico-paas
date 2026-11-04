@@ -35,8 +35,11 @@ def home(request):
     if number_of_apps == 1 and not superuser:
         return redirect('overview', app_id=available_apps[0].id)
 
-    # Get all container statuses in a single Docker API call
-    app_names = set(available_apps.values_list('name', flat=True))
+    # Get all container statuses in a single Docker API call (include staging apps)
+    if superuser:
+        app_names = set(App.objects.values_list('name', flat=True))
+    else:
+        app_names = set(request.user.app.values_list('name', flat=True))
     container_statuses = get_container_statuses(app_names)
 
     # Group apps by their first letter
