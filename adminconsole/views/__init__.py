@@ -70,9 +70,11 @@ def overview(request, app_id):
         # resume staging creation process
         return redirect('staging-git-clone', app_id=app.id)
 
+    active = status in ('running', 'created', 'restarting')
     renderdict = {
         'app': app,
         'status': status,
+        'active': active,
         'staging': staging,
         'has_2fa': user_has_device(request.user),
     }
@@ -128,16 +130,27 @@ def env(request, app_id):
         if form.is_valid() and formset.is_valid():
             form.save()
             formset.save()
-            with open(app.log_file, 'wb') as out:
-                proc = subprocess.Popen(
-                    [settings.PYTHON_BIN, '-m', 'manage', 'restart', app.name],
-                    stdout=out, stderr=out
-                )
-            return render(request, 'app/wait_next.html', {
-                'step': 'Einstellungen anwenden',
-                'pid': proc.pid,
-                'next': reverse('overview', args=[app.id])
-            })
+            # Only restart the container if it currently exists
+            container_exists = False
+            try:
+                docker.from_env().containers.get(app.name)
+                container_exists = True
+            except NotFound:
+                pass
+            if container_exists:
+                with open(app.log_file, 'wb') as out:
+                    proc = subprocess.Popen(
+                        [settings.PYTHON_BIN, '-m', 'manage', 'restart', app.name],
+                        stdout=out, stderr=out
+                    )
+                return render(request, 'app/wait_next.html', {
+                    'step': 'Einstellungen anwenden',
+                    'pid': proc.pid,
+                    'next': reverse('overview', args=[app.id])
+                })
+            else:
+                messages.info(request, 'Einstellungen gespeichert. Die Instanz ist inaktiv; die Änderungen werden beim nächsten Start wirksam.')
+                return redirect('overview', app.id)
     else:
         form = EnvForm(instance=app_env)
         formset = AppEnvVarFormSet(instance=app_env)

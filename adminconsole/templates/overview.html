@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block page_title %}
-    <h1>{{ app.name }}{% if status == 'inactive' %} <span class="badge bg-secondary">inaktiv</span>{% endif %}</h1>
+    <h1>{{ app.name }}{% if not active %} <span class="badge bg-secondary">inaktiv</span>{% endif %}</h1>
 {% endblock %}
 
 {% block content %}
@@ -25,7 +25,7 @@
             {% endif %}
 
             <h3>Status</h3>
-                {% if status == 'running' or status == 'created' or status == 'restarting' %}
+                {% if active %}
                     <div class="alert alert-success">
                         <p>
                             Die Instanz läuft.
@@ -44,7 +44,7 @@
                             </form>
                         {% endif %}
                     </div>
-                {% elif status == 'paused' or status == 'removing' or status == 'exited' or status == 'dead' or status == 'inactive' %}
+                {% elif not active %}
                     <div class="alert alert-danger">
                         <p>
                             {% if status == 'inactive' %}
@@ -53,6 +53,11 @@
                                 Die Instanz ist gestoppt.
                             {% endif %}
                         </p>
+                        {% if status == 'inactive' %}
+                        <p class="mb-2">
+                            Einige Funktionen sind erst verfügbar, wenn die Instanz gestartet wird.
+                        </p>
+                        {% endif %}
                         <form action="{% url 'app-start' app.id %}" method="POST">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-success">starten</button>
@@ -74,8 +79,13 @@
                     </p>
                 </div>
             {% endif %}
+            {% if active %}
             <a href="/logs/{{ app.id }}/" class="btn btn-outline-primary mb-1">Logs anzeigen</a>
             <a href="{% url "versions" app.id %}" class="btn btn-outline-primary mb-1">Versionen anzeigen</a>
+            {% else %}
+            <button class="btn btn-outline-primary mb-1" disabled>Logs anzeigen</button>
+            <button class="btn btn-outline-primary mb-1" disabled>Versionen anzeigen</button>
+            {% endif %}
             {% if 'adminconsole.view_app' in perms %}
                 <a href="{% url 'admin:adminconsole_app_change' app.id %}" class="btn btn-outline-secondary mb-1">Im Admin bearbeiten</a>
             {% endif %}
@@ -339,7 +349,11 @@
                             <p class="card-text">
                                 Erzeugt die E-Mail-Texte mit deinen personalisierten Templates.
                             </p>
+                            {% if active %}
                             <a href="/mailtexts/{{ app.id }}/" class="btn btn-outline-primary">Email-Texte</a>
+                            {% else %}
+                            <button class="btn btn-outline-primary" disabled>Email-Texte</button>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -350,9 +364,15 @@
                             <p class="card-text">
                                 Passt die Namen der Berechtigungen dem Vokabular an und löscht alte Berechtigungen.
                             </p>
+                            {% if active %}
                             <a href="{% url "update-permissions" app.id %}" class="btn btn-outline-primary">
                                 Berechtigungen aktualisieren
                             </a>
+                            {% else %}
+                            <button class="btn btn-outline-primary" disabled>
+                                Berechtigungen aktualisieren
+                            </button>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -386,10 +406,14 @@
                                 Seit Juntagrico 1.6 kann die Depotliste auch in der Instanz selbst generiert werden
                                 unter Administration &rarr; Listen &rarr; Erzeugen.
                             </p>
+                            {% if active %}
                             <form action="/gdl/{{ app.id }}/" method="post">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-outline-primary">erzeugen</button>
                             </form>
+                            {% else %}
+                            <button class="btn btn-outline-primary" disabled>erzeugen</button>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -402,9 +426,15 @@
                                     Setzt ein neues, zufälliges Passwort für den Benutzer admin deiner Instanz,
                                     z. B. wenn das Passwort verloren ging. Das bisherige Passwort wird ungültig.
                                 </p>
+                                {% if active %}
                                 <a href="{% url "app-admin-password" app.id %}" class="btn btn-outline-primary">
                                     Admin-Passwort neu setzen
                                 </a>
+                                {% else %}
+                                <button class="btn btn-outline-primary" disabled>
+                                    Admin-Passwort neu setzen
+                                </button>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
