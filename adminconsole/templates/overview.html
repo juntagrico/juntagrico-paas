@@ -147,11 +147,11 @@
                 {% if not staging %}
                     <div class="col-md-6">
                         <div class="card mb-3">
-                            <h4 class="card-header">Staging</h4>
+                            <h4 class="card-header">Staging{% if app.stagings.exists %} {{ staging_running|running_badge }}{% endif %}</h4>
                             <div class="card-body">
                                 {% if app.stagings.exists %}
                                     <p class="card-text">
-                                        Staging-App existiert bereits. {{ staging_running|running_badge }}
+                                        Staging-App existiert bereits.
                                     </p>
                                     <a href="{% url 'overview' app.stagings.first.id %}" class="btn btn-warning">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
