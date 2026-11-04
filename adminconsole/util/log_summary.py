@@ -1,6 +1,65 @@
 import re
 
 
+# Word-boundary-aware error patterns: match "error" as a standalone word, not inside package names like "liberror-perl"
+# These use \b for word boundaries to avoid false positives on package/library names
+ERROR_WORD_RE = re.compile(r'\berror\b', re.IGNORECASE)
+# Catch compound error names like "OperationalError", "TypeError" — but only after a dot (module path) or at line start
+# to avoid false positives on package names like "liberror-perl"
+ERROR_COMPOUND_RE = re.compile(r'(?:^|\.)([A-Z]\w*Error)\b')
+FAILED_WORD_RE = re.compile(r'\bfailed\b', re.IGNORECASE)
+FAILURE_WORD_RE = re.compile(r'\bfailure\b', re.IGNORECASE)
+EXCEPTION_WORD_RE = re.compile(r'\bexception\b', re.IGNORECASE)
+# Same for compound exception names like "ValueError", "KeyError"
+EXCEPTION_COMPOUND_RE = re.compile(r'(?:^|\.)([A-Z]\w*Exception)\b')
+TRACEBACK_WORD_RE = re.compile(r'\btraceback\b', re.IGNORECASE)
+FATAL_WORD_RE = re.compile(r'\bfatal\b', re.IGNORECASE)
+CRITICAL_WORD_RE = re.compile(r'\bcritical\b', re.IGNORECASE)
+WARNING_WORD_RE = re.compile(r'\bwarning\b', re.IGNORECASE)
+WARN_COLON_RE = re.compile(r'\bwarn:', re.IGNORECASE)
+COULD_NOT_RE = re.compile(r'\bcould not\b', re.IGNORECASE)
+REFUSED_WORD_RE = re.compile(r'\brefused\b', re.IGNORECASE)
+DENIED_WORD_RE = re.compile(r'\bdenied\b', re.IGNORECASE)
+TIMEOUT_WORD_RE = re.compile(r'\btimeout\b', re.IGNORECASE)
+PERMISSION_DENIED_RE = re.compile(r'\bpermission denied\b', re.IGNORECASE)
+
+
+def _is_error_line(line):
+    """Check if a log line is a genuine error/warning, avoiding false positives on package names like 'liberror-perl'."""
+    # Skip lines that look like apt/package manager output (e.g. "Get:29 ... liberror-perl ...")
+    if re.match(r'^Get:\d+\s+', line):
+        return False
+    # Skip lines that look like package installation output
+    if re.match(r'^(Selecting|Preparing to unpack|Unpacking|Setting up)\s+', line):
+        return False
+    # Skip lines that are just package lists (common in apt output, space-separated package names)
+    stripped = line.strip()
+    if stripped and not stripped[0].isupper() and ':' not in stripped and '(' not in stripped and '=' not in stripped:
+        # Likely a package list line like "  git git-man libbrotli1 liberror-perl ..."
+        parts = stripped.split()
+        if len(parts) > 3 and all('.' not in p and '/' not in p for p in parts):
+            return False
+
+    return bool(
+        ERROR_WORD_RE.search(line)
+        or ERROR_COMPOUND_RE.search(line)
+        or FAILED_WORD_RE.search(line)
+        or FAILURE_WORD_RE.search(line)
+        or EXCEPTION_WORD_RE.search(line)
+        or EXCEPTION_COMPOUND_RE.search(line)
+        or TRACEBACK_WORD_RE.search(line)
+        or FATAL_WORD_RE.search(line)
+        or CRITICAL_WORD_RE.search(line)
+        or WARNING_WORD_RE.search(line)
+        or WARN_COLON_RE.search(line)
+        or COULD_NOT_RE.search(line)
+        or REFUSED_WORD_RE.search(line)
+        or DENIED_WORD_RE.search(line)
+        or TIMEOUT_WORD_RE.search(line)
+        or PERMISSION_DENIED_RE.search(line)
+    )
+
+
 # Regex patterns for known log formats
 
 # Docker BuildKit: "[+] Building 1.2s (14/18) docker:default" or "[+] Building 0.0s (0/0)"
@@ -71,143 +130,16 @@ COLLECTSTATIC_COPYING_RE = re.compile(r'^\s+Copying\s+')
 
 
 def _summarize_docker_build(text, result):
-    """Summarize a Docker build log (BuildKit, legacy, or #N hash format)."""
-    lines = text.rstrip('\n').split('\n')
-    if not lines or (len(lines) == 1 and not lines[0]):
-        return ''
-
-    summary_parts = []
-    is_buildkit = False
-    is_hash = False
-    steps = []
+    """Summarize a Docker build log — return only error lines and return code."""
     errors = []
-    total_steps = None
-    final_line = None
-
-    # First pass: detect format
-    for line in lines:
+    for line in text.split('\n'):
         stripped = line.strip()
-        if BUILDKIT_BUILDING_RE.match(stripped):
-            is_buildkit = True
-            break
-        if HASH_STEP_RE.match(stripped):
-            is_hash = True
-            break
-        if LEGACY_STEP_RE.match(stripped):
-            break
+        if stripped and _is_error_line(stripped):
+            errors.append(stripped)
 
-    for line in lines:
-        stripped = line.strip()
-        if not stripped:
-            continue
-
-        # Detect BuildKit format
-        if BUILDKIT_BUILDING_RE.match(stripped):
-            is_buildkit = True
-            # Extract progress: "(14/18)"
-            m = re.search(r'\((\d+)/(\d+)\)', stripped)
-            if m:
-                total_steps = int(m.group(2))
-            # Check for final status
-            if 'DONE' in stripped.upper() or 'ERROR' in stripped.upper():
-                final_line = stripped
-            summary_parts.append(stripped)
-            continue
-
-        if is_buildkit:
-            # BuildKit step lines (running steps with ">")
-            if BUILDKIT_STEP_RE.match(stripped):
-                steps.append(stripped)
-            # BuildKit completed step lines (" =>")
-            elif BUILDKIT_DONE_STEP_RE.match(stripped):
-                steps.append(stripped)
-            elif BUILDKIT_EXPORT_RE.match(stripped):
-                # Export lines are less interesting, skip in summary
-                pass
-            elif BUILDKIT_ERROR_RE.match(stripped):
-                errors.append(stripped)
-            elif BUILDKIT_SUCCESS_RE.search(stripped):
-                final_line = stripped
-        elif is_hash:
-            # #N hash format
-            if HASH_STATUS_RE.match(stripped):
-                # e.g. "#1 DONE 0.0s" or "#3 CACHED" — skip status-only lines
-                pass
-            elif HASH_STEP_RE.match(stripped):
-                # Extract the step description, e.g. "#1 [internal] load build definition from Dockerfile"
-                m = HASH_STEP_RE.match(stripped)
-                step_num = m.group(1)
-                rest = stripped[len(f'#{step_num} '):]
-                # Skip the driver line: "building with "default" instance using docker driver"
-                if rest.startswith('building with'):
-                    continue
-                # Skip sub-steps like "transferring dockerfile: 1.59kB done"
-                if rest.startswith('transferring') or rest.startswith('resolve') or rest.endswith(' done'):
-                    continue
-                # Skip progress-only lines like "..."
-                if rest.strip() == '...':
-                    continue
-                # Skip long image reference lines (sha256 digests) that repeat the step info
-                if '@sha256:' in rest and rest.count('/') > 3:
-                    # Keep only the short form if it starts with a bracketed stage name
-                    if not rest.startswith('[') and not rest.startswith('FROM'):
-                        continue
-                # Strip long sha256 suffixes from step descriptions for brevity
-                rest = re.sub(r'@sha256:[a-f0-9]+', '', rest)
-                steps.append(rest)
-            # Check for errors in hash format
-            lower = stripped.lower()
-            if any(p in lower for p in ['error', 'failed', 'fatal']):
-                errors.append(stripped)
-        else:
-            # Legacy format
-            if LEGACY_STEP_RE.match(stripped):
-                steps.append(stripped)
-            elif LEGACY_SUCCESS_RE.match(stripped):
-                final_line = stripped
-            elif LEGACY_ERROR_RE.match(stripped):
-                errors.append(stripped)
-
-    # Build the summary
     parts = []
-
-    if is_buildkit:
-        # For BuildKit, show the final building line and key steps
-        building_lines = [l for l in lines if BUILDKIT_BUILDING_RE.match(l.strip())]
-        if building_lines:
-            parts.append(building_lines[-1].strip())
-        # Show error steps
-        for err in errors:
-            parts.append(f'⚠ {err}')
-        # Show the last few steps (up to 5)
-        if steps and not errors:
-            parts.extend(steps[-5:])
-        if final_line and final_line not in parts:
-            parts.append(final_line)
-    elif is_hash:
-        # Hash format: show key steps and errors
-        # Deduplicate steps (same step may appear multiple times with different status)
-        seen = set()
-        unique_steps = []
-        for s in steps:
-            if s not in seen:
-                seen.add(s)
-                unique_steps.append(s)
-        if unique_steps:
-            parts.extend(unique_steps[:8])
-        for err in errors:
-            parts.append(f'⚠ {err}')
-        if final_line:
-            parts.append(final_line)
-    else:
-        # Legacy format
-        if steps:
-            parts.extend(steps[:5])
-        for err in errors:
-            parts.append(f'⚠ {err}')
-        if final_line:
-            parts.append(final_line)
-
+    for err in errors:
+        parts.append(f'⚠ {err}')
     if result != 0:
         parts.append(f'(Return code: {result})')
 
@@ -215,98 +147,16 @@ def _summarize_docker_build(text, result):
 
 
 def _summarize_django_migrate(text, result):
-    """Summarize Django migration output."""
-    lines = text.rstrip('\n').split('\n')
-    if not lines or (len(lines) == 1 and not lines[0]):
-        return ''
-
-    parts = []
-    migrations_applied = []
-    tables_created = []
+    """Summarize Django migration output — return only error lines and return code."""
     errors = []
-    no_migrations = False
-    apps_list = []
-
-    for line in lines:
+    for line in text.split('\n'):
         stripped = line.strip()
-        if not stripped:
-            continue
-
-        # Check for header lines like "Operations to perform:", "Running migrations:"
-        if DJANGO_MIGRATE_HEADER_RE.match(stripped):
-            continue
-
-        # Check for "Apply all migrations: admin, auth, contenttypes, ..."
-        m = DJANGO_MIGRATE_APPLY_ALL_RE.match(stripped)
-        if m:
-            apps_str = m.group(1).strip()
-            if apps_str:
-                apps_list = [a.strip() for a in apps_str.split(',') if a.strip()]
-            continue
-
-        m = DJANGO_MIGRATE_APPLYING_RE.match(stripped)
-        if m:
-            migration_name = m.group(1)
-            status = m.group(3)
-            if status:
-                migrations_applied.append(f'{migration_name}... {status}')
-            else:
-                # Incomplete line, might be followed by OK on next line
-                # Strip "Applying " prefix to keep summary shorter than input
-                clean = stripped.replace('Applying ', '', 1)
-                migrations_applied.append(clean)
-            continue
-
-        if DJANGO_MIGRATE_CREATING_RE.match(stripped):
-            tables_created.append(stripped)
-            continue
-
-        if DJANGO_MIGRATE_NONE_RE.match(stripped):
-            no_migrations = True
-            continue
-
-        # Check for errors
-        lower = stripped.lower()
-        if any(p in lower for p in ['error', 'failed', 'exception', 'traceback']):
+        if stripped and _is_error_line(stripped):
             errors.append(stripped)
 
-    # Build summary
-    if no_migrations:
-        if apps_list:
-            parts.append(f'Apps: {", ".join(apps_list)}')
-        parts.append('No migrations to apply.')
-        for err in errors:
-            parts.append(f'⚠ {err}')
-        if result != 0:
-            parts.append(f'(Return code: {result})')
-        return '\n'.join(parts) if parts else ''
-
-    if migrations_applied:
-        # Group by app
-        apps = {}
-        for mig in migrations_applied:
-            # Extract app name from "app.migration... OK"
-            clean = mig.replace('Applying ', '', 1)
-            app_name = clean.split('.')[0] if '.' in clean else 'unknown'
-            apps.setdefault(app_name, []).append(mig)
-
-        total = len(migrations_applied)
-        if len(apps) <= 2 and total <= 5:
-            # Few apps, show individually
-            for app_name, migs in apps.items():
-                parts.extend(migs)
-        else:
-            # Many migrations, summarize per app
-            for app_name, migs in apps.items():
-                parts.append(f'{app_name}: {len(migs)} migration(s) applied')
-            parts.append(f'({total} migrations total)')
-
-    if tables_created:
-        parts.append(f'{len(tables_created)} tables created')
-
+    parts = []
     for err in errors:
         parts.append(f'⚠ {err}')
-
     if result != 0:
         parts.append(f'(Return code: {result})')
 
@@ -314,52 +164,16 @@ def _summarize_django_migrate(text, result):
 
 
 def _summarize_django_collectstatic(text, result):
-    """Summarize Django collectstatic output."""
-    lines = text.rstrip('\n').split('\n')
-    if not lines or (len(lines) == 1 and not lines[0]):
-        return ''
-
-    parts = []
-    copied_count = 0
-    post_processed_count = 0
+    """Summarize Django collectstatic output — return only error lines and return code."""
     errors = []
-
-    for line in lines:
+    for line in text.split('\n'):
         stripped = line.strip()
-        if not stripped:
-            continue
-
-        # Check for combined format: "123 static files copied to '...', 456 post-processed."
-        m = COLLECTSTATIC_COMBINED_RE.match(stripped)
-        if m:
-            copied_count = int(m.group(1))
-            post_processed_count = int(m.group(3))
-            continue
-
-        m = COLLECTSTATIC_COPIED_RE.match(stripped)
-        if m:
-            copied_count = int(m.group(1))
-            continue
-
-        m = COLLECTSTATIC_POST_RE.match(stripped)
-        if m:
-            post_processed_count = int(m.group(1))
-            continue
-
-        # Check for errors
-        lower = stripped.lower()
-        if any(p in lower for p in ['error', 'failed', 'exception', 'warning']):
+        if stripped and _is_error_line(stripped):
             errors.append(stripped)
 
-    # Build a concise summary
-    if copied_count:
-        parts.append(f'{copied_count} static files copied')
-    if post_processed_count:
-        parts.append(f'{post_processed_count} post-processed')
-
+    parts = []
     for err in errors:
         parts.append(f'⚠ {err}')
-
     if result != 0:
         parts.append(f'(Return code: {result})')
 
@@ -367,43 +181,22 @@ def _summarize_django_collectstatic(text, result):
 
 
 def _summarize_generic(text, result):
-    """Generic summary for unknown log formats, highlighting errors and key output."""
-    lines = text.rstrip('\n').split('\n')
-    if not lines or (len(lines) == 1 and not lines[0]):
-        return ''
-
-    # Collect error/warning lines
-    error_patterns = ['error', 'failed', 'failure', 'exception', 'traceback',
-                      'fatal', 'critical', 'warning', 'warn:', 'could not',
-                      'refused', 'denied', 'timeout', 'permission denied']
-    error_lines = []
-    other_lines = []
-    for line in lines:
-        lower = line.lower()
-        if any(p in lower for p in error_patterns):
-            error_lines.append(line)
-        else:
-            other_lines.append(line)
-
-    summary_parts = []
-
-    # Add first few meaningful lines as context
-    meaningful = [l for l in other_lines if l.strip()]
-    if meaningful:
-        summary_parts.extend(meaningful[:5])
-
-    # Add error lines (deduplicated)
+    """Generic summary for unknown log formats — return only error lines and return code."""
+    errors = []
     seen = set()
-    for line in error_lines:
-        if line not in seen:
-            seen.add(line)
-            summary_parts.append(f'⚠ {line}')
+    for line in text.split('\n'):
+        stripped = line.strip()
+        if stripped and _is_error_line(stripped) and stripped not in seen:
+            seen.add(stripped)
+            errors.append(stripped)
 
-    # Add return code indicator
+    parts = []
+    for err in errors:
+        parts.append(f'⚠ {err}')
     if result != 0:
-        summary_parts.append(f'(Return code: {result})')
+        parts.append(f'(Return code: {result})')
 
-    return '\n'.join(summary_parts)
+    return '\n'.join(parts) if parts else ''
 
 
 def _extract_duration(text):
@@ -412,10 +205,15 @@ def _extract_duration(text):
     m = re.search(r'Building\s+([\d.]+)s', text)
     if m:
         return m.group(1)
-    # Hash format: "#1 DONE 0.0s" — take the last DONE line's duration
+    # Hash format: "#1 DONE 0.0s" — sum all DONE durations for total build time
     durations = re.findall(r'DONE\s+([\d.]+)s', text)
     if durations:
-        return durations[-1]
+        total = sum(float(d) for d in durations)
+        # Format: show integer if whole number, otherwise one decimal place
+        if total == int(total):
+            return str(int(total))
+        else:
+            return f'{total:.1f}'
     return None
 
 
@@ -425,20 +223,17 @@ def _count_docker_steps(text):
     m = re.search(r'\((\d+)/(\d+)\)', text)
     if m:
         return int(m.group(2))
-    # Hash format: count unique step descriptions
-    steps = set()
+    # Hash format: use the highest step number #N as the step count
+    max_step = 0
     for line in text.split('\n'):
         stripped = line.strip()
         m = HASH_STEP_RE.match(stripped)
         if m:
-            step_num = m.group(1)
-            rest = stripped[len(f'#{step_num} '):]
-            if not rest.startswith('building with') and not rest.startswith('transferring') and not rest.startswith('resolve') and not rest.endswith(' done'):
-                rest = re.sub(r'@sha256:[a-f0-9]+', '', rest)
-                if rest.strip():
-                    steps.add(rest)
-    if steps:
-        return len(steps)
+            step_num = int(m.group(1))
+            if step_num > max_step:
+                max_step = step_num
+    if max_step > 0:
+        return max_step
     # Legacy: "Step 1/7" — extract total from the last step line
     legacy = re.findall(r'^Step\s+\d+/(\d+):', text, re.MULTILINE)
     if legacy:
@@ -470,10 +265,8 @@ def _count_collectstatic_files(text):
 
 def _get_first_error(text):
     """Extract the first error line from log text."""
-    error_patterns = ['error', 'failed', 'exception', 'fatal', 'traceback']
     for line in text.split('\n'):
-        lower = line.lower()
-        if any(p in lower for p in error_patterns):
+        if _is_error_line(line):
             return line.strip()
     return None
 
