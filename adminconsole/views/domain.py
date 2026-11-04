@@ -19,6 +19,7 @@ def manage(request, app_id):
         if form.is_valid():
             domain = form.save()
             with open(app.log_file, 'wb') as out:
+                out.write('# Domain hinzufügen\n'.encode())
                 proc = subprocess.Popen(
                     [settings.PYTHON_BIN, '-m', 'manage', 'add_domain', domain.name],
                     stdout=out, stderr=out
@@ -60,6 +61,7 @@ def remove(request, domain_id):
 def renew(request, domain_id):
     domain = get_object_or_404(Domain, pk=domain_id)
     with open(domain.app.log_file, 'wb') as out:
+        out.write('# Domain erneuern\n'.encode())
         proc = subprocess.Popen(
             [settings.PYTHON_BIN, '-m', 'manage', 'add_domain', domain.name],
             stdout=out, stderr=out

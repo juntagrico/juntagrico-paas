@@ -17,6 +17,7 @@ def manage(request, app_id):
         if form.is_valid():
             form.save()
             with open(app.log_file, 'wb') as out:
+                out.write(b'# Cronjobs erstellen\n')
                 proc = subprocess.Popen(
                     [settings.PYTHON_BIN, '-m', 'manage', 'install_cronjob', app.name],
                     stdout=out, stderr=out
