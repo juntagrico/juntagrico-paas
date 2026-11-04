@@ -3,37 +3,32 @@ import re
 
 # Word-boundary-aware error patterns: match "error" as a standalone word, not inside package names like "liberror-perl"
 # These use \b for word boundaries to avoid false positives on package/library names
-ERROR_WORD_RE = re.compile(r'\berror\b', re.IGNORECASE)
-# Catch compound error names like "OperationalError", "TypeError" — but only after a dot (module path) or at line start
-# to avoid false positives on package names like "liberror-perl"
-ERROR_COMPOUND_RE = re.compile(r'(?:^|\.)([A-Z]\w*Error)\b')
-FAILED_WORD_RE = re.compile(r'\bfailed\b', re.IGNORECASE)
-FAILURE_WORD_RE = re.compile(r'\bfailure\b', re.IGNORECASE)
-EXCEPTION_WORD_RE = re.compile(r'\bexception\b', re.IGNORECASE)
-# Same for compound exception names like "ValueError", "KeyError"
-EXCEPTION_COMPOUND_RE = re.compile(r'(?:^|\.)([A-Z]\w*Exception)\b')
-TRACEBACK_WORD_RE = re.compile(r'\btraceback\b', re.IGNORECASE)
-FATAL_WORD_RE = re.compile(r'\bfatal\b', re.IGNORECASE)
-CRITICAL_WORD_RE = re.compile(r'\bcritical\b', re.IGNORECASE)
-WARNING_WORD_RE = re.compile(r'\bwarning\b', re.IGNORECASE)
+# Combined into fewer patterns using alternation to reduce the number of .search() calls per line
+# Group 1: Single-word error indicators (case-insensitive)
+ERROR_SINGLE_WORD_RE = re.compile(r'\b(error|failed|failure|exception|traceback|fatal|critical|warning|refused|denied|timeout)\b', re.IGNORECASE)
+# Group 2: Multi-word phrases (case-insensitive)
+ERROR_PHRASE_RE = re.compile(r'\b(could not|permission denied)\b', re.IGNORECASE)
+# Group 3: Compound error/exception names after a dot (module path) or at line start
+ERROR_COMPOUND_RE = re.compile(r'(?:^|\.)([A-Z]\w*(?:Error|Exception))\b')
+# Group 4: "WARN:" with colon (case-insensitive)
 WARN_COLON_RE = re.compile(r'\bwarn:', re.IGNORECASE)
-COULD_NOT_RE = re.compile(r'\bcould not\b', re.IGNORECASE)
-REFUSED_WORD_RE = re.compile(r'\brefused\b', re.IGNORECASE)
-DENIED_WORD_RE = re.compile(r'\bdenied\b', re.IGNORECASE)
-TIMEOUT_WORD_RE = re.compile(r'\btimeout\b', re.IGNORECASE)
-PERMISSION_DENIED_RE = re.compile(r'\bpermission denied\b', re.IGNORECASE)
+
+# Pre-compiled patterns for _is_error_line false-positive filters
+APT_GET_RE = re.compile(r'^Get:\d+\s+')
+APT_INSTALL_RE = re.compile(r'^(Selecting|Preparing to unpack|Unpacking|Setting up)\s+')
+COLLECTSTATIC_DELETING_RE = re.compile(r'^\s*Deleting\s+', re.IGNORECASE)
 
 
 def _is_error_line(line):
     """Check if a log line is a genuine error/warning, avoiding false positives on package names like 'liberror-perl'."""
     # Skip lines that look like apt/package manager output (e.g. "Get:29 ... liberror-perl ...")
-    if re.match(r'^Get:\d+\s+', line):
+    if APT_GET_RE.match(line):
         return False
     # Skip lines that look like package installation output
-    if re.match(r'^(Selecting|Preparing to unpack|Unpacking|Setting up)\s+', line):
+    if APT_INSTALL_RE.match(line):
         return False
     # Skip Django collectstatic "Deleting" lines — file paths may contain words like "critical-role"
-    if re.match(r'^\s*Deleting\s+', line, re.IGNORECASE):
+    if COLLECTSTATIC_DELETING_RE.match(line):
         return False
     # Skip lines that are just package lists (common in apt output, space-separated package names)
     stripped = line.strip()
@@ -44,22 +39,10 @@ def _is_error_line(line):
             return False
 
     return bool(
-        ERROR_WORD_RE.search(line)
+        ERROR_SINGLE_WORD_RE.search(line)
+        or ERROR_PHRASE_RE.search(line)
         or ERROR_COMPOUND_RE.search(line)
-        or FAILED_WORD_RE.search(line)
-        or FAILURE_WORD_RE.search(line)
-        or EXCEPTION_WORD_RE.search(line)
-        or EXCEPTION_COMPOUND_RE.search(line)
-        or TRACEBACK_WORD_RE.search(line)
-        or FATAL_WORD_RE.search(line)
-        or CRITICAL_WORD_RE.search(line)
-        or WARNING_WORD_RE.search(line)
         or WARN_COLON_RE.search(line)
-        or COULD_NOT_RE.search(line)
-        or REFUSED_WORD_RE.search(line)
-        or DENIED_WORD_RE.search(line)
-        or TIMEOUT_WORD_RE.search(line)
-        or PERMISSION_DENIED_RE.search(line)
     )
 
 
