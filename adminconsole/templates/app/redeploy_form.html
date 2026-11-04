@@ -47,6 +47,22 @@
             <div class="alert alert-danger col-md-12">{{form.python_version.errors}}</div>
         {% endif %}
 
+        {% if form.copy_data %}
+        <div class="form-group row">
+            <div class="offset-md-3 col-md-9">
+                <div class="form-check">
+                    {{ form.copy_data }}
+                    <label class="form-check-label" for="{{ form.copy_data.id_for_label }}">
+                        Daten kopieren
+                        <small class="form-text text-muted d-block">
+                            Überschreibt die Staging-Datenbank mit den Daten der Produktions-Datenbank.
+                        </small>
+                    </label>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <div class="form-group row">
             <div class="offset-md-3 col-md-9">
                 <button type="submit" class="btn btn-primary btn-lg">

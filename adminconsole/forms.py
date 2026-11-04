@@ -392,6 +392,11 @@ class RedeployForm(forms.Form):
         label='WSGI Pfad', max_length=100, required=False,
         widget=TextInput(attrs={'class': 'form-control'}),
     )
+    copy_data = BooleanField(
+        label='Daten kopieren',
+        required=False,
+        widget=CheckboxInput(attrs={'class': 'form-check-input'}),
+    )
 
     def __init__(self, *args, app, **kwargs):
         super().__init__(*args, **kwargs)
@@ -404,6 +409,9 @@ class RedeployForm(forms.Form):
             default_wsgi = app.name.partition('-')[0] + '.wsgi'
             self.fields['wsgi'].initial = app.wsgi
             self.fields['wsgi'].widget.attrs['placeholder'] = default_wsgi
+        # Only show copy_data for staging apps
+        if not app.staging_of:
+            del self.fields['copy_data']
 
     def clean_branch(self):
         branch = self.cleaned_data['branch']

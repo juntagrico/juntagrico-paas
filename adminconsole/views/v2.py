@@ -87,7 +87,10 @@ def redeploy_with_form(request, app):
             app.wsgi = form.cleaned_data['wsgi']
             app.save()
 
-            return _spawn_redeploy(app, 'Redeploy')
+            extra_args = []
+            if form.cleaned_data.get('copy_data'):
+                extra_args.append('--copy-data')
+            return _spawn_redeploy(app, 'Redeploy', extra_args)
     else:
         form = RedeployForm(app=app)
 

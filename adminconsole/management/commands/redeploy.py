@@ -22,6 +22,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('app_name', nargs=1)
         parser.add_argument('--upgrade', action='store_true', help="Force upgrade of requirements.txt")
+        parser.add_argument('--copy-data', action='store_true', help="Copy data from production to staging")
 
 
     # entry point used by manage.py
@@ -58,6 +59,12 @@ class Command(BaseCommand):
         result = call_command('rebuild', '--restart', app.name)
         if result != 0:
             return
+
+        if options.get('copy_data'):
+            print('# Clone Database', flush=True)
+            result = call_command('clone_db', '--no-restart', app.name)
+            if result != 0:
+                return
 
         container = docker.from_env().containers.get(name)
 
