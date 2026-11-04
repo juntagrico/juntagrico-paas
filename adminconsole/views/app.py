@@ -1,14 +1,17 @@
+import docker
+
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
-from docker.errors import APIError, DockerException
+from docker.errors import APIError, DockerException, NotFound
 
 from adminconsole.decorators import owner_of_app
 from adminconsole.models import App
 from adminconsole.util import generate_password
 from adminconsole.util.admin import ADMIN_USERNAME, set_admin_password
+from adminconsole.util.docker import create_container
 from adminconsole.views.generic import confirm_post
 
 
@@ -21,9 +24,10 @@ def start(request, app_id):
         app.renew()
 
     try:
-        app.container.start()
-    except APIError as e:
+        create_container(app)
+    except (DockerException, APIError) as e:
         messages.error(request, str(e))
+        return redirect('overview', app.id)
 
     return redirect('overview', app.id)
 
@@ -34,8 +38,12 @@ def stop(request, app_id):
     app = get_object_or_404(App, pk=app_id)
 
     try:
-        app.container.stop()
-    except APIError as e:
+        container = docker.from_env().containers.get(app.name)
+        container.stop()
+        container.remove()
+    except NotFound:
+        pass
+    except (DockerException, APIError) as e:
         messages.error(request, str(e))
 
     return redirect('overview', app.id)

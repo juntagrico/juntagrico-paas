@@ -13,7 +13,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
 from django_otp import user_has_device
-from docker.errors import APIError, DockerException
+from docker.errors import APIError, DockerException, NotFound
 
 from adminconsole.decorators import owner_of_app
 from adminconsole.forms import EnvForm, ProfileForm, BranchForm, AppEnvVarFormSet
@@ -51,9 +51,11 @@ def home(request):
 def overview(request, app_id):
     app = get_object_or_404(App, pk=app_id)
 
-    status = 'unknown'
+    status = 'inactive'
     try:
         status = app.container.status
+    except NotFound:
+        status = 'inactive'
     except (DockerException, APIError) as e:
         messages.error(request, str(e))
 

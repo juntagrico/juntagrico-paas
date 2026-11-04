@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block page_title %}
-    <h1>{{ app.name }}</h1>
+    <h1>{{ app.name }}{% if status == 'inactive' %} <span class="badge bg-secondary">inaktiv</span>{% endif %}</h1>
 {% endblock %}
 
 {% block content %}
@@ -44,10 +44,14 @@
                             </form>
                         {% endif %}
                     </div>
-                {% elif status == 'paused' or status == 'removing' or status == 'exited' or status == 'dead' %}
+                {% elif status == 'paused' or status == 'removing' or status == 'exited' or status == 'dead' or status == 'inactive' %}
                     <div class="alert alert-danger">
                         <p>
-                            Die Instanz ist gestoppt.
+                            {% if status == 'inactive' %}
+                                Die Instanz ist nicht aktiv.
+                            {% else %}
+                                Die Instanz ist gestoppt.
+                            {% endif %}
                         </p>
                         <form action="{% url 'app-start' app.id %}" method="POST">
                             {% csrf_token %}
