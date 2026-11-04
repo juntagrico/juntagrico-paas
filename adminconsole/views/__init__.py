@@ -182,6 +182,9 @@ def show_env(request, app_id):
 
     # Collect values from secret AppEnvVars so we can mask settings that match them
     secret_values = set(app.env.env_vars.filter(secret=True).exclude(value='').values_list('value', flat=True))
+    secret_values.add(app.env.juntagrico_secret_key)
+    secret_values.add(app.env.juntagrico_database_password)
+    secret_values.add(app.env.juntagrico_email_password)
 
     # Run diffsettings inside the container to get the actual Django settings
     try:
