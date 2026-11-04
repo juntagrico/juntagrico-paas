@@ -425,3 +425,22 @@ tr.shown td.details-control::before {
 #progress-div {
     height: 2em;
 }
+
+/* status circles */
+.status-circle {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 0.3em;
+    vertical-align: middle;
+}
+.status-circle-active {
+    background-color: #28a745;
+}
+.status-circle-stopped {
+    background-color: #dc3545;
+}
+.status-circle-inactive {
+    background-color: #6c757d;
+}
