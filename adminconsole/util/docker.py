@@ -72,25 +72,6 @@ def _run_migration_in_temp_container(app, name):
     return exit_code
 
 
-def _run_collectstatic_in_temp_container(app, name):
-    """Run collectstatic in a temporary container with the latest environment."""
-    static_dir = app.dir / 'static'
-    static_stat = os.stat(static_dir)
-    volumes = {static_dir: {'bind': '/code/static/', 'mode': 'rw'}}
-    exit_code, output, stderr = _run_in_temp_container(
-        app, name + '-collectstatic',
-        'python -m manage collectstatic --noinput -c',
-        volumes=volumes,
-        user=f'{static_stat.st_uid}:{static_stat.st_gid}',
-    )
-    if output:
-        print(output.decode("utf-8", errors="replace"), end="", flush=True)
-    if stderr:
-        print(stderr.decode("utf-8", errors="replace"), end="", flush=True)
-    print(f'Return {exit_code}', flush=True)
-    return exit_code
-
-
 def _do_restart(app, name):
     """Stop and recreate the container; returns (exit_code, stdout_bytes, stderr_bytes)."""
     try:

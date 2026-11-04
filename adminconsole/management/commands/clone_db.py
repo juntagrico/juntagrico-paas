@@ -34,21 +34,18 @@ class Command(BaseCommand):
         print('# Clone Database', flush=True)
         db_user = settings.DATABASES['default']['USER']
         db_pw = settings.DATABASES['default']['PASSWORD']
+        env = {'PGPASSWORD': db_pw}
         load = subprocess.Popen(
             ['psql', '-U', db_user, '--no-password', app.env.juntagrico_database_name],
-            stdin=subprocess.PIPE, stderr=subprocess.STDOUT, env={'PGPASSWORD': db_pw}
-        )
-        change_owner = subprocess.Popen(
-            ['sed', f's/OWNER TO {app.staging_of.env.juntagrico_database_user}/OWNER TO {app.env.juntagrico_database_user}/'],
-            stdout=load.stdin, stdin=subprocess.PIPE
+            stdin=subprocess.PIPE, stderr=subprocess.STDOUT, env=env
         )
         dump = subprocess.Popen(
-            ['pg_dump', '-U', db_user, '--no-password', '--no-comments', app.staging_of.env.juntagrico_database_name],
-            stdout=change_owner.stdin, env={'PGPASSWORD': db_pw}
+            ['pg_dump', '-U', db_user, '--no-password', '--no-comments', '--no-owner', '--no-privileges',
+             app.staging_of.env.juntagrico_database_name],
+            stdout=load.stdin, env=env
         )
         dump.communicate()
-        change_owner.communicate()
-        print(load.communicate(b'\\q'))
+        load.communicate(b'\\q')
         print('Return 0', flush=True)
 
         if not options.get('no_restart'):
