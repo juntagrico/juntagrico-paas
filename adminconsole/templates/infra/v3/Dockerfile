@@ -1,31 +1,34 @@
 # syntax=docker/dockerfile:1.4
 ARG pythonversion={{ default_python_version }}
-FROM python:$pythonversion-slim AS git
 
-RUN apt-get update && apt-get install -y --no-install-recommends git
+FROM python:$pythonversion-slim AS base
+
+RUN apt-get update && apt-get install -y --no-install-recommends git \
+    && rm -rf /var/lib/apt/lists/*
 
 
-FROM git AS fetcher
+FROM base AS fetcher
 ARG git_repo
 ARG git_ref=main
 RUN test -n "$git_repo" && git clone --depth 1 --branch "$git_ref" "$git_repo" /code
 
 
-FROM git AS builder
+FROM base AS builder
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
 ARG gunicorn_ver=">=25.1.0"
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --root-user-action=ignore --upgrade pip \
-    && pip install --root-user-action=ignore 'psycopg[binary]' 'svglib<1.6.0' "gunicorn${gunicorn_ver}"
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv pip install --system 'psycopg[binary]' 'svglib<1.6.0' "gunicorn${gunicorn_ver}"
 
 # install requirements
 COPY --from=fetcher /code/requirements*.txt /code/
 WORKDIR /code
 RUN echo "Break Docker Cache: {% now "Y-m-d H:i:s.u" %}"
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --root-user-action=ignore --upgrade -r requirements.txt
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv pip install --system -r requirements.txt
 
 
 FROM python:$pythonversion-slim AS app
