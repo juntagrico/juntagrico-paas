@@ -33,6 +33,21 @@ def exec_run(container, cmd, stdout=True, stderr=True, stdin=False, tty=False,
     )
 
 
+def get_container_statuses(app_names):
+    """
+    Efficiently get the status of multiple containers in a single Docker API call.
+    Returns a dict mapping container names to their status strings.
+    """
+    client = docker.from_env()
+    all_containers = client.containers.list(all=True)
+    statuses = {}
+    for container in all_containers:
+        name = container.name
+        if name in app_names:
+            statuses[name] = container.status
+    return statuses
+
+
 def create_container(app):
     """Create and start a Docker container for the given app."""
     client = docker.from_env()

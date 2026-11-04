@@ -34,6 +34,17 @@ def get_item(dictionary, key):
 
 
 @register.filter
+def container_status_badge(status):
+    """Return a Bootstrap badge span for a Docker container status."""
+    if status in ('running', 'created', 'restarting'):
+        return mark_safe('<span class="badge bg-success">läuft</span>')
+    elif status in ('paused', 'exited', 'dead'):
+        return mark_safe('<span class="badge bg-danger">gestoppt</span>')
+    else:
+        return mark_safe('<span class="badge bg-secondary">inaktiv</span>')
+
+
+@register.filter
 def get_default_minute(form, cj_def):
     """Return the default minute for a cronjob, respecting 'spread' vs int."""
     return form.get_default_minute(cj_def)

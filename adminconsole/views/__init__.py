@@ -19,6 +19,7 @@ from adminconsole.decorators import owner_of_app
 from adminconsole.forms import EnvForm, ProfileForm, BranchForm, AppEnvVarFormSet
 from adminconsole.models import App
 from adminconsole.util import pid_finished
+from adminconsole.util.docker import get_container_statuses
 from adminconsole.util.git import git_switch, git_current_branch
 from adminconsole.views.generic import confirm_post, confirm_password, security_log, client_address
 
@@ -34,6 +35,10 @@ def home(request):
     if number_of_apps == 1 and not superuser:
         return redirect('overview', app_id=available_apps[0].id)
 
+    # Get all container statuses in a single Docker API call
+    app_names = set(available_apps.values_list('name', flat=True))
+    container_statuses = get_container_statuses(app_names)
+
     # Group apps by their first letter
     grouped_apps = defaultdict(list)
     for app in available_apps:
@@ -44,6 +49,7 @@ def home(request):
         'grouped_apps': dict(sorted(grouped_apps.items())),
         'number_of_apps': number_of_apps,
         'can_add_app': number_of_apps < 1 or superuser,
+        'container_statuses': container_statuses,
     })
 
 
