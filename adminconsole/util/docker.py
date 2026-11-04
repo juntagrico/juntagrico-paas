@@ -1,6 +1,6 @@
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from threading import Lock
+from threading import Event, Lock
 
 import docker
 
@@ -95,13 +95,25 @@ def _run_collectstatic_in_temp_container(app, name):
 def run_parallel_steps(app, name):
     """
     Run migration, collectstatic, and restart in parallel.
-    Each step's output is buffered and printed in a fixed order after all complete.
+    Each step's output is buffered and printed sequentially in a fixed order,
+    waiting for the previous step to finish printing before showing its own header.
     Returns a list of exit codes for each step.
     """
-    from django.core.management import call_command
-
     output_buffer = {}
     lock = Lock()
+    migrate_done = Event()
+    collectstatic_done = Event()
+
+    def print_block(key, header):
+        """Print a step's header and buffered output atomically under lock."""
+        with lock:
+            print(header, flush=True)
+            code, out, err = output_buffer.get(key, (0, b'', b''))
+            if out:
+                print(out.decode("utf-8", errors="replace"), end="", flush=True)
+            if err:
+                print(err.decode("utf-8", errors="replace"), end="", flush=True)
+            print(f'Return {code}', flush=True)
 
     def task_migration():
         code, out, err = _run_in_temp_container(
@@ -109,6 +121,8 @@ def run_parallel_steps(app, name):
         )
         with lock:
             output_buffer['migrate'] = (code, out, err)
+        print_block('migrate', '# Django Migrate')
+        migrate_done.set()
 
     def task_collectstatic():
         static_dir = app.dir / 'static'
@@ -123,11 +137,22 @@ def run_parallel_steps(app, name):
         )
         with lock:
             output_buffer['collectstatic'] = (code, out, err)
+        migrate_done.wait()
+        print_block('collectstatic', '# Django Collectstatic')
+        collectstatic_done.set()
 
     def task_restart():
-        code = call_command('restart', name)
+        try:
+            stop_container(name)
+            container = create_container(app)
+            status = container.status
+            code, out, err = 0, f'{status}\n'.encode(), b''
+        except Exception as exc:
+            code, out, err = 1, b'', str(exc).encode()
         with lock:
-            output_buffer['restart'] = (code, b'', b'')
+            output_buffer['restart'] = (code, out, err)
+        collectstatic_done.wait()
+        print_block('restart', '# Docker Start')
 
     with ThreadPoolExecutor(max_workers=3) as executor:
         futures = [
@@ -138,23 +163,8 @@ def run_parallel_steps(app, name):
         for future in as_completed(futures):
             future.result()
 
-    # Print output in fixed order
-    order = [
-        ('migrate', '# Django Migrate'),
-        ('collectstatic', '# Django Collectstatic'),
-        ('restart', '# Docker Start'),
-    ]
-    exit_codes = []
-    for key, header in order:
-        print(header, flush=True)
-        code, out, err = output_buffer.get(key, (0, b'', b''))
-        if out:
-            print(out.decode("utf-8", errors="replace"), end="", flush=True)
-        if err:
-            print(err.decode("utf-8", errors="replace"), end="", flush=True)
-        print(f'Return {code}', flush=True)
-        exit_codes.append(code)
-
+    # Collect exit codes in fixed order
+    exit_codes = [output_buffer.get(key, (0, b'', b''))[0] for key in ('migrate', 'collectstatic', 'restart')]
     return exit_codes
 
 
