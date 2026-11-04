@@ -74,7 +74,8 @@ def create_container(app):
         network_options = {
             'network': network.name,
             'ports': {f'{app.port}/tcp': ('127.0.0.1', app.port)},
-            'command': ['gunicorn', '--forwarded-allow-ips', gateway, '--bind', f'0.0.0.0:{app.port}', '-t', '600', app.wsgi_path],
+            'command': ['gunicorn', '--no-control-socket', '--forwarded-allow-ips', gateway] +
+                       ['--bind', f'0.0.0.0:{app.port}', '-t', '600', app.wsgi_path],
             'mem_limit': apps_memory_limit(),
         }
     else:
