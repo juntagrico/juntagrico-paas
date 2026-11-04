@@ -2,15 +2,15 @@ import os
 from datetime import datetime
 
 import docker
+from docker.errors import ContainerError
 
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from docker.errors import ContainerError
 
 from adminconsole.models import App
 from adminconsole.util.commands import log_after
-from adminconsole.util.docker import exec_run
+from adminconsole.util.docker import _run_migration_in_temp_container
 from adminconsole.util.git import git_pull
 
 
@@ -66,14 +66,12 @@ class Command(BaseCommand):
             if result != 0:
                 return
 
-        container = docker.from_env().containers.get(name)
-
         print('# Django Migrate', flush=True)
-        cmd = ['python', '-m', 'manage', 'migrate']
-        result = exec_run(container, cmd, stream=True)
-        for line in result[1]:
-            print(line.decode(), end="", flush=True)
-        print('Return', result[0](), flush=True)
+        result = _run_migration_in_temp_container(app, name)
+        if result != 0:
+            return
+
+        container = docker.from_env().containers.get(name)
 
         print('# Django Collectstatic', flush=True)
         # start new container with write access on static

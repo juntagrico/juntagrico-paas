@@ -3,10 +3,10 @@ from datetime import datetime
 
 import docker
 from django.conf import settings
-from django.core.management import call_command
 
 from django.core.management.base import BaseCommand
 
+from adminconsole.util.docker import _run_migration_in_temp_container
 from adminconsole.models import App, AppEnv
 from adminconsole.util.commands import log_after
 from adminconsole.util.create_app import create_database
@@ -54,20 +54,15 @@ class Command(BaseCommand):
         print('Return 0', flush=True)
 
         if not options.get('no_restart'):
-            # restart docker (to pass new db pw to env)
-            print('# Docker Restart', flush=True)
-            call_command('restart', app.name)
-
-            # apply migrations, because staging may use newer version of code
+            # apply migrations in a temporary container with the latest environment
             print('# Django Migrate', flush=True)
-            container = docker.from_env().containers.get(app.name)
-            cmd = ['python', '-m', 'manage', 'migrate']
-            result = container.exec_run(cmd)
-            print(result[1])
-            print('Return', result[0], flush=True)
+            result = _run_migration_in_temp_container(app, app.name)
+            print('Return', result, flush=True)
 
-            print('# Docker Restart2', flush=True)
+            # restart docker to pick up the new db credentials
+            print('# Docker Restart', flush=True)
             start = datetime.now()
+            container = docker.from_env().containers.get(app.name)
             container.restart()
             print(log_after(container, since=start))
             print('Return 0', flush=True)

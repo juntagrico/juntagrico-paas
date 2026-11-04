@@ -1,9 +1,38 @@
 import docker
 
-from docker.errors import NotFound
+from docker.errors import NotFound, ContainerError
 from docker.models.containers import ExecResult
 
 from adminconsole.util.network import apps_memory_limit, apps_network, ensure_apps_network
+
+
+def _run_migration_in_temp_container(app, name):
+    """Run Django migrations in a temporary container with the latest environment."""
+    client = docker.from_env()
+    volumes = {}
+    if app.version < 3:
+        volumes[app.dir / 'code'] = {'bind': '/code/', 'mode': 'ro'}
+    try:
+        output = client.containers.run(
+            image=app.image_tag,
+            environment=list(app.env.get_lines()),
+            name=name + '-migrate',
+            labels=['migrate'],
+            network_mode=None,
+            volumes=volumes,
+            command='python -m manage migrate --noinput',
+            remove=True,
+            stdout=True,
+            stderr=True,
+        )
+        print(output.decode("utf-8", errors="replace"), end="", flush=True)
+        print('Return 0', flush=True)
+        return 0
+    except ContainerError as exc:
+        if exc.stderr:
+            print(exc.stderr.decode("utf-8", errors="replace"))
+        print('Return', exc.exit_status, flush=True)
+        return exc.exit_status
 
 
 def exec_run(container, cmd, stdout=True, stderr=True, stdin=False, tty=False,
