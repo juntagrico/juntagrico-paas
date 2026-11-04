@@ -31,8 +31,11 @@ $(function () {
                 let num_value = (current_step + last_section_progress) / expected_steps * 100
                 // set progress
                 set_progress(num_value)
-                // poll progress
-                current_url = url + '?s=' + data.read
+                // poll progress, preserving existing query params (e.g. copy_data)
+                let base = url.split('?')[0]
+                let params = new URLSearchParams(url.split('?')[1] || '')
+                params.set('s', data.read)
+                current_url = base + '?' + params.toString()
                 setTimeout(wait_for_pid,1000);
             } else {
                 $("#progress-title").text("Fertig!")

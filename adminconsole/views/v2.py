@@ -14,7 +14,7 @@ from adminconsole.models import App
 from adminconsole.util import pid_finished
 
 
-def _spawn_redeploy(app, step_title, extra_args=None):
+def _spawn_redeploy(app, step_title, extra_args=None, copy_data=False):
     """Spawn a background redeploy command and return the wait page response."""
     if app.staging_of:
         app.renew()
@@ -28,13 +28,17 @@ def _spawn_redeploy(app, step_title, extra_args=None):
         proc = subprocess.Popen(command, stdout=out, stderr=out)
 
     app_id = app.id
+    progress_url = reverse('progress', args=[app_id, proc.pid])
+    if copy_data:
+        progress_url += '?copy_data=1'
+
     return render(
         None,  # request not needed for this template
         'wait_redeploy.html',
         {
             'page_title': app.name,
             'step': step_title,
-            'url': reverse('progress', args=[app_id, proc.pid]),
+            'url': progress_url,
             'pid': proc.pid,
             'next': reverse('show-result', args=[app_id]),
         },
@@ -88,9 +92,10 @@ def redeploy_with_form(request, app):
             app.save()
 
             extra_args = []
-            if form.cleaned_data.get('copy_data'):
+            copy_data = form.cleaned_data.get('copy_data')
+            if copy_data:
                 extra_args.append('--copy-data')
-            return _spawn_redeploy(app, 'Redeploy', extra_args)
+            return _spawn_redeploy(app, 'Redeploy', extra_args, copy_data=copy_data)
     else:
         form = RedeployForm(app=app)
 
@@ -143,11 +148,21 @@ def show_progress(request, app_id, pid):
                     pass
         read_until = file.tell()
 
+    expected = None
+    if start == 0:
+        if app.version >= 3:
+            base_steps = 5.1  # Docker Rebuild + Migrate + Collectstatic + Start + Collect Version
+            docker_build_steps = 23  # v3 counts each docker build step
+            clone_db_extra = 1 if (request.GET.get('copy_data') == '1') else 0
+            expected = docker_build_steps + base_steps + clone_db_extra
+        else:
+            expected = 6.1  # v2 has an extra git pull step
+
     return JsonResponse({
         'finished': pid_finished(pid),
         'section': current_section,
         'section_progress': current_section_progress,
-        'expected_steps':  ((23 + 5.1) if app.version >= 3 else 6.1),  # v3 counts each docker build step
+        'expected_steps': expected,
         'title': current_title,
         'read': read_until,
     })
