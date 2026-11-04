@@ -1,10 +1,7 @@
-import docker
-
 from django.core.management.base import BaseCommand
-from docker.errors import NotFound
 
 from adminconsole.models import App
-from adminconsole.util.docker import create_container
+from adminconsole.util.docker import create_container, stop_container
 
 
 class Command(BaseCommand):
@@ -18,15 +15,7 @@ class Command(BaseCommand):
         name = options['app_name'][0]
         app = App.objects.get(name=name)
 
-        client = docker.from_env()
-
-        try:
-            container = client.containers.get(name)
-            container.stop()
-            container.remove()
-        except NotFound:
-            print('container not found')
-
+        stop_container(name)
         container = create_container(app)
         print(container.status)
         print('Return 0', flush=True)

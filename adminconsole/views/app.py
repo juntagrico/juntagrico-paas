@@ -1,17 +1,15 @@
-import docker
-
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
-from docker.errors import APIError, DockerException, NotFound
+from docker.errors import APIError, DockerException
 
 from adminconsole.decorators import owner_of_app
 from adminconsole.models import App
 from adminconsole.util import generate_password
 from adminconsole.util.admin import ADMIN_USERNAME, set_admin_password
-from adminconsole.util.docker import create_container
+from adminconsole.util.docker import create_container, stop_container
 from adminconsole.views.generic import confirm_post
 
 
@@ -38,11 +36,7 @@ def stop(request, app_id):
     app = get_object_or_404(App, pk=app_id)
 
     try:
-        container = docker.from_env().containers.get(app.name)
-        container.stop()
-        container.remove()
-    except NotFound:
-        pass
+        stop_container(app.name)
     except (DockerException, APIError) as e:
         messages.error(request, str(e))
 

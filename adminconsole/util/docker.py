@@ -1,5 +1,6 @@
 import docker
 
+from docker.errors import NotFound
 from docker.models.containers import ExecResult
 
 from adminconsole.util.network import apps_memory_limit, apps_network, ensure_apps_network
@@ -31,6 +32,17 @@ def exec_run(container, cmd, stdout=True, stderr=True, stdin=False, tty=False,
         container.client.api.exec_inspect(resp['Id'])['ExitCode'],
         exec_output
     )
+
+
+def stop_container(name):
+    """Stop and remove a Docker container by name. Silently ignores NotFound."""
+    client = docker.from_env()
+    try:
+        container = client.containers.get(name)
+        container.stop()
+        container.remove()
+    except NotFound:
+        pass
 
 
 def get_container_statuses(app_names):
