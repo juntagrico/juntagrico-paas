@@ -1,6 +1,5 @@
 import os
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from threading import Event, Lock
+from concurrent.futures import ThreadPoolExecutor
 
 import docker
 
@@ -92,80 +91,73 @@ def _run_collectstatic_in_temp_container(app, name):
     return exit_code
 
 
+def _do_restart(app, name):
+    """Stop and recreate the container; returns (exit_code, stdout_bytes, stderr_bytes)."""
+    try:
+        stop_container(name)
+        container = create_container(app)
+        status = container.status
+        return 0, f'{status}\n'.encode(), b''
+    except Exception as exc:
+        return 1, b'', str(exc).encode()
+
+
 def run_parallel_steps(app, name):
     """
     Run migration, collectstatic, and restart in parallel.
-    Each step's output is buffered and printed sequentially in a fixed order,
-    waiting for the previous step to finish printing before showing its own header.
+    All three work tasks start immediately via Futures. The main thread prints
+    each step's header right away, then waits for that Future to print its output.
+    This ensures headers appear before their work completes, while output blocks
+    remain sequential: migration → collectstatic → restart.
     Returns a list of exit codes for each step.
     """
-    output_buffer = {}
-    lock = Lock()
-    migrate_done = Event()
-    collectstatic_done = Event()
 
-    def print_block(key, header):
-        """Print a step's header and buffered output atomically under lock."""
-        with lock:
-            print(header, flush=True)
-            code, out, err = output_buffer.get(key, (0, b'', b''))
-            if out:
-                print(out.decode("utf-8", errors="replace"), end="", flush=True)
-            if err:
-                print(err.decode("utf-8", errors="replace"), end="", flush=True)
-            print(f'Return {code}', flush=True)
+    def _print_output(code, out, err):
+        """Print buffered stdout/stderr and return code."""
+        if out:
+            print(out.decode("utf-8", errors="replace"), end="", flush=True)
+        if err:
+            print(err.decode("utf-8", errors="replace"), end="", flush=True)
+        print(f'Return {code}', flush=True)
 
-    def task_migration():
-        code, out, err = _run_in_temp_container(
-            app, name + '-migrate', 'python -m manage migrate --noinput', volumes={}
-        )
-        with lock:
-            output_buffer['migrate'] = (code, out, err)
-        print_block('migrate', '# Django Migrate')
-        migrate_done.set()
+    # Prepare collectstatic arguments
+    static_dir = app.dir / 'static'
+    static_stat = os.stat(static_dir)
+    collectstatic_volumes = {static_dir: {'bind': '/code/static/', 'mode': 'rw'}}
+    collectstatic_user = f'{static_stat.st_uid}:{static_stat.st_gid}'
 
-    def task_collectstatic():
-        static_dir = app.dir / 'static'
-        static_stat = os.stat(static_dir)
-        volumes = {static_dir: {'bind': '/code/static/', 'mode': 'rw'}}
-        user = f'{static_stat.st_uid}:{static_stat.st_gid}'
-        code, out, err = _run_in_temp_container(
-            app, name + '-collectstatic',
-            'python -m manage collectstatic --noinput -c',
-            volumes=volumes,
-            user=user,
-        )
-        with lock:
-            output_buffer['collectstatic'] = (code, out, err)
-        migrate_done.wait()
-        print_block('collectstatic', '# Django Collectstatic')
-        collectstatic_done.set()
-
-    def task_restart():
-        try:
-            stop_container(name)
-            container = create_container(app)
-            status = container.status
-            code, out, err = 0, f'{status}\n'.encode(), b''
-        except Exception as exc:
-            code, out, err = 1, b'', str(exc).encode()
-        with lock:
-            output_buffer['restart'] = (code, out, err)
-        collectstatic_done.wait()
-        print_block('restart', '# Docker Start')
-
+    # Submit all work as Futures — they start immediately
     with ThreadPoolExecutor(max_workers=3) as executor:
-        futures = [
-            executor.submit(task_migration),
-            executor.submit(task_collectstatic),
-            executor.submit(task_restart),
-        ]
-        for future in as_completed(futures):
-            future.result()
+        migrate_future = executor.submit(
+            _run_in_temp_container, app, name + '-migrate',
+            'python -m manage migrate --noinput', volumes={}
+        )
+        collectstatic_future = executor.submit(
+            _run_in_temp_container, app, name + '-collectstatic',
+            'python -m manage collectstatic --noinput -c',
+            volumes=collectstatic_volumes, user=collectstatic_user,
+        )
+        restart_future = executor.submit(_do_restart, app, name)
 
-    # Collect exit codes in fixed order
-    exit_codes = [output_buffer.get(key, (0, b'', b''))[0] for key in ('migrate', 'collectstatic', 'restart')]
-    return exit_codes
+        # Print migration block: header immediately, output when ready
+        print('# Django Migrate', flush=True)
+        code, out, err = migrate_future.result()
+        _print_output(code, out, err)
+        migrate_exit = code
+
+        # Print collectstatic block: header immediately, output when ready
+        print('# Django Collectstatic', flush=True)
+        code, out, err = collectstatic_future.result()
+        _print_output(code, out, err)
+        collectstatic_exit = code
+
+        # Print restart block: header immediately, output when ready
+        print('# Docker Start', flush=True)
+        code, out, err = restart_future.result()
+        _print_output(code, out, err)
+        restart_exit = code
+
+    return [migrate_exit, collectstatic_exit, restart_exit]
 
 
 def exec_run(container, cmd, stdout=True, stderr=True, stdin=False, tty=False,
