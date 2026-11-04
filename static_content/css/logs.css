@@ -149,3 +149,66 @@
 .log-filter-btn.active {
     font-weight: bold;
 }
+
+/* Responsive log table: on small screens, each row becomes a card-like block */
+@media (max-width: 575.98px) {
+    .log-container {
+        overflow-y: visible;
+    }
+
+    .log-table,
+    .log-table thead,
+    .log-table tbody,
+    .log-table th,
+    .log-table td,
+    .log-table tr {
+        display: block;
+    }
+
+    .log-table thead {
+        display: none;
+    }
+
+    .log-entry {
+        margin-bottom: 8px;
+        border: 1px solid #444;
+        border-radius: 4px;
+    }
+
+    .log-entry td {
+        padding: 4px 8px;
+        text-align: right;
+    }
+
+    .log-col-timestamp,
+    .log-col-pid,
+    .log-col-level {
+        width: auto;
+        min-width: 0;
+        display: inline-block;
+        width: calc(50% - 8px);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+    }
+
+    .log-col-timestamp {
+        display: block;
+        width: 100%;
+        margin-bottom: 2px;
+    }
+
+    .log-col-pid,
+    .log-col-level {
+        display: inline-block;
+    }
+
+    .log-col-message {
+        display: block;
+        width: 100%;
+        text-align: left;
+        margin-top: 4px;
+        padding-top: 4px;
+        border-top: 1px solid #444;
+    }
+}
