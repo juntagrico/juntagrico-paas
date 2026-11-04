@@ -234,6 +234,38 @@
                         </div>
                     </div>
                 </div>
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <h4 class="card-header">Infrastruktur-Version</h4>
+                        <div class="card-body">
+                            <p class="card-text">
+                                Aktuell: <strong>V{{ app.version }}</strong>.
+                                {% if app.version == 2 %}
+                                    V3 verwendet ein moderneres Docker-Image.
+                                {% else %}
+                                    Wechsle auf V2, falls du Probleme mit V3 hast und melde dein Problem.
+                                {% endif %}
+                            </p>
+                            <form action="{% url 'set-version' app.id %}" method="POST">
+                                {% csrf_token %}
+                                {% if app.version == 2 %}
+                                    <input type="hidden" name="version" value="3">
+                                    <button type="submit" class="btn btn-outline-primary">
+                                        auf V3 wechseln
+                                    </button>
+                                {% else %}
+                                    <input type="hidden" name="version" value="2">
+                                    <button type="submit" class="btn btn-outline-primary">
+                                        auf V2 wechseln
+                                    </button>
+                                {% endif %}
+                            </form>
+                            <p class="card-text mt-3 small text-muted">
+                                Nach dem Wechsel wird ein Redeploy durchgeführt.
+                            </p>
+                        </div>
+                    </div>
+                </div>
                 {% if app.version < 3 %}
                 <div class="col-md-6">
                     <div class="card mb-3">

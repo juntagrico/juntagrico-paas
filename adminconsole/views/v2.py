@@ -14,18 +14,49 @@ from adminconsole.models import App
 from adminconsole.util import pid_finished
 
 
+def _spawn_redeploy(app, step_title, extra_args=None):
+    """Spawn a background redeploy command and return the wait page response."""
+    if app.staging_of:
+        app.renew()
+
+    command = [settings.PYTHON_BIN, '-m', 'manage', 'redeploy']
+    if extra_args:
+        command.extend(extra_args)
+    command.append(app.name)
+
+    with open(app.log_file, 'wb') as out:
+        proc = subprocess.Popen(command, stdout=out, stderr=out)
+
+    app_id = app.id
+    return render(
+        None,  # request not needed for this template
+        'wait_redeploy.html',
+        {
+            'page_title': app.name,
+            'step': step_title,
+            'url': reverse('progress', args=[app_id, proc.pid]),
+            'pid': proc.pid,
+            'next': reverse('show-result', args=[app_id]),
+        },
+    )
+
+
 @require_POST
 @owner_of_app
 def set_version(request, app_id):
     app = get_object_or_404(App, id=app_id)
     try:
         version = int(request.POST.get('version'))
-        app.version = version
-        app.save()
-        messages.success(request, f'V{version} aktiviert. Mache einen Redeploy um die Änderungen anzuwenden.')
-    except ValueError:
+    except (ValueError, TypeError):
         messages.error(request, 'Version nicht definiert.')
-    return redirect('overview', app_id)
+        return redirect('overview', app_id)
+
+    old_version = app.version
+    app.version = version
+    app.save()
+    messages.success(request, f'Infrastruktur-Version geändert von V{old_version} nach V{version}. Starte Redeploy...')
+
+    return _spawn_redeploy(app, f'Version wechseln (V{old_version} → V{version})')
 
 
 @owner_of_app
@@ -36,22 +67,8 @@ def redeploy(request, app_id, upgrade=False):
         return redeploy_with_form(request, app)
 
     if request.method == 'POST':
-        if app.staging_of:
-            app.renew()
-
-        command = [settings.PYTHON_BIN, '-m', 'manage', 'redeploy', app.name]
-        if upgrade:
-            command.insert(-1, '--upgrade')
-        with open(app.log_file, 'wb') as out:
-            proc = subprocess.Popen(command, stdout=out, stderr=out)
-
-        return render(request, 'wait_redeploy.html', {
-            'page_title': app.name,
-            'step': 'Upgrade' if upgrade else 'Redeploy',
-            'url': reverse('progress', args=[app_id, proc.pid]),
-            'pid': proc.pid,
-            'next': reverse('show-result', args=[app_id])
-        })
+        extra_args = ['--upgrade'] if upgrade else []
+        return _spawn_redeploy(app, 'Upgrade' if upgrade else 'Redeploy', extra_args)
 
     return render(request, 'generic/submit.html', {
         'page_title': f'Redeploy {app.name}',
@@ -70,21 +87,7 @@ def redeploy_with_form(request, app):
             app.wsgi = form.cleaned_data['wsgi']
             app.save()
 
-            # Perform the redeploy
-            if app.staging_of:
-                app.renew()
-
-            command = [settings.PYTHON_BIN, '-m', 'manage', 'redeploy', app.name]
-            with open(app.log_file, 'wb') as out:
-                proc = subprocess.Popen(command, stdout=out, stderr=out)
-
-            return render(request, 'wait_redeploy.html', {
-                'page_title': app.name,
-                'step': 'Redeploy',
-                'url': reverse('progress', args=[app.id, proc.pid]),
-                'pid': proc.pid,
-                'next': reverse('show-result', args=[app.id])
-            })
+            return _spawn_redeploy(app, 'Redeploy')
     else:
         form = RedeployForm(app=app)
 
