@@ -115,18 +115,62 @@ DJANGO_MIGRATE_CREATING_RE = re.compile(r'^Creating table\s+')
 DJANGO_MIGRATE_NONE_RE = re.compile(r'^No migrations to apply', re.IGNORECASE)
 
 # Django collectstatic: "123 static files copied to '...'"
-COLLECTSTATIC_COPIED_RE = re.compile(r'^(\d+)\s+static files?\s+(copied|found)', re.IGNORECASE)
+# MULTILINE needed because this line may not be the first line of the log
+COLLECTSTATIC_COPIED_RE = re.compile(r'^(\d+)\s+static files?\s+(copied|found)', re.IGNORECASE | re.MULTILINE)
 
 # Django collectstatic: "456 post-processed" (standalone line)
-COLLECTSTATIC_POST_RE = re.compile(r'^(\d+)\s+post-processed', re.IGNORECASE)
+COLLECTSTATIC_POST_RE = re.compile(r'^(\d+)\s+post-processed', re.IGNORECASE | re.MULTILINE)
 
 # Django collectstatic: "123 static files copied to '...', 456 post-processed."
 COLLECTSTATIC_COMBINED_RE = re.compile(
-    r'^(\d+)\s+static files?\s+(copied|found).*?,\s*(\d+)\s+post-processed', re.IGNORECASE
+    r'^(\d+)\s+static files?\s+(copied|found).*?,\s*(\d+)\s+post-processed', re.IGNORECASE | re.MULTILINE
 )
 
 # Django collectstatic: "Copying ..."
 COLLECTSTATIC_COPYING_RE = re.compile(r'^\s+Copying\s+')
+
+# PostgreSQL psql output when restoring a pg_dump SQL script:
+# "CREATE TABLE", "COPY 1234", "ALTER TABLE", "SET", "GRANT", etc.
+# MULTILINE needed because these lines may not be the first line of the log
+PSQL_CREATE_TABLE_RE = re.compile(r'^CREATE\s+TABLE', re.IGNORECASE | re.MULTILINE)
+PSQL_COPY_RE = re.compile(r'^COPY\s+(\d+)', re.IGNORECASE | re.MULTILINE)
+PSQL_ERROR_RE = re.compile(r'^(ERROR:|psql:\s*error)', re.IGNORECASE | re.MULTILINE)
+
+
+def _summarize_psql(text, result):
+    """Summarize psql output (e.g., pg_dump restore) — return only error lines and return code."""
+    errors = []
+    for line in text.split('\n'):
+        stripped = line.strip()
+        if stripped and _is_error_line(stripped):
+            errors.append(stripped)
+
+    parts = []
+    for err in errors:
+        parts.append(f'⚠ {err}')
+    if result != 0:
+        parts.append(f'(Return code: {result})')
+
+    return '\n'.join(parts) if parts else ''
+
+
+def _count_psql_tables(text):
+    """Count the number of tables created."""
+    count = 0
+    for line in text.split('\n'):
+        if PSQL_CREATE_TABLE_RE.match(line.strip()):
+            count += 1
+    return count
+
+
+def _count_psql_rows(text):
+    """Count the total number of rows copied from COPY N lines."""
+    total = 0
+    for line in text.split('\n'):
+        m = PSQL_COPY_RE.match(line.strip())
+        if m:
+            total += int(m.group(1))
+    return total
 
 
 def _summarize_docker_build(text, result):
@@ -272,7 +316,7 @@ def _get_first_error(text):
 
 
 def _detect_format(text):
-    """Detect the log format from content. Returns 'buildkit', 'hash', 'legacy', 'migrate', 'collectstatic', or None."""
+    """Detect the log format from content. Returns 'buildkit', 'hash', 'legacy', 'migrate', 'collectstatic', 'psql', or None."""
     first_lines = text[:500]
     if BUILDKIT_BUILDING_RE.search(first_lines):
         return 'buildkit'
@@ -287,6 +331,9 @@ def _detect_format(text):
         return 'migrate'
     if COLLECTSTATIC_COPIED_RE.search(first_lines):
         return 'collectstatic'
+    # psql: look for CREATE TABLE and COPY N lines (characteristic of pg_dump restore)
+    if PSQL_CREATE_TABLE_RE.search(first_lines) and PSQL_COPY_RE.search(first_lines):
+        return 'psql'
     return None
 
 
@@ -328,6 +375,8 @@ def build_header_summary(text, result, section_name=''):
             fmt = 'migrate'
         elif detected == 'collectstatic':
             fmt = 'collectstatic'
+        elif detected == 'psql':
+            fmt = 'psql'
     
     if fmt == 'docker':
         duration = _extract_duration(text)
@@ -354,6 +403,16 @@ def build_header_summary(text, result, section_name=''):
             return f'{count} files copied'
         return ''
     
+    elif fmt == 'psql':
+        tables = _count_psql_tables(text)
+        rows = _count_psql_rows(text)
+        parts = []
+        if tables:
+            parts.append(f'{tables} table(s)')
+        if rows:
+            parts.append(f'{rows} rows')
+        return ', '.join(parts) if parts else ''
+    
     return ''
 
 
@@ -377,6 +436,9 @@ def build_summary(text, result, section_name=''):
     if 'django collectstatic' in section_lower or 'collectstatic' in section_lower:
         summary = _summarize_django_collectstatic(text, result)
 
+    if 'clone database' in section_lower or 'clone_db' in section_lower or 'psql' in section_lower:
+        summary = _summarize_psql(text, result)
+
     # Auto-detect format from content when section name is not specific enough
     first_lines = text[:500]
     if BUILDKIT_BUILDING_RE.search(first_lines) or LEGACY_STEP_RE.search(first_lines) or HASH_STEP_RE.search(first_lines):
@@ -388,6 +450,8 @@ def build_summary(text, result, section_name=''):
         summary = _summarize_django_migrate(text, result)
     elif COLLECTSTATIC_COPIED_RE.search(first_lines):
         summary = _summarize_django_collectstatic(text, result)
+    elif PSQL_CREATE_TABLE_RE.search(first_lines) and PSQL_COPY_RE.search(first_lines):
+        summary = _summarize_psql(text, result)
     else:
         summary = _summarize_generic(text, result)
 

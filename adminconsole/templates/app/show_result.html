@@ -9,7 +9,7 @@
                 <div class="card">
                     <div class="card-header" id="heading{{ forloop.counter }}">
                         <h4 class="mb-0" role="button" data-toggle="collapse" data-target="#collapse{{ forloop.counter }}"
-                            aria-expanded="{% if section.result %}true{% else %}false{% endif %}" aria-controls="collapse{{ forloop.counter }}">
+                            aria-expanded="{% if section.result or section.summary %}true{% else %}false{% endif %}" aria-controls="collapse{{ forloop.counter }}">
                             <span class="carret">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-caret-right-fill" viewBox="0 0 16 16">
                                     <path d="m12.14 8.753-5.482 4.796c-.646.566-1.658.106-1.658-.753V3.204a1 1 0 0 1 1.659-.753l5.48 4.796a1 1 0 0 1 0 1.506z"/>
@@ -36,7 +36,7 @@
                         </h4>
                     </div>
 
-                    <div id="collapse{{ forloop.counter }}" class="collapse{% if section.result %} show{% endif %}"
+                    <div id="collapse{{ forloop.counter }}" class="collapse{% if section.result or section.summary %} show{% endif %}"
                          aria-labelledby="heading{{ forloop.counter }}">
                         <div class="card-body">
                             {% if section.summary %}
