@@ -155,7 +155,12 @@ def env(request, app_id):
         form = EnvForm(instance=app_env)
         formset = AppEnvVarFormSet(instance=app_env)
 
-    return render(request, 'app/env.html', {'form': form, 'formset': formset, 'app': app})
+    # Extract SMTP error message for display in the email section
+    smtp_error = None
+    if form.has_error('__all__', 'smtp_error'):
+        smtp_error = form.errors['__all__'][0]
+
+    return render(request, 'app/env.html', {'form': form, 'formset': formset, 'app': app, 'smtp_error': smtp_error})
 
 
 def _is_sensitive_key(key):
