@@ -41,8 +41,8 @@
             <thead class="thead-dark">
                 <tr>
                     <th class="log-col-timestamp">Zeit</th>
-                    <th class="log-col-pid">PID</th>
                     <th class="log-col-level">Stufe</th>
+                    <th class="log-col-pid">PID</th>
                     <th class="log-col-message">Nachricht</th>
                 </tr>
             </thead>
@@ -50,12 +50,12 @@
                 {% for entry in log_entries %}
                     <tr class="log-entry log-level-{{ entry.level|lower }}" data-level="{{ entry.level }}">
                         <td class="log-col-timestamp" title="{{ entry.timestamp }}">{{ entry.timestamp_display }}</td>
-                        <td class="log-col-pid">{{ entry.pid }}</td>
                         <td class="log-col-level">
                             {% if not entry.is_continuation %}
                                 <span class="badge badge-{{ entry.level|lower }}">{{ entry.level }}</span>
                             {% endif %}
                         </td>
+                        <td class="log-col-pid">{{ entry.pid }}</td>
                         <td class="log-col-message">{{ entry.message }}</td>
                     </tr>
                 {% empty %}

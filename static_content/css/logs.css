@@ -186,7 +186,7 @@
 
     .log-entry td {
         padding: 4px 8px;
-        text-align: right;
+        text-align: left;
         box-sizing: border-box;
     }
 
@@ -206,8 +206,8 @@
         margin-bottom: 2px;
     }
 
-    .log-col-pid,
-    .log-col-level {
+    .log-table .log-col-pid,
+    .log-table .log-col-level {
         display: inline-block;
         width: calc(50% - 8px);
     }
@@ -215,7 +215,6 @@
     .log-col-message {
         display: block;
         width: 100%;
-        text-align: left;
         margin-top: 4px;
         padding-top: 4px;
         border-top: 1px solid #444;

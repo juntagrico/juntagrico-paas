@@ -1,0 +1,13 @@
+{# Render a single form field with label, input, help text, and errors #}
+{# Context: field (Django form field), label_text (optional override for label) #}
+{#          required (optional, defaults to field.field.required) #}
+<label for="{{ field.id_for_label }}"{% if field.field.required %} class="requiredField"{% endif %}>
+    {{ label_text|default:field.label }}{% if field.field.required %}*{% endif %}
+</label>
+{{ field }}
+{% if field.help_text %}
+    <small class="form-text text-muted">{{ field.help_text }}</small>
+{% endif %}
+{% if field.errors %}
+    <div class="invalid-feedback d-block"><strong>{{ field.errors }}</strong></div>
+{% endif %}
