@@ -331,8 +331,8 @@ def _detect_format(text):
         return 'migrate'
     if COLLECTSTATIC_COPIED_RE.search(first_lines):
         return 'collectstatic'
-    # psql: look for CREATE TABLE and COPY N lines (characteristic of pg_dump restore)
-    if PSQL_CREATE_TABLE_RE.search(first_lines) and PSQL_COPY_RE.search(first_lines):
+    # psql: look for CREATE TABLE (characteristic of pg_dump restore); COPY N may appear much later
+    if PSQL_CREATE_TABLE_RE.search(first_lines):
         return 'psql'
     return None
 
@@ -450,7 +450,7 @@ def build_summary(text, result, section_name=''):
         summary = _summarize_django_migrate(text, result)
     elif COLLECTSTATIC_COPIED_RE.search(first_lines):
         summary = _summarize_django_collectstatic(text, result)
-    elif PSQL_CREATE_TABLE_RE.search(first_lines) and PSQL_COPY_RE.search(first_lines):
+    elif PSQL_CREATE_TABLE_RE.search(first_lines):
         summary = _summarize_psql(text, result)
     else:
         summary = _summarize_generic(text, result)
