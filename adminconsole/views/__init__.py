@@ -13,7 +13,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
 from django_otp import user_has_device
-from docker.errors import APIError, DockerException, NotFound
+from docker.errors import DockerException, NotFound
 
 from adminconsole.decorators import owner_of_app
 from adminconsole.forms import EnvForm, ProfileForm, BranchForm, AppEnvVarFormSet
@@ -60,25 +60,24 @@ def home(request):
 def overview(request, app_id):
     app = get_object_or_404(App, pk=app_id)
 
-    status = 'inactive'
-    try:
-        status = app.container.status
-    except NotFound:
-        status = 'inactive'
-    except (DockerException, APIError) as e:
-        messages.error(request, str(e))
+    running = app.running
 
     staging = app.staging_of is not None
     if staging and not app.code_dir.is_dir():
         # resume staging creation process
         return redirect('staging-git-clone', app_id=app.id)
 
-    active = status in ('running', 'created', 'restarting')
+    # Get staging app running status if this is the main app
+    staging_running = None
+    if not staging and app.stagings.exists():
+        staging_app = app.stagings.first()
+        staging_running = staging_app.running
+
     renderdict = {
         'app': app,
-        'status': status,
-        'active': active,
+        'running': running,
         'staging': staging,
+        'staging_running': staging_running,
         'has_2fa': user_has_device(request.user),
     }
     return render(request, 'overview.html', renderdict)

@@ -47,8 +47,8 @@ def stop_container(name):
 
 def get_container_statuses(app_names):
     """
-    Efficiently get the status of multiple containers in a single Docker API call.
-    Returns a dict mapping container names to their status strings.
+    Efficiently get the running status of multiple containers in a single Docker API call.
+    Returns a dict mapping container names to booleans (True if running).
     """
     client = docker.from_env()
     all_containers = client.containers.list(all=True)
@@ -56,7 +56,7 @@ def get_container_statuses(app_names):
     for container in all_containers:
         name = container.name
         if name in app_names:
-            statuses[name] = container.status
+            statuses[name] = container.status in ('running', 'created', 'restarting')
     return statuses
 
 

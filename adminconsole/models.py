@@ -1,5 +1,6 @@
 import datetime
 from pathlib import Path
+from functools import cached_property
 
 import docker
 from django.conf import settings
@@ -9,6 +10,7 @@ from django.contrib.auth.models import User
 from django.core.validators import RegexValidator, validate_domain_name
 from django.urls import reverse
 from django.utils import timezone
+from docker.errors import NotFound
 
 from adminconsole.util import generate_secret_key
 
@@ -99,6 +101,14 @@ class App(models.Model):
     @property
     def container(self):
         return docker.from_env().containers.get(self.name)
+
+    @cached_property
+    def running(self):
+        """Return True if the Docker container is running, False otherwise."""
+        try:
+            return docker.from_env().containers.get(self.name).status in ('running', 'created', 'restarting')
+        except NotFound:
+            return False
 
     def set_branch(self, branch_name):
         self.git_branch = branch_name

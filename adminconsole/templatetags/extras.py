@@ -34,12 +34,10 @@ def get_item(dictionary, key):
 
 
 @register.filter
-def container_status_badge(status):
-    """Return a colored circle span for a Docker container status."""
-    if status in ('running', 'created', 'restarting'):
+def running_badge(running):
+    """Return a colored circle span for a boolean running status."""
+    if running:
         return mark_safe('<span class="status-circle status-circle-active"></span>')
-    elif status in ('paused', 'exited', 'dead'):
-        return mark_safe('<span class="status-circle status-circle-stopped"></span>')
     else:
         return mark_safe('<span class="status-circle status-circle-inactive"></span>')
 
