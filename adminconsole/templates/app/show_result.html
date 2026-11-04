@@ -30,11 +30,23 @@
                             </span>
                         </h4>
                     </div>
-    
+
                     <div id="collapse{{ forloop.counter }}" class="collapse show"
                          aria-labelledby="heading{{ forloop.counter }}">
                         <div class="card-body">
-                            <pre class="pre-scrollable"><code>{{ section.text }}</code></pre>
+                            {% if section.summary %}
+                                <div class="mb-2">
+                                    <pre class="pre-scrollable summary-pre"><code>{{ section.summary }}</code></pre>
+                                </div>
+                                <a class="btn btn-sm btn-link p-0" data-toggle="collapse" href="#fulllog{{ forloop.counter }}" role="button" aria-expanded="false" aria-controls="fulllog{{ forloop.counter }}">
+                                    Vollständige Ausgabe anzeigen
+                                </a>
+                                <div class="collapse" id="fulllog{{ forloop.counter }}">
+                                    <pre class="pre-scrollable mt-2"><code>{{ section.text }}</code></pre>
+                                </div>
+                            {% else %}
+                                <pre class="pre-scrollable"><code>{{ section.text }}</code></pre>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

@@ -21,6 +21,7 @@ from adminconsole.models import App
 from adminconsole.util import pid_finished
 from adminconsole.util.docker import get_container_statuses
 from adminconsole.util.git import git_switch, git_current_branch
+from adminconsole.util.log_summary import build_summary
 from adminconsole.views.generic import confirm_post, confirm_password, security_log, client_address
 
 
@@ -117,6 +118,11 @@ def show_result(request, app_id):
                 current['text'] += '\n'
     if not sections['Log']['text']:
         del sections['Log']
+
+    # Build summaries for each section
+    for section_name, section in sections.items():
+        section['summary'] = build_summary(section['text'], section['result'], section_name)
+
     return render(request, 'app/show_result.html',
                   {'app': app, 'sections': sections})
 
