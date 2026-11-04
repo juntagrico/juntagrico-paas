@@ -149,7 +149,7 @@ def _summarize_psql(text, result):
     for err in errors:
         parts.append(f'⚠ {err}')
     if result != 0:
-        parts.append(f'(Return code: {result})')
+        parts.append(f'(Rückgabewert: {result})')
 
     return '\n'.join(parts) if parts else ''
 
@@ -185,7 +185,7 @@ def _summarize_docker_build(text, result):
     for err in errors:
         parts.append(f'⚠ {err}')
     if result != 0:
-        parts.append(f'(Return code: {result})')
+        parts.append(f'(Rückgabewert: {result})')
 
     return '\n'.join(parts) if parts else ''
 
@@ -202,7 +202,7 @@ def _summarize_django_migrate(text, result):
     for err in errors:
         parts.append(f'⚠ {err}')
     if result != 0:
-        parts.append(f'(Return code: {result})')
+        parts.append(f'(Rückgabewert: {result})')
 
     return '\n'.join(parts) if parts else ''
 
@@ -219,7 +219,7 @@ def _summarize_django_collectstatic(text, result):
     for err in errors:
         parts.append(f'⚠ {err}')
     if result != 0:
-        parts.append(f'(Return code: {result})')
+        parts.append(f'(Rückgabewert: {result})')
 
     return '\n'.join(parts) if parts else ''
 
@@ -238,7 +238,7 @@ def _summarize_generic(text, result):
     for err in errors:
         parts.append(f'⚠ {err}')
     if result != 0:
-        parts.append(f'(Return code: {result})')
+        parts.append(f'(Rückgabewert: {result})')
 
     return '\n'.join(parts) if parts else ''
 
@@ -383,7 +383,7 @@ def build_header_summary(text, result, section_name=''):
         steps = _count_docker_steps(text)
         parts = []
         if steps:
-            parts.append(f'{steps} steps')
+            parts.append(f'{steps} Schritte')
         if duration:
             parts.append(f'{duration}s')
         return ', '.join(parts) if parts else ''
@@ -391,16 +391,16 @@ def build_header_summary(text, result, section_name=''):
     elif fmt == 'migrate':
         count = _count_migrations(text)
         if count:
-            return f'{count} migration(s) applied'
+            return f'{count} Migration(en) angewendet'
         # Check for "no migrations" case (need MULTILINE for ^ anchor)
         if re.search(DJANGO_MIGRATE_NONE_RE.pattern, text, re.MULTILINE):
-            return 'No migrations to apply'
+            return 'Keine Migrationen anzuwenden'
         return ''
     
     elif fmt == 'collectstatic':
         count = _count_collectstatic_files(text)
         if count:
-            return f'{count} files copied'
+            return f'{count} Dateien kopiert'
         return ''
     
     elif fmt == 'psql':
@@ -408,9 +408,9 @@ def build_header_summary(text, result, section_name=''):
         rows = _count_psql_rows(text)
         parts = []
         if tables:
-            parts.append(f'{tables} table(s)')
+            parts.append(f'{tables} Tabelle(n)')
         if rows:
-            parts.append(f'{rows} rows')
+            parts.append(f'{rows} Zeilen')
         return ', '.join(parts) if parts else ''
     
     return ''
