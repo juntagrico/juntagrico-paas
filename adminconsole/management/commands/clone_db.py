@@ -1,14 +1,12 @@
 import subprocess
-from datetime import datetime
 
-import docker
 from django.conf import settings
 
+from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
 from adminconsole.util.docker import _run_migration_in_temp_container
 from adminconsole.models import App, AppEnv
-from adminconsole.util.commands import log_after
 from adminconsole.util.create_app import create_database
 
 
@@ -59,12 +57,9 @@ class Command(BaseCommand):
             result = _run_migration_in_temp_container(app, app.name)
             print('Return', result, flush=True)
 
-            # restart docker to pick up the new db credentials
-            print('# Docker Restart', flush=True)
-            start = datetime.now()
-            container = docker.from_env().containers.get(app.name)
-            container.restart()
-            print(log_after(container, since=start))
-            print('Return 0', flush=True)
+            # restart to pick up the new db credentials
+            print('# Docker Start', flush=True)
+            result = call_command('restart', app.name)
+            print('Return', result, flush=True)
 
         return 0

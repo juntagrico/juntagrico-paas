@@ -1,5 +1,4 @@
 import os
-from datetime import datetime
 
 import docker
 from docker.errors import ContainerError
@@ -9,7 +8,6 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 
 from adminconsole.models import App
-from adminconsole.util.commands import log_after
 from adminconsole.util.docker import _run_migration_in_temp_container
 from adminconsole.util.git import git_pull
 
@@ -56,7 +54,7 @@ class Command(BaseCommand):
                 f.write(f'\n{self.FORCE_REBUILD_SEP}{upgrade_nonce}')
 
         print('# Docker Rebuild', flush=True)
-        result = call_command('rebuild', '--restart', app.name)
+        result = call_command('rebuild', app.name)
         if result != 0:
             return
 
@@ -70,8 +68,6 @@ class Command(BaseCommand):
         result = _run_migration_in_temp_container(app, name)
         if result != 0:
             return
-
-        container = docker.from_env().containers.get(name)
 
         print('# Django Collectstatic', flush=True)
         # start new container with write access on static
@@ -104,13 +100,11 @@ class Command(BaseCommand):
                 print(exc.stderr)
             print('Return', exc.exit_status, flush=True)
 
-        # update juntagrico version register
+        print('# Docker Start', flush=True)
+        result = call_command('restart', app.name)
+        print('Return', result, flush=True)
+
+        # update juntagrico version register (needs running container)
         print('# Collect Version', flush=True)
         result = call_command('collect_version', app_name=app.name)
         print('Return', result, flush=True)
-
-        print('# Docker Restart', flush=True)
-        start = datetime.now()
-        container.restart()
-        print(log_after(container, since=start))
-        print('Return 0', flush=True)
