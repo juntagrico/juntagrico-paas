@@ -32,17 +32,17 @@ class Command(BaseCommand):
 
         # copy tables from prod app
         print('# Clone Database', flush=True)
-        db_user = settings.DATABASES['default']['USER']
-        db_pw = settings.DATABASES['default']['PASSWORD']
-        env = {'PGPASSWORD': db_pw}
+        target_user = app.env.juntagrico_database_user
         load = subprocess.Popen(
-            ['psql', '-U', db_user, '--no-password', app.env.juntagrico_database_name],
-            stdin=subprocess.PIPE, stderr=subprocess.STDOUT, env=env
+            ['psql', '-U', target_user, '--no-password', app.env.juntagrico_database_name],
+            stdin=subprocess.PIPE, stderr=subprocess.STDOUT,
+            env={'PGPASSWORD': app.env.juntagrico_database_password}
         )
+        source_user = app.staging_of.env.juntagrico_database_user
         dump = subprocess.Popen(
-            ['pg_dump', '-U', db_user, '--no-password', '--no-comments', '--no-owner', '--no-privileges',
+            ['pg_dump', '-U', source_user, '--no-password', '--no-comments', '--no-owner', '--no-privileges',
              app.staging_of.env.juntagrico_database_name],
-            stdout=load.stdin, env=env
+            stdout=load.stdin, env={'PGPASSWORD': app.staging_of.env.juntagrico_database_password}
         )
         dump.communicate()
         load.communicate(b'\\q')
