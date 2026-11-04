@@ -21,14 +21,14 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv pip install --system 'psycopg[binary]' 'svglib<1.6.0' "gunicorn${gunicorn_ver}"
+    uv pip install --system --link-mode=copy 'psycopg[binary]' 'svglib<1.6.0' "gunicorn${gunicorn_ver}"
 
 # install requirements
 COPY --from=fetcher /code/requirements*.txt /code/
 WORKDIR /code
 RUN echo "Break Docker Cache: {% now "Y-m-d H:i:s.u" %}"
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv pip install --system -r requirements.txt
+    uv pip install --system --link-mode=copy -r requirements.txt
 
 
 FROM python:$pythonversion-slim AS app

@@ -48,7 +48,7 @@ class Command(BaseCommand):
         )
         dump.communicate()
         change_owner.communicate()
-        print(load.communicate(b'\q'))
+        print(load.communicate(b'\\q'))
         print('Return 0', flush=True)
 
         if not options.get('no_restart'):
