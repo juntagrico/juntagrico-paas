@@ -21,14 +21,14 @@
                         {% for app in apps %}
                             <li>
                                 <a href="{% url "overview" app.id %}">{{ app.name }}</a>
-                                {% if app.juntagrico_version %}<span class="badge {{ app.juntagrico_version|juntagrico_version_badge }}">juntagrico {{ app.juntagrico_version }}</span>{% endif %}
+                                {% if app.juntagrico_version %}<span class="badge {{ app.juntagrico_version|juntagrico_version_badge }}">j{{ app.juntagrico_version }}</span>{% endif %}
                                 {% if app.version == 3 %}<span class="badge bg-info text-dark">v3</span>{% endif %}
-                                {% if app.python_version %}<span class="badge badge-secondary">python {{ app.python_version }}</span>{% endif %}
+                                {% if app.python_version %}<span class="badge badge-secondary">p{{ app.python_version }}</span>{% endif %}
                                 {% for staging in app.stagings.all %}
                                     / <a href="{% url "overview" staging.id %}">{{ staging.name }}</a>
-                                    {% if staging.juntagrico_version %}<span class="badge {{ staging.juntagrico_version|juntagrico_version_badge }}">juntagrico {{ staging.juntagrico_version }}</span>{% endif %}
+                                    {% if staging.juntagrico_version %}<span class="badge {{ staging.juntagrico_version|juntagrico_version_badge }}">j{{ staging.juntagrico_version }}</span>{% endif %}
                                     {% if staging.version == 3 %}<span class="badge bg-info text-dark">v3</span>{% endif %}
-                                    {% if staging.python_version %}<span class="badge badge-secondary">python {{ staging.python_version }}</span>{% endif %}
+                                    {% if staging.python_version %}<span class="badge badge-secondary">p{{ staging.python_version }}</span>{% endif %}
                                 {% endfor %}
                             </li>
                         {% endfor %}
