@@ -12,18 +12,24 @@ def _run_migration_in_temp_container(app, name):
     volumes = {}
     if app.version < 3:
         volumes[app.dir / 'code'] = {'bind': '/code/', 'mode': 'ro'}
+    # Match the network mode of the running container so the temp container can reach the database
+    if app.isolated_network:
+        network = ensure_apps_network(client)
+        network_kwargs = {'network': network.name}
+    else:
+        network_kwargs = {'network_mode': 'host'}
     try:
         output = client.containers.run(
             image=app.image_tag,
             environment=list(app.env.get_lines()),
             name=name + '-migrate',
             labels=['migrate'],
-            network_mode=None,
             volumes=volumes,
             command='python -m manage migrate --noinput',
             remove=True,
             stdout=True,
             stderr=True,
+            **network_kwargs,
         )
         print(output.decode("utf-8", errors="replace"), end="", flush=True)
         print('Return 0', flush=True)
