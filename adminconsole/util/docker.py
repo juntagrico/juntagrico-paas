@@ -6,22 +6,35 @@ from docker.models.containers import ExecResult
 from adminconsole.util.network import apps_memory_limit, apps_network, ensure_apps_network
 
 
+def get_container_env_and_network(app, client):
+    """
+    Return (environment, network_kwargs) for a container matching the app's network configuration.
+    For isolated networks, the environment includes JUNTAGRICO_DATABASE_HOST pointing to the gateway,
+    and network_kwargs connects to the apps bridge network.
+    For non-isolated apps, network_kwargs uses host mode.
+    """
+    environment = list(app.env.get_lines())
+    if app.isolated_network:
+        network = ensure_apps_network(client)
+        gateway = apps_network()["gateway"]
+        environment.append(f'JUNTAGRICO_DATABASE_HOST={gateway}')
+        network_kwargs = {'network': network.name}
+    else:
+        network_kwargs = {'network_mode': 'host'}
+    return environment, network_kwargs
+
+
 def _run_migration_in_temp_container(app, name):
     """Run Django migrations in a temporary container with the latest environment."""
     client = docker.from_env()
     volumes = {}
     if app.version < 3:
         volumes[app.dir / 'code'] = {'bind': '/code/', 'mode': 'ro'}
-    # Match the network mode of the running container so the temp container can reach the database
-    if app.isolated_network:
-        network = ensure_apps_network(client)
-        network_kwargs = {'network': network.name}
-    else:
-        network_kwargs = {'network_mode': 'host'}
+    environment, network_kwargs = get_container_env_and_network(app, client)
     try:
         output = client.containers.run(
             image=app.image_tag,
-            environment=list(app.env.get_lines()),
+            environment=environment,
             name=name + '-migrate',
             labels=['migrate'],
             volumes=volumes,
@@ -101,20 +114,15 @@ def create_container(app):
     name = app.name
     base_dir = app.dir
 
-    environment = list(app.env.get_lines())
+    environment, network_options = get_container_env_and_network(app, client)
     if app.isolated_network:
-        network = ensure_apps_network(client)
         gateway = apps_network()["gateway"]
-        environment.append(f'JUNTAGRICO_DATABASE_HOST={gateway}')
-        network_options = {
-            'network': network.name,
-            'ports': {f'{app.port}/tcp': ('127.0.0.1', app.port)},
-            'command': ['gunicorn', '--no-control-socket', '--forwarded-allow-ips', gateway] +
-                       ['--bind', f'0.0.0.0:{app.port}', '-t', '600', app.wsgi_path],
-            'mem_limit': apps_memory_limit(),
-        }
-    else:
-        network_options = {'network_mode': 'host'}
+        network_options['ports'] = {f'{app.port}/tcp': ('127.0.0.1', app.port)}
+        network_options['command'] = (
+            ['gunicorn', '--no-control-socket', '--forwarded-allow-ips', gateway]
+            + ['--bind', f'0.0.0.0:{app.port}', '-t', '600', app.wsgi_path]
+        )
+        network_options['mem_limit'] = apps_memory_limit()
 
     labels = []
     if app.staging_of:
