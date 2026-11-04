@@ -1,5 +1,6 @@
 {# Render app status circle and version badges #}
 {# Context: app (App instance), container_statuses (dict) #}
+{% load extras %}
 {% with container_statuses|get_item:app.name as status %}
     {{ status|container_status_badge }}
     {% if status != 'paused' and status != 'exited' and status != 'dead' and status is not None %}
