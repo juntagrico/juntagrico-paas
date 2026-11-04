@@ -54,7 +54,7 @@ def set_version(request, app_id):
     old_version = app.version
     app.version = version
     app.save()
-    messages.success(request, f'Infrastruktur-Version geändert von V{old_version} nach V{version}. Starte Redeploy...')
+    messages.success(request, f'Infrastruktur-Version geändert von V{old_version} nach V{version}.')
 
     return _spawn_redeploy(app, f'Version wechseln (V{old_version} → V{version})')
 
