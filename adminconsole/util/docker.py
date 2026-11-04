@@ -103,6 +103,7 @@ def run_parallel_steps(app, name):
 
     # Prepare collectstatic arguments
     static_dir = app.dir / 'static'
+    static_dir.mkdir(parents=True, exist_ok=True)
     static_stat = os.stat(static_dir)
     collectstatic_volumes = {static_dir: {'bind': '/code/static/', 'mode': 'rw'}}
     collectstatic_user = f'{static_stat.st_uid}:{static_stat.st_gid}'
