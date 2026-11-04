@@ -1,14 +1,9 @@
-import os
-
-import docker
-from docker.errors import ContainerError
-
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
 from adminconsole.models import App
-from adminconsole.util.docker import _run_migration_in_temp_container
+from adminconsole.util.docker import run_parallel_steps
 from adminconsole.util.git import git_pull
 
 
@@ -64,45 +59,10 @@ class Command(BaseCommand):
             if result != 0:
                 return
 
-        print('# Django Migrate', flush=True)
-        result = _run_migration_in_temp_container(app, name)
-        if result != 0:
+        # Run migration, collectstatic, and restart in parallel
+        exit_codes = run_parallel_steps(app, name)
+        if any(code != 0 for code in exit_codes):
             return
-
-        print('# Django Collectstatic', flush=True)
-        # start new container with write access on static
-        static_dir = app.dir / 'static'
-        static_stat = os.stat(static_dir)
-        client = docker.from_env()
-        volumes = {
-            static_dir: {'bind': '/code/static/', 'mode': 'rw'}
-        }
-        if app.version < 3:
-            volumes[app.dir / 'code'] = {'bind': '/code/', 'mode': 'rw'}
-        try:
-            output = client.containers.run(
-                image=app.image_tag,
-                environment=list(app.env.get_lines()),
-                name=name + '-collectstatic',
-                labels=['collectstatic'],
-                network_mode=None,
-                user=f'{static_stat.st_uid}:{static_stat.st_gid}',
-                volumes=volumes,
-                command='python -m manage collectstatic --noinput -c',
-                remove=True,
-                stdout=True,
-                stderr=True,
-            )
-            print(output.decode("utf-8", errors="replace"))
-            print('Return 0', flush=True)
-        except ContainerError as exc:
-            if exc.stderr:
-                print(exc.stderr)
-            print('Return', exc.exit_status, flush=True)
-
-        print('# Docker Start', flush=True)
-        result = call_command('restart', app.name)
-        print('Return', result, flush=True)
 
         # update juntagrico version register (needs running container)
         print('# Collect Version', flush=True)

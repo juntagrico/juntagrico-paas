@@ -1,3 +1,7 @@
+import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from threading import Lock
+
 import docker
 
 from docker.errors import NotFound, ContainerError
@@ -24,34 +28,134 @@ def get_container_env_and_network(app, client):
     return environment, network_kwargs
 
 
+def _run_in_temp_container(app, name, command, volumes=None, user=None):
+    """
+    Run a command in a temporary container with the latest environment.
+    Returns (exit_code, output_bytes, error_bytes).
+    """
+    client = docker.from_env()
+    if volumes is None:
+        volumes = {}
+    if app.version < 3:
+        volumes.setdefault(app.dir / 'code', {'bind': '/code/', 'mode': 'ro'})
+    environment, network_kwargs = get_container_env_and_network(app, client)
+    kwargs = {
+        'image': app.image_tag,
+        'environment': environment,
+        'name': name,
+        'volumes': volumes,
+        'command': command,
+        'remove': True,
+        'stdout': True,
+        'stderr': True,
+    }
+    if user:
+        kwargs['user'] = user
+    kwargs.update(network_kwargs)
+    try:
+        output = client.containers.run(**kwargs)
+        return 0, output, b''
+    except ContainerError as exc:
+        return exc.exit_status, exc.stdout or b'', exc.stderr or b''
+
+
 def _run_migration_in_temp_container(app, name):
     """Run Django migrations in a temporary container with the latest environment."""
-    client = docker.from_env()
     volumes = {}
-    if app.version < 3:
-        volumes[app.dir / 'code'] = {'bind': '/code/', 'mode': 'ro'}
-    environment, network_kwargs = get_container_env_and_network(app, client)
-    try:
-        output = client.containers.run(
-            image=app.image_tag,
-            environment=environment,
-            name=name + '-migrate',
-            labels=['migrate'],
-            volumes=volumes,
-            command='python -m manage migrate --noinput',
-            remove=True,
-            stdout=True,
-            stderr=True,
-            **network_kwargs,
-        )
+    exit_code, output, stderr = _run_in_temp_container(
+        app, name + '-migrate', 'python -m manage migrate --noinput', volumes=volumes
+    )
+    if output:
         print(output.decode("utf-8", errors="replace"), end="", flush=True)
-        print('Return 0', flush=True)
-        return 0
-    except ContainerError as exc:
-        if exc.stderr:
-            print(exc.stderr.decode("utf-8", errors="replace"))
-        print('Return', exc.exit_status, flush=True)
-        return exc.exit_status
+    if stderr:
+        print(stderr.decode("utf-8", errors="replace"), end="", flush=True)
+    print(f'Return {exit_code}', flush=True)
+    return exit_code
+
+
+def _run_collectstatic_in_temp_container(app, name):
+    """Run collectstatic in a temporary container with the latest environment."""
+    static_dir = app.dir / 'static'
+    static_stat = os.stat(static_dir)
+    volumes = {static_dir: {'bind': '/code/static/', 'mode': 'rw'}}
+    exit_code, output, stderr = _run_in_temp_container(
+        app, name + '-collectstatic',
+        'python -m manage collectstatic --noinput -c',
+        volumes=volumes,
+        user=f'{static_stat.st_uid}:{static_stat.st_gid}',
+    )
+    if output:
+        print(output.decode("utf-8", errors="replace"), end="", flush=True)
+    if stderr:
+        print(stderr.decode("utf-8", errors="replace"), end="", flush=True)
+    print(f'Return {exit_code}', flush=True)
+    return exit_code
+
+
+def run_parallel_steps(app, name):
+    """
+    Run migration, collectstatic, and restart in parallel.
+    Each step's output is buffered and printed in a fixed order after all complete.
+    Returns a list of exit codes for each step.
+    """
+    from django.core.management import call_command
+
+    output_buffer = {}
+    lock = Lock()
+
+    def task_migration():
+        code, out, err = _run_in_temp_container(
+            app, name + '-migrate', 'python -m manage migrate --noinput', volumes={}
+        )
+        with lock:
+            output_buffer['migrate'] = (code, out, err)
+
+    def task_collectstatic():
+        static_dir = app.dir / 'static'
+        static_stat = os.stat(static_dir)
+        volumes = {static_dir: {'bind': '/code/static/', 'mode': 'rw'}}
+        user = f'{static_stat.st_uid}:{static_stat.st_gid}'
+        code, out, err = _run_in_temp_container(
+            app, name + '-collectstatic',
+            'python -m manage collectstatic --noinput -c',
+            volumes=volumes,
+            user=user,
+        )
+        with lock:
+            output_buffer['collectstatic'] = (code, out, err)
+
+    def task_restart():
+        code = call_command('restart', name)
+        with lock:
+            output_buffer['restart'] = (code, b'', b'')
+
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        futures = [
+            executor.submit(task_migration),
+            executor.submit(task_collectstatic),
+            executor.submit(task_restart),
+        ]
+        for future in as_completed(futures):
+            future.result()
+
+    # Print output in fixed order
+    order = [
+        ('migrate', '# Django Migrate'),
+        ('collectstatic', '# Django Collectstatic'),
+        ('restart', '# Docker Start'),
+    ]
+    exit_codes = []
+    for key, header in order:
+        print(header, flush=True)
+        code, out, err = output_buffer.get(key, (0, b'', b''))
+        if out:
+            print(out.decode("utf-8", errors="replace"), end="", flush=True)
+        if err:
+            print(err.decode("utf-8", errors="replace"), end="", flush=True)
+        print(f'Return {code}', flush=True)
+        exit_codes.append(code)
+
+    return exit_codes
 
 
 def exec_run(container, cmd, stdout=True, stderr=True, stdin=False, tty=False,
