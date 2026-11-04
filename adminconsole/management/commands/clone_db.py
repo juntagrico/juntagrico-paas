@@ -34,13 +34,13 @@ class Command(BaseCommand):
         print('# Clone Database', flush=True)
         target_user = app.env.juntagrico_database_user
         load = subprocess.Popen(
-            ['psql', '-U', target_user, '--no-password', app.env.juntagrico_database_name],
+            ['psql', '-h', 'localhost', '-U', target_user, '--no-password', app.env.juntagrico_database_name],
             stdin=subprocess.PIPE, stderr=subprocess.STDOUT,
             env={'PGPASSWORD': app.env.juntagrico_database_password}
         )
         source_user = app.staging_of.env.juntagrico_database_user
         dump = subprocess.Popen(
-            ['pg_dump', '-U', source_user, '--no-password', '--no-comments', '--no-owner', '--no-privileges',
+            ['pg_dump', '-h', 'localhost', '-U', source_user, '--no-password', '--no-comments', '--no-owner', '--no-privileges',
              app.staging_of.env.juntagrico_database_name],
             stdout=load.stdin, env={'PGPASSWORD': app.staging_of.env.juntagrico_database_password}
         )
