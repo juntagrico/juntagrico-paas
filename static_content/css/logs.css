@@ -175,9 +175,19 @@
         border-radius: 4px;
     }
 
+    /* Alternating row background colors for readability */
+    .log-entry:nth-child(even) {
+        background-color: #2a2a2a;
+    }
+
+    .log-entry:nth-child(odd) {
+        background-color: #1e1e1e;
+    }
+
     .log-entry td {
         padding: 4px 8px;
         text-align: right;
+        box-sizing: border-box;
     }
 
     .log-col-timestamp,
@@ -185,8 +195,6 @@
     .log-col-level {
         width: auto;
         min-width: 0;
-        display: inline-block;
-        width: calc(50% - 8px);
         overflow: hidden;
         text-overflow: ellipsis;
         max-width: 100%;
@@ -201,6 +209,7 @@
     .log-col-pid,
     .log-col-level {
         display: inline-block;
+        width: calc(50% - 8px);
     }
 
     .log-col-message {
