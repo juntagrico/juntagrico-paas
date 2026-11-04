@@ -32,6 +32,9 @@ def _is_error_line(line):
     # Skip lines that look like package installation output
     if re.match(r'^(Selecting|Preparing to unpack|Unpacking|Setting up)\s+', line):
         return False
+    # Skip Django collectstatic "Deleting" lines — file paths may contain words like "critical-role"
+    if re.match(r'^\s*Deleting\s+', line, re.IGNORECASE):
+        return False
     # Skip lines that are just package lists (common in apt output, space-separated package names)
     stripped = line.strip()
     if stripped and not stripped[0].isupper() and ':' not in stripped and '(' not in stripped and '=' not in stripped:

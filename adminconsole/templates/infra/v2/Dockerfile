@@ -6,10 +6,10 @@ ENV PYTHONUNBUFFERED 1
 RUN pip install --upgrade pip
 # install psycopg for postgres & git to enable pip install from repos
 RUN apk add --update --virtual .build-deps gcc musl-dev postgresql-dev git \
-    && pip install psycopg[c] --no-cache-dir
+    && pip install --root-user-action=ignore psycopg[c] --no-cache-dir
 
 FROM django AS app
 COPY code/requirements*.txt /
-RUN pip install --upgrade -r requirements.txt
+RUN pip install --root-user-action=ignore --upgrade -r requirements.txt
 WORKDIR /code/
 CMD ["gunicorn","--bind","127.0.0.1:{{ app.port }}","-t", "600","{{ app.wsgi_path }}","&"]
