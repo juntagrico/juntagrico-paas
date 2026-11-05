@@ -3,7 +3,7 @@
 {% block page_subtitle %}<h4>Installierte Versionen</h4>{% endblock %}
 
 {% block inner_content %}
-    {% if python_version or pip_version or packages %}
+    {% if python_version or pip_version or uv_version or packages %}
         <div class="card mb-3">
             <div class="card-header">
                 <strong>Runtime</strong>
@@ -26,6 +26,12 @@
                             <tr>
                                 <td><strong>pip</strong></td>
                                 <td><code>{{ pip_version }}</code></td>
+                            </tr>
+                        {% endif %}
+                        {% if uv_version %}
+                            <tr>
+                                <td><strong>uv</strong></td>
+                                <td><code>{{ uv_version }}</code></td>
                             </tr>
                         {% endif %}
                     </tbody>

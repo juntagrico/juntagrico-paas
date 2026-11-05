@@ -534,53 +534,48 @@ def versions(request, app_id):
 
     python_version = None
     pip_version = None
+    uv_version = None
     packages = []
     errors = []
 
-    # Get Python version (python --version writes to stderr, so merge streams)
-    try:
-        result = container.exec_run(['python', '--version'], stderr=True)
-        output = result.output.decode('utf-8').strip()
-        if output:
-            # "Python 3.11.18" -> "3.11.18"
-            match = re.search(r'Python\s+(\S+)', output)
-            if match:
-                python_version = match.group(1)
-            else:
-                python_version = output
-    except Exception as e:
-        errors.append(f'Python-Version: {e}')
-
-    # Get pip version
-    try:
-        result = container.exec_run(['pip', '--version'])
-        output = result.output.decode('utf-8').strip()
-        if result.exit_code == 0 or output:
-            # "pip 26.2.2 from /usr/local/lib/python3.11/site-packages/pip (python 3.11)"
-            match = re.search(r'pip\s+(\S+)', output)
-            if match:
-                pip_version = match.group(1)
-            elif output:
-                pip_version = output
-    except Exception as e:
-        errors.append(f'pip-Version: {e}')
-
-    # Get installed packages using JSON format for reliable parsing
+    # Batch all version lookups into a single exec_run call to minimize Docker API overhead.
+    # The Python script collects Python version, uv version (via subprocess), and all
+    # package metadata, then outputs a single JSON object.
     try:
         result = container.exec_run(
-            ['pip', 'list', '--format', 'json', '--disable-pip-version-check'],
+            ['python', '-c', '''
+import importlib.metadata, json, subprocess, sys, re
+
+data = {"python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}", "packages": []}
+for d in importlib.metadata.distributions():
+    name = d.metadata["Name"]
+    if name and d.version:
+        data["packages"].append([name, d.version])
+
+try:
+    out = subprocess.check_output(["uv", "--version"], stderr=subprocess.DEVNULL, text=True)
+    m = re.search(r"uv\\s+(\\S+)", out)
+    if m:
+        data["uv_version"] = m.group(1)
+except Exception:
+    pass
+
+print(json.dumps(data))
+'''],
             stderr=False,
         )
         output = result.output.decode('utf-8').strip()
-        if output:
-            parsed = json.loads(output)
-            for pkg in parsed:
-                pkg_name = pkg.get('name', 'unknown')
-                version = pkg.get('version', 'unknown')
-                if pkg_name and version:
+        if result.exit_code == 0 and output:
+            data = json.loads(output)
+            python_version = data.get('python_version')
+            uv_version = data.get('uv_version')
+            for pkg_name, version in data.get('packages', []):
+                if pkg_name.lower() == 'pip':
+                    pip_version = version
+                else:
                     packages.append({'name': pkg_name, 'version': version})
     except Exception as e:
-        errors.append(f'Paketliste: {e}')
+        errors.append(f'Versionsabfrage: {e}')
 
     # Categorize packages by prefix into titled groups
     PACKAGE_CATEGORIES = [
@@ -620,6 +615,7 @@ def versions(request, app_id):
             'app': app,
             'python_version': python_version,
             'pip_version': pip_version,
+            'uv_version': uv_version,
             'packages': packages_dict,
             'errors': errors,
         },

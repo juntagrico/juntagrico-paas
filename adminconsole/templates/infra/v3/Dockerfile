@@ -32,7 +32,11 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv pip install --system --link-mode=copy -r requirements.txt
 
 
-FROM python:$pythonversion-slim AS app
+FROM python:$pythonversion-alpine AS app
+
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+ENV PYTHONNOUSERSITE 1
 
 # Create normal user
 ARG appuser=appuser
@@ -45,9 +49,29 @@ COPY --from=builder /usr/local/lib /usr/local/lib
 COPY --from=builder /usr/local/bin/gunicorn* /usr/local/bin/
 COPY --from=fetcher /code /code
 
+# Remove unused packages, so they can do no harm
+RUN pip uninstall -y pip \
+    && rm -rf /usr/local/lib/python*/ensurepip \
+    && rm -rf /usr/local/lib/python*/venv \
+    && rm -rf /usr/local/lib/python*/idlelib \
+    && rm -rf /usr/local/lib/python*/tkinter \
+    && rm -rf /usr/local/lib/python*/turtle.py \
+    && rm -rf /usr/local/lib/python*/turtledemo \
+    && rm -rf /usr/local/lib/python*/lib2to3 \
+    && rm -rf /usr/local/lib/python*/test
+
+# Make Python libraries read-only for the app user to prevent installing packages
+RUN chown -R root:root /usr/local/lib \
+    && chmod -R a-w /usr/local/lib
+
 RUN mkdir -p /code/internal_files && chown -R "$appuser" /code/internal_files
 
 WORKDIR /code
 USER "$appuser"
+
+# Healthcheck to detect unresponsive app processes
+# Fakes the Host header from JUNTAGRICO_DOMAINS so Django ALLOWED_HOSTS accepts the request
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD HOST=$(echo "$JUNTAGRICO_DOMAINS" | cut -d, -f1) wget --no-verbose --tries=1 --spider --header="Host: $HOST" http://127.0.0.1:{{ app.port }}/ || exit 1
 
 CMD ["gunicorn", "--no-control-socket", "--bind","127.0.0.1:{{ app.port }}", "-t", "600", "{{ app.wsgi_path }}"]

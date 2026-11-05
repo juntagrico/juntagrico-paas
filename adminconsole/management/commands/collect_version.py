@@ -7,8 +7,8 @@ from adminconsole.models import App
 
 
 class Command(BaseCommand):
-    """ collect installed package version
-    """
+    """Collect installed package version using importlib.metadata (no pip required)."""
+
     def add_arguments(self, parser):
         parser.add_argument('app_name', nargs='?')
         parser.add_argument('package', nargs='?', default='juntagrico')
@@ -20,7 +20,6 @@ class Command(BaseCommand):
         else:
             apps = App.objects.filter(name=app_name)
         package = package or 'juntagrico'
-        package += '=='
 
         return_code = 'package not found'
         for app in apps:
@@ -30,16 +29,20 @@ class Command(BaseCommand):
             except NotFound:
                 continue
             try:
-                result = container.exec_run(['pip', 'list', '--format', 'freeze'])
+                result = container.exec_run(
+                    ['python', '-c',
+                     f'import importlib.metadata; print(importlib.metadata.version("{package}"))']
+                )
             except APIError:
                 continue
-            for line in result.output.decode('utf-8').split('\n'):
-                if line.startswith(package):
-                    self.stdout.write(app.name + ': ' + line, ending='\n')
-                    version = line[len(package):]
-                    return_code = '0'
-                    break
-            if package == 'juntagrico==':
+            output = result.output.decode('utf-8').strip()
+            if result.exit_code == 0:
+                self.stdout.write(f'{app.name}: {package}=={output}', ending='\n')
+                version = output
+                return_code = '0'
+            else:
+                self.stdout.write(f'{app.name}: {package} not installed', ending='\n')
+            if package == 'juntagrico':
                 app.juntagrico_version = version or ''
                 app.save()
         return return_code
