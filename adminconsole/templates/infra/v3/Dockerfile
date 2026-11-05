@@ -1,11 +1,12 @@
 # syntax=docker/dockerfile:1.4
 ARG pythonversion={{ default_python_version }}
 
-FROM python:$pythonversion-slim AS base
+FROM python:$pythonversion-alpine AS base
 
-ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y --no-install-recommends git \
-    && rm -rf /var/lib/apt/lists/*
+# Install git (needed in fetcher/builder) and build dependencies for C extensions
+# (gcc, musl-dev, postgresql-dev). The build deps are discarded in the final stage.
+RUN apk add --no-cache git \
+    && apk add --no-cache --virtual .build-deps gcc musl-dev postgresql-dev
 
 
 FROM base AS fetcher
@@ -44,14 +45,13 @@ ARG appuid=10001
 RUN addgroup -g "${appuid}" -S "${appuser}" \
     && adduser -u "${appuid}" -G "${appuser}" -s /sbin/nologin -S "${appuser}"
 
-# Copy only relevant libs
+# Copy only relevant libs from builder
 COPY --from=builder /usr/local/lib /usr/local/lib
 COPY --from=builder /usr/local/bin/gunicorn* /usr/local/bin/
 COPY --from=fetcher /code /code
 
-# Remove unused packages, so they can do no harm
-RUN pip uninstall -y pip \
-    && rm -rf /usr/local/lib/python*/ensurepip \
+# Remove unused Python stdlib modules and package management tools
+RUN rm -rf /usr/local/lib/python*/ensurepip \
     && rm -rf /usr/local/lib/python*/venv \
     && rm -rf /usr/local/lib/python*/idlelib \
     && rm -rf /usr/local/lib/python*/tkinter \
