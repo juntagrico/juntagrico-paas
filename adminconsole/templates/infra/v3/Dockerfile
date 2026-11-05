@@ -1,10 +1,6 @@
 # syntax=docker/dockerfile:1.4
 ARG pythonversion={{ default_python_version }}
 
-# TBD: Pin for reproducibility?
-ARG uv_image=ghcr.io/astral-sh/uv:latest
-ARG gunicorn_ver=">=25.2.2"
-
 FROM python:$pythonversion-alpine AS base
 
 # git is needed in the fetcher; gcc/musl-dev/postgresql-dev only in the builder.
@@ -30,6 +26,8 @@ RUN test -n "$git_repo" || (echo "git_repo build arg is required" && exit 1) \
 
 
 FROM base AS builder
+# TBD: Pin for reproducibility?
+ARG uv_image=ghcr.io/astral-sh/uv:latest
 COPY --from=${uv_image} /uv /usr/local/bin/uv
 
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -37,6 +35,7 @@ ENV PYTHONUNBUFFERED 1
 
 # Core runtime dependencies, installed first so they can be ommited from the requirements.txt
 # svg lib is forced < 1.6.0 due to a cairo dependency
+ARG gunicorn_ver=">=25.2.2"
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv pip install --system --link-mode=copy \
         'psycopg[binary]' \
