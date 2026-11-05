@@ -41,8 +41,8 @@ ENV PYTHONNOUSERSITE 1
 # Create normal user
 ARG appuser=appuser
 ARG appuid=10001
-RUN groupadd -g "${appuid}" "${appuser}" \
-    && useradd -u "${appuid}" -g "${appuser}" -s /sbin/nologin "${appuser}"
+RUN addgroup -g "${appuid}" -S "${appuser}" \
+    && adduser -u "${appuid}" -G "${appuser}" -s /sbin/nologin -S "${appuser}"
 
 # Copy only relevant libs
 COPY --from=builder /usr/local/lib /usr/local/lib
