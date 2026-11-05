@@ -534,31 +534,22 @@ def versions(request, app_id):
 
     python_version = None
     pip_version = None
-    uv_version = None
     packages = []
     errors = []
 
     # Batch all version lookups into a single exec_run call to minimize Docker API overhead.
-    # The Python script collects Python version, uv version (via subprocess), and all
-    # package metadata, then outputs a single JSON object.
+    # The Python script collects Python version and all package metadata, then outputs
+    # a single JSON object.
     try:
         result = container.exec_run(
             ['python', '-c', '''
-import importlib.metadata, json, subprocess, sys, re
+import importlib.metadata, json, sys
 
 data = {"python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}", "packages": []}
 for d in importlib.metadata.distributions():
     name = d.metadata["Name"]
     if name and d.version:
         data["packages"].append([name, d.version])
-
-try:
-    out = subprocess.check_output(["uv", "--version"], stderr=subprocess.DEVNULL, text=True)
-    m = re.search(r"uv\\s+(\\S+)", out)
-    if m:
-        data["uv_version"] = m.group(1)
-except Exception:
-    pass
 
 print(json.dumps(data))
 '''],
@@ -568,7 +559,6 @@ print(json.dumps(data))
         if result.exit_code == 0 and output:
             data = json.loads(output)
             python_version = data.get('python_version')
-            uv_version = data.get('uv_version')
             for pkg_name, version in data.get('packages', []):
                 if pkg_name.lower() == 'pip':
                     pip_version = version
@@ -615,7 +605,6 @@ print(json.dumps(data))
             'app': app,
             'python_version': python_version,
             'pip_version': pip_version,
-            'uv_version': uv_version,
             'packages': packages_dict,
             'errors': errors,
         },

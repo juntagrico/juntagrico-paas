@@ -14,10 +14,11 @@ FROM base AS fetcher
 ARG git_repo
 ARG git_ref=main
 # Fetch approach also works when git_ref is a commit SHA (unlike `git clone --branch`).
+# -b main removes the warning about the initial branch name.
 # The checkout is exported via `git archive` so the image never receives .git/,
 # keeping remotes, refs, and history out of the final image.
 RUN test -n "$git_repo" || (echo "git_repo build arg is required" && exit 1) \
-    && git init /code \
+    && git init -b main /code \
     && git -C /code remote add origin "$git_repo" \
     && git -C /code fetch --depth 1 origin "$git_ref" \
     && git -C /code checkout FETCH_HEAD \
