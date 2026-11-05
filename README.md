@@ -108,11 +108,6 @@ Install gunicorn
 apt install gunicorn
 ```
 
-prepare the socket
-```
-mkdir -p /run/adminconsole
-chown juntagrico:www-data /run/adminconsole
-```
 
 copy the configuration:
 
@@ -259,6 +254,7 @@ echo "host sameuser all 172.30.0.0/22 scram-sha-256" >> "$(sudo -u postgres psql
 systemctl restart postgresql
 ```
 
+TODO
 Firewall: from the app network only Postgres may be reached on the server:
 ```
 install -o root -g root -m 0755 setup/juntagrico-apps-firewall /usr/local/sbin/juntagrico-apps-firewall
