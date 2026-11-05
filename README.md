@@ -19,6 +19,23 @@ Create a database
 `sudo -u postgres createdb adminconsole`
 
 
+### Install Docker
+
+The juntagrico apps will need docker to run.
+See https://docs.docker.com/engine/install/ubuntu/
+
+Set up a persistent log-driver.
+Add this to `/etc/docker/daemon.json` or create the file if it doesn't exist.
+```
+{
+  "log-driver": "journald"
+}
+```
+
+To release unused docker images add this cronjob
+`5 1 * * * docker image prune -f`
+
+
 ### Install from Source
 
 create local user with required permissions
@@ -40,12 +57,6 @@ install with git
 mkdir -p /var/django/adminconsole
 cd /var/django/adminconsole
 git clone https://github.com/juntagrico/juntagrico-paas.git .
-```
-
-Make the scripts executable
-
-```
-chmod +x tasks/*.sh
 ```
 
 open `adminconsole/settings.py` and add your domain to the `ALLOWED_HOSTS`
@@ -91,6 +102,11 @@ Create superuser
 `python manage.py createsuperuser`
 
 ### setup Gunicorn
+
+Install gunicorn
+```
+apt install gunicorn
+```
 
 prepare the socket
 ```
@@ -175,21 +191,6 @@ certbot --nginx -d admin.juntagrico.app
 
 You can now open your juntagrico PaaS in the browser.
 
-### Install Docker
-
-The juntagrico apps will need docker to run.
-See https://docs.docker.com/engine/install/ubuntu/
-
-Set up a persistent log-driver.
-Add this to `/etc/docker/daemon.json` or create the file if it doesn't exist.
-```
-{
-  "log-driver": "journald"
-}
-```
-
-To release unused docker images add this cronjob
-`5 1 * * * docker image prune -f`
 
 ### Enable staging auto-stop
 
@@ -229,34 +230,6 @@ To turn it off do
 rm -f /var/www/MAINTENANCE_MODE
 systemctl reload nginx
 ```
-
-
-## Upgrading an existing installation
-
-Some changes require one-time steps on existing servers. Run them right after deploying the new code.
-
-### Certificates via wrapper script
-
-The user `juntagrico` may only request certificates through a wrapper script, which accepts exactly one domain.
-Run as root in `/var/django/adminconsole`:
-```
-install -o root -g root -m 0755 setup/juntagrico-certbot /usr/local/sbin/juntagrico-certbot
-install -o root -g root -m 0440 setup/50-juntagrico-paas /etc/sudoers.d/50-juntagrico-paas
-visudo -c
-```
-
-### GitHub tokens
-
-GitHub tokens are no longer stored in the app repositories. Remove the ones stored by earlier versions:
-```
-su - juntagrico
-cd /var/django/adminconsole
-export $(cat .venv/env.env | xargs)
-.venv/bin/python manage.py remove_git_credentials
-```
-
-Then revoke all tokens issued so far in the settings of the GitHub OAuth app ("Revoke all user tokens").
-Users are asked to authorize the app again the next time they select a repository.
 
 
 ## App network isolation
@@ -326,13 +299,6 @@ Start with the demo app, then a staging app, then the other apps one by one.
 
 
 ## Backups
-
-Make backup scripts executable
-
-```
-cd /var/django/adminconsole/tasks/backup
-chmod +x *.sh
-```
 
 Setup backup location
 
