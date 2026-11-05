@@ -30,7 +30,9 @@ COPY --from=fetcher /code/requirements*.txt /code/
 WORKDIR /code
 RUN echo "Break Docker Cache: {% now "Y-m-d H:i:s.u" %}"
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv pip install --system --link-mode=copy -r requirements.txt
+    uv pip install --system --link-mode=copy -r requirements.txt \
+    && chown -R root:root /usr/local/lib \
+    && chmod -R a-w /usr/local/lib
 
 
 FROM python:$pythonversion-alpine AS app
@@ -59,10 +61,6 @@ RUN rm -rf /usr/local/lib/python*/ensurepip \
     && rm -rf /usr/local/lib/python*/turtledemo \
     && rm -rf /usr/local/lib/python*/lib2to3 \
     && rm -rf /usr/local/lib/python*/test
-
-# Make Python libraries read-only for the app user to prevent installing packages
-RUN chown -R root:root /usr/local/lib \
-    && chmod -R a-w /usr/local/lib
 
 RUN mkdir -p /code/internal_files && chown -R "$appuser" /code/internal_files
 
