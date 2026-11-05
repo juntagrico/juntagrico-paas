@@ -27,8 +27,7 @@ RUN test -n "$git_repo" || (echo "git_repo build arg is required" && exit 1) \
 
 FROM base AS builder
 # TBD: Pin for reproducibility?
-ARG uv_image=ghcr.io/astral-sh/uv:latest
-COPY --from=${uv_image} /uv /usr/local/bin/uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
