@@ -25,7 +25,9 @@ SECRET_KEY = os.environ.get('JS_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', ]
+ALLOWED_HOSTS = [
+    'localhost',
+]
 TEST_LOCALHOST = True
 
 
@@ -85,7 +87,7 @@ WSGI_APPLICATION = 'adminconsole.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME':  os.environ.get('JS_DATABASE_NAME'),
+        'NAME': os.environ.get('JS_DATABASE_NAME'),
         'USER': os.environ.get('JS_DATABASE_USER'),
         'PASSWORD': os.environ.get('JS_DATABASE_PASSWORD'),
         'HOST': os.environ.get('JS_DATABASE_HOST'),
@@ -139,5 +141,5 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "static_content"),
+    os.path.join(BASE_DIR, 'static_content'),
 ]

@@ -25,6 +25,7 @@ from adminconsole.util.log_summary import (
 # _is_error_line
 # =============================================================================
 
+
 class TestIsErrorLine(unittest.TestCase):
     """Test error detection with word boundaries and false positive filters."""
 
@@ -73,7 +74,9 @@ class TestIsErrorLine(unittest.TestCase):
         self.assertTrue(_is_error_line('Permission denied for user'))
 
     def test_detects_compound_error(self):
-        self.assertTrue(_is_error_line('django.db.utils.OperationalError: connection refused'))
+        self.assertTrue(
+            _is_error_line('django.db.utils.OperationalError: connection refused')
+        )
 
     def test_detects_compound_exception(self):
         self.assertTrue(_is_error_line('FileNotFoundError: no such file'))
@@ -90,13 +93,23 @@ class TestIsErrorLine(unittest.TestCase):
         self.assertFalse(_is_error_line('git-man libbrotli1 liberror-perl libexpat1'))
 
     def test_ignores_get_line(self):
-        self.assertFalse(_is_error_line('Get:29 http://deb.debian.org/debian trixie/main amd64 liberror-perl all 0.17030-1'))
+        self.assertFalse(
+            _is_error_line(
+                'Get:29 http://deb.debian.org/debian trixie/main amd64 liberror-perl all 0.17030-1'
+            )
+        )
 
     def test_ignores_selecting(self):
-        self.assertFalse(_is_error_line('Selecting previously unselected package liberror-perl.'))
+        self.assertFalse(
+            _is_error_line('Selecting previously unselected package liberror-perl.')
+        )
 
     def test_ignores_preparing(self):
-        self.assertFalse(_is_error_line('Preparing to unpack .../28-liberror-perl_0.17030-1_all.deb ...'))
+        self.assertFalse(
+            _is_error_line(
+                'Preparing to unpack .../28-liberror-perl_0.17030-1_all.deb ...'
+            )
+        )
 
     def test_ignores_unpacking(self):
         self.assertFalse(_is_error_line('Unpacking liberror-perl (0.17030-1) ...'))
@@ -105,13 +118,17 @@ class TestIsErrorLine(unittest.TestCase):
         self.assertFalse(_is_error_line('Setting up liberror-perl (0.17030-1) ...'))
 
     def test_ignores_deleting(self):
-        self.assertFalse(_is_error_line("Deleting 'fontawesomefree/svgs/brands/critical-role.svg'"))
+        self.assertFalse(
+            _is_error_line("Deleting 'fontawesomefree/svgs/brands/critical-role.svg'")
+        )
 
     def test_ignores_deleting_with_path(self):
         self.assertFalse(_is_error_line("Deleting 'js/critical-validation.js'"))
 
     def test_ignores_package_list(self):
-        self.assertFalse(_is_error_line('git git-man libbrotli1 libcurl3t64-gnutls liberror-perl'))
+        self.assertFalse(
+            _is_error_line('git git-man libbrotli1 libcurl3t64-gnutls liberror-perl')
+        )
 
     # -- Non-error lines --
 
@@ -128,6 +145,7 @@ class TestIsErrorLine(unittest.TestCase):
 # =============================================================================
 # _summarize_docker_build
 # =============================================================================
+
 
 class TestSummarizeDockerBuild(unittest.TestCase):
     """Test Docker build log summarizer."""
@@ -169,6 +187,7 @@ class TestSummarizeDockerBuild(unittest.TestCase):
 # _summarize_django_migrate
 # =============================================================================
 
+
 class TestSummarizeDjangoMigrate(unittest.TestCase):
     """Test Django migrate log summarizer."""
 
@@ -194,6 +213,7 @@ class TestSummarizeDjangoMigrate(unittest.TestCase):
 # _summarize_django_collectstatic
 # =============================================================================
 
+
 class TestSummarizeDjangoCollectstatic(unittest.TestCase):
     """Test Django collectstatic log summarizer."""
 
@@ -206,7 +226,7 @@ class TestSummarizeDjangoCollectstatic(unittest.TestCase):
         self.assertEqual(_summarize_django_collectstatic(log, 0), '')
 
     def test_collectstatic_error(self):
-        log = "Copying file\nERROR: Permission denied\n"
+        log = 'Copying file\nERROR: Permission denied\n'
         summary = _summarize_django_collectstatic(log, 1)
         self.assertIn('⚠', summary)
 
@@ -217,6 +237,7 @@ class TestSummarizeDjangoCollectstatic(unittest.TestCase):
 # =============================================================================
 # _summarize_psql
 # =============================================================================
+
 
 class TestSummarizePsql(unittest.TestCase):
     """Test psql/pg_dump restore log summarizer."""
@@ -238,6 +259,7 @@ class TestSummarizePsql(unittest.TestCase):
 # =============================================================================
 # _summarize_generic
 # =============================================================================
+
 
 class TestSummarizeGeneric(unittest.TestCase):
     """Test generic log summarizer (fallback for unknown formats)."""
@@ -270,6 +292,7 @@ class TestSummarizeGeneric(unittest.TestCase):
 # _extract_duration
 # =============================================================================
 
+
 class TestExtractDuration(unittest.TestCase):
     """Test duration extraction from Docker build logs."""
 
@@ -298,6 +321,7 @@ class TestExtractDuration(unittest.TestCase):
 # _count_docker_steps
 # =============================================================================
 
+
 class TestCountDockerSteps(unittest.TestCase):
     """Test Docker step counting."""
 
@@ -324,6 +348,7 @@ class TestCountDockerSteps(unittest.TestCase):
 # _count_migrations
 # =============================================================================
 
+
 class TestCountMigrations(unittest.TestCase):
     """Test migration counting."""
 
@@ -347,6 +372,7 @@ class TestCountMigrations(unittest.TestCase):
 # _count_collectstatic_files
 # =============================================================================
 
+
 class TestCountCollectstaticFiles(unittest.TestCase):
     """Test collectstatic file counting."""
 
@@ -355,11 +381,11 @@ class TestCountCollectstaticFiles(unittest.TestCase):
         self.assertEqual(_count_collectstatic_files(log), 295)
 
     def test_standalone_format(self):
-        log = "1234 static files copied.\n"
+        log = '1234 static files copied.\n'
         self.assertEqual(_count_collectstatic_files(log), 1234)
 
     def test_found_format(self):
-        log = "0 static files found.\n"
+        log = '0 static files found.\n'
         self.assertEqual(_count_collectstatic_files(log), 0)
 
     def test_no_count(self):
@@ -369,6 +395,7 @@ class TestCountCollectstaticFiles(unittest.TestCase):
 # =============================================================================
 # _count_psql_tables
 # =============================================================================
+
 
 class TestCountPsqlTables(unittest.TestCase):
     """Test psql table counting."""
@@ -387,6 +414,7 @@ class TestCountPsqlTables(unittest.TestCase):
 # =============================================================================
 # _count_psql_rows
 # =============================================================================
+
 
 class TestCountPsqlRows(unittest.TestCase):
     """Test psql row counting."""
@@ -407,6 +435,7 @@ class TestCountPsqlRows(unittest.TestCase):
 # _get_first_error
 # =============================================================================
 
+
 class TestGetFirstError(unittest.TestCase):
     """Test first error extraction."""
 
@@ -425,6 +454,7 @@ class TestGetFirstError(unittest.TestCase):
 # _detect_format
 # =============================================================================
 
+
 class TestDetectFormat(unittest.TestCase):
     """Test log format auto-detection."""
 
@@ -441,13 +471,17 @@ class TestDetectFormat(unittest.TestCase):
         self.assertEqual(_detect_format('Applying admin.0001... OK'), 'migrate')
 
     def test_detects_migrate_header(self):
-        self.assertEqual(_detect_format('Operations to perform:\nRunning migrations:'), 'migrate')
+        self.assertEqual(
+            _detect_format('Operations to perform:\nRunning migrations:'), 'migrate'
+        )
 
     def test_detects_migrate_create(self):
         self.assertEqual(_detect_format('Creating table auth_user'), 'migrate')
 
     def test_detects_collectstatic(self):
-        self.assertEqual(_detect_format("295 static files copied to '/code/static'"), 'collectstatic')
+        self.assertEqual(
+            _detect_format("295 static files copied to '/code/static'"), 'collectstatic'
+        )
 
     def test_detects_psql(self):
         self.assertEqual(_detect_format('CREATE TABLE public.users'), 'psql')
@@ -462,6 +496,7 @@ class TestDetectFormat(unittest.TestCase):
 # =============================================================================
 # build_summary (public API)
 # =============================================================================
+
 
 class TestBuildSummary(unittest.TestCase):
     """Test the public build_summary() dispatcher."""
@@ -507,6 +542,7 @@ class TestBuildSummary(unittest.TestCase):
 # =============================================================================
 # build_header_summary (public API)
 # =============================================================================
+
 
 class TestBuildHeaderSummary(unittest.TestCase):
     """Test the public build_header_summary() dispatcher."""
@@ -578,6 +614,7 @@ class TestBuildHeaderSummary(unittest.TestCase):
 # Performance
 # =============================================================================
 
+
 class TestPerformance(unittest.TestCase):
     """Basic performance smoke tests to detect regressions."""
 
@@ -595,7 +632,9 @@ class TestPerformance(unittest.TestCase):
         elapsed = time.perf_counter() - start
 
         # Should complete in under 1 second for 500 steps
-        self.assertLess(elapsed, 1.0, f'Large Docker log took {elapsed:.3f}s, expected < 1s')
+        self.assertLess(
+            elapsed, 1.0, f'Large Docker log took {elapsed:.3f}s, expected < 1s'
+        )
 
     def test_large_psql_log(self):
         """Simulate a large pg_dump restore with 200 tables."""
@@ -610,7 +649,9 @@ class TestPerformance(unittest.TestCase):
         build_header_summary(log, 0, 'Clone Database')
         elapsed = time.perf_counter() - start
 
-        self.assertLess(elapsed, 1.0, f'Large psql log took {elapsed:.3f}s, expected < 1s')
+        self.assertLess(
+            elapsed, 1.0, f'Large psql log took {elapsed:.3f}s, expected < 1s'
+        )
 
     def test_large_generic_log(self):
         """Simulate a large generic log with 1000 lines."""
@@ -622,7 +663,9 @@ class TestPerformance(unittest.TestCase):
         build_summary(log, 0, 'Unknown Step')
         elapsed = time.perf_counter() - start
 
-        self.assertLess(elapsed, 1.0, f'Large generic log took {elapsed:.3f}s, expected < 1s')
+        self.assertLess(
+            elapsed, 1.0, f'Large generic log took {elapsed:.3f}s, expected < 1s'
+        )
 
 
 if __name__ == '__main__':

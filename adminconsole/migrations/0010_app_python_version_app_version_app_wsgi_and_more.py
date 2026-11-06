@@ -5,7 +5,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('adminconsole', '0009_app_staging_of_alter_app_git_clone_url'),
     ]
@@ -14,7 +13,18 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='app',
             name='python_version',
-            field=models.CharField(blank=True, choices=[('3.9', '3.9 (Nur mit Juntagrico < 2.0)'), ('3.10', '3.10'), ('3.11', '3.11'), ('3.12', '3.12'), ('3.13', '3.13 (Nur mit Juntagrico >= 2.0)')], max_length=100, verbose_name='python'),
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ('3.9', '3.9 (Nur mit Juntagrico < 2.0)'),
+                    ('3.10', '3.10'),
+                    ('3.11', '3.11'),
+                    ('3.12', '3.12'),
+                    ('3.13', '3.13 (Nur mit Juntagrico >= 2.0)'),
+                ],
+                max_length=100,
+                verbose_name='python',
+            ),
         ),
         migrations.AddField(
             model_name='app',
@@ -29,6 +39,12 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='app',
             name='staging_of',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='stagings', to='adminconsole.app'),
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name='stagings',
+                to='adminconsole.app',
+            ),
         ),
     ]

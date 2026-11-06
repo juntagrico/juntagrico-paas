@@ -29,10 +29,11 @@ class Command(BaseCommand):
             except NotFound:
                 continue
             try:
-                result = container.exec_run(
-                    ['python', '-c',
-                     f'import importlib.metadata; print(importlib.metadata.version("{package}"))']
-                )
+                result = container.exec_run([
+                    'python',
+                    '-c',
+                    f'import importlib.metadata; print(importlib.metadata.version("{package}"))',
+                ])
             except APIError:
                 continue
             output = result.output.decode('utf-8').strip()

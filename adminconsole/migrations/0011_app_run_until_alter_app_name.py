@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('adminconsole', '0010_app_python_version_app_version_app_wsgi_and_more'),
     ]
@@ -14,11 +13,20 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='app',
             name='run_until',
-            field=models.DateTimeField(blank=True, default=None, null=True, verbose_name='run until'),
+            field=models.DateTimeField(
+                blank=True, default=None, null=True, verbose_name='run until'
+            ),
         ),
         migrations.AlterField(
             model_name='app',
             name='name',
-            field=models.CharField(max_length=100, unique=True, validators=[django.core.validators.RegexValidator(regex='^[a-z0-9-]+$')], verbose_name='name'),
+            field=models.CharField(
+                max_length=100,
+                unique=True,
+                validators=[
+                    django.core.validators.RegexValidator(regex='^[a-z0-9-]+$')
+                ],
+                verbose_name='name',
+            ),
         ),
     ]

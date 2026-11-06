@@ -62,7 +62,7 @@ MIDDLEWARE = [
     'adminconsole.middleware.RequireOTPMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django.contrib.sites.middleware.CurrentSiteMiddleware'
+    'django.contrib.sites.middleware.CurrentSiteMiddleware',
 ]
 
 ROOT_URLCONF = 'adminconsole.urls'
@@ -96,7 +96,7 @@ WSGI_APPLICATION = 'adminconsole.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME':  os.environ.get('JS_DATABASE_NAME'),
+        'NAME': os.environ.get('JS_DATABASE_NAME'),
         'USER': os.environ.get('JS_DATABASE_USER'),
         'PASSWORD': os.environ.get('JS_DATABASE_PASSWORD'),
         'HOST': os.environ.get('JS_DATABASE_HOST'),
@@ -150,7 +150,7 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "static_content"),
+    os.path.join(BASE_DIR, 'static_content'),
 ]
 
 
@@ -192,7 +192,9 @@ GITHUB_CLIENT_SECRET = os.environ.get('GITHUB_CLIENT_SECRET')
 PYTHON_BIN = '.venv/bin/python'
 APPS_DOMAIN = '.juntagrico.app'
 
-COOKIECUTTER_URL = 'https://github.com/juntagrico/juntagrico-science-django-cookiecutter'
+COOKIECUTTER_URL = (
+    'https://github.com/juntagrico/juntagrico-science-django-cookiecutter'
+)
 # Template version used for new apps. Review the changes of the template before updating the commit.
 COOKIECUTTER_COMMIT = 'main'
 

@@ -22,17 +22,18 @@ def manage(request, app_id):
                 out.write('# Domain hinzufügen\n'.encode())
                 proc = subprocess.Popen(
                     [settings.PYTHON_BIN, '-m', 'manage', 'add_domain', domain.name],
-                    stdout=out, stderr=out
+                    stdout=out,
+                    stderr=out,
                 )
             return redirect(reverse('domain-add', args=[app.id, proc.pid]))
     else:
         form = DomainForm(app=app)
 
-    return render(request, 'app/domain_form.html', {
-        'domains': app.domains.all(),
-        'form': form,
-        'app': app
-    })
+    return render(
+        request,
+        'app/domain_form.html',
+        {'domains': app.domains.all(), 'form': form, 'app': app},
+    )
 
 
 @owner_of_app
@@ -42,7 +43,7 @@ def add(request, app_id, pid):
     render_dict = {
         'step': 'Domain hinzufügen',
         'pid': pid,
-        'next': reverse('show-result', args=[app.id])
+        'next': reverse('show-result', args=[app.id]),
     }
     return render(request, 'app/wait_next.html', render_dict)
 
@@ -64,6 +65,7 @@ def renew(request, domain_id):
         out.write('# Domain erneuern\n'.encode())
         proc = subprocess.Popen(
             [settings.PYTHON_BIN, '-m', 'manage', 'add_domain', domain.name],
-            stdout=out, stderr=out
+            stdout=out,
+            stderr=out,
         )
     return redirect(reverse('domain-add', args=[domain.app.id, proc.pid]))

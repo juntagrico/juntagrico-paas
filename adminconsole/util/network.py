@@ -28,19 +28,34 @@ def ensure_apps_network(client):
     try:
         network = client.networks.get(config['name'])
     except NotFound:
-        ipam = docker.types.IPAMConfig(pool_configs=[
-            docker.types.IPAMPool(subnet=config['subnet'], gateway=config['gateway'])
-        ])
-        return client.networks.create(config['name'], driver='bridge', ipam=ipam, options=options)
+        ipam = docker.types.IPAMConfig(
+            pool_configs=[
+                docker.types.IPAMPool(
+                    subnet=config['subnet'], gateway=config['gateway']
+                )
+            ]
+        )
+        return client.networks.create(
+            config['name'], driver='bridge', ipam=ipam, options=options
+        )
 
     ipam_configs = (network.attrs.get('IPAM') or {}).get('Config') or [{}]
     actual = {
         'driver': network.attrs.get('Driver'),
         'subnet': ipam_configs[0].get('Subnet'),
         'gateway': ipam_configs[0].get('Gateway'),
-        'options': {key: (network.attrs.get('Options') or {}).get(key) for key in options},
+        'options': {
+            key: (network.attrs.get('Options') or {}).get(key) for key in options
+        },
     }
-    expected = {'driver': 'bridge', 'subnet': config['subnet'], 'gateway': config['gateway'], 'options': options}
+    expected = {
+        'driver': 'bridge',
+        'subnet': config['subnet'],
+        'gateway': config['gateway'],
+        'options': options,
+    }
     if actual != expected:
-        raise NetworkMismatch(f'Docker network {config["name"]} has {actual}, expected {expected}')
+        raise NetworkMismatch(
+            f'Docker network {config["name"]} has {actual}, expected {expected}'
+        )
     return network

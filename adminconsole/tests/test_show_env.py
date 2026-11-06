@@ -14,6 +14,7 @@ from adminconsole.views import _is_sensitive_key, _mask_value
 # _is_sensitive_key
 # =============================================================================
 
+
 class TestIsSensitiveKey(unittest.TestCase):
     """Test sensitive key detection based on key name patterns."""
 
@@ -59,6 +60,7 @@ class TestIsSensitiveKey(unittest.TestCase):
 # _mask_value
 # =============================================================================
 
+
 class TestMaskValue(unittest.TestCase):
     """Test recursive value masking for sensitive keys and secret values."""
 
@@ -68,7 +70,9 @@ class TestMaskValue(unittest.TestCase):
         self.assertEqual(_mask_value('hello'), 'hello')
 
     def test_plain_string_with_secret_substring(self):
-        self.assertEqual(_mask_value('prefix_my_secret_suffix', {'my_secret'}), 'prefix_****_suffix')
+        self.assertEqual(
+            _mask_value('prefix_my_secret_suffix', {'my_secret'}), 'prefix_****_suffix'
+        )
 
     def test_multiple_secret_replacements(self):
         result = _mask_value('abc_secret1_xyz_secret2_end', {'secret1', 'secret2'})
@@ -180,15 +184,20 @@ class TestMaskValue(unittest.TestCase):
 # show_env view (integration tests with mocked Docker)
 # =============================================================================
 
+
 class ShowEnvTests(TestCase):
     """Test the show_env view with mocked Docker container."""
 
     password = 'test-password'
 
     def setUp(self):
-        self.user = User.objects.create_superuser('admin', 'admin@example.com', self.password)
+        self.user = User.objects.create_superuser(
+            'admin', 'admin@example.com', self.password
+        )
         self.app = App.objects.create(name='testapp', port=8001, user=self.user)
-        self.env = AppEnv.objects.create(app=self.app, juntagrico_secret_key='my-secret-key')
+        self.env = AppEnv.objects.create(
+            app=self.app, juntagrico_secret_key='my-secret-key'
+        )
 
     def add_device(self):
         return TOTPDevice.objects.create(user=self.user, name='default', confirmed=True)
@@ -210,17 +219,21 @@ class ShowEnvTests(TestCase):
         """Authenticated user can access show_env."""
         mock_container = self._mock_container(b'DEBUG = True\n')
         self.login_verified()
-        with patch.object(App, 'container', new_callable=lambda: property(lambda self: mock_container)):
+        with patch.object(
+            App, 'container', new_callable=lambda: property(lambda self: mock_container)
+        ):
             response = self.client.get(f'/env/show/{self.app.id}/')
             self.assertEqual(response.status_code, 200)
 
     def test_show_env_parses_simple_settings(self):
         """Simple key=value lines are parsed correctly."""
-        output = b'DEBUG = True\nALLOWED_HOSTS = [\'localhost\', \'example.com\']\n'
+        output = b"DEBUG = True\nALLOWED_HOSTS = ['localhost', 'example.com']\n"
         mock_container = self._mock_container(output)
 
         self.login_verified()
-        with patch.object(App, 'container', new_callable=lambda: property(lambda self: mock_container)):
+        with patch.object(
+            App, 'container', new_callable=lambda: property(lambda self: mock_container)
+        ):
             response = self.client.get(f'/env/show/{self.app.id}/')
         self.assertEqual(response.status_code, 200)
         self.assertIn('settings', response.context)
@@ -234,7 +247,9 @@ class ShowEnvTests(TestCase):
         mock_container = self._mock_container(output)
 
         self.login_verified()
-        with patch.object(App, 'container', new_callable=lambda: property(lambda self: mock_container)):
+        with patch.object(
+            App, 'container', new_callable=lambda: property(lambda self: mock_container)
+        ):
             response = self.client.get(f'/env/show/{self.app.id}/')
         self.assertEqual(response.status_code, 200)
         settings = {s['key']: s['value'] for s in response.context['settings']}
@@ -247,7 +262,9 @@ class ShowEnvTests(TestCase):
         mock_container = self._mock_container(output)
 
         self.login_verified()
-        with patch.object(App, 'container', new_callable=lambda: property(lambda self: mock_container)):
+        with patch.object(
+            App, 'container', new_callable=lambda: property(lambda self: mock_container)
+        ):
             response = self.client.get(f'/env/show/{self.app.id}/')
         settings = {s['key']: s['value'] for s in response.context['settings']}
         self.assertEqual(settings['DATABASE_PASSWORD'], '****')
@@ -255,12 +272,16 @@ class ShowEnvTests(TestCase):
 
     def test_show_env_masks_secret_env_var_values(self):
         """Values matching secret AppEnvVar values are masked as substrings."""
-        AppEnvVar.objects.create(env=self.env, key='MY_API_KEY', value='api_secret_123', secret=True)
+        AppEnvVar.objects.create(
+            env=self.env, key='MY_API_KEY', value='api_secret_123', secret=True
+        )
         output = b"API_KEY = 'api_secret_123'\nAPI_URL = 'https://api.example.com'\n"
         mock_container = self._mock_container(output)
 
         self.login_verified()
-        with patch.object(App, 'container', new_callable=lambda: property(lambda self: mock_container)):
+        with patch.object(
+            App, 'container', new_callable=lambda: property(lambda self: mock_container)
+        ):
             response = self.client.get(f'/env/show/{self.app.id}/')
         settings = {s['key']: s['value'] for s in response.context['settings']}
         self.assertEqual(settings['API_KEY'], '****')
@@ -268,11 +289,15 @@ class ShowEnvTests(TestCase):
 
     def test_show_env_masks_nested_secret_keys(self):
         """Sensitive keys inside nested dicts are masked recursively."""
-        output = b"DATABASES = {'default': {'PASSWORD': 'db_pass', 'HOST': 'localhost'}}\n"
+        output = (
+            b"DATABASES = {'default': {'PASSWORD': 'db_pass', 'HOST': 'localhost'}}\n"
+        )
         mock_container = self._mock_container(output)
 
         self.login_verified()
-        with patch.object(App, 'container', new_callable=lambda: property(lambda self: mock_container)):
+        with patch.object(
+            App, 'container', new_callable=lambda: property(lambda self: mock_container)
+        ):
             response = self.client.get(f'/env/show/{self.app.id}/')
         settings = {s['key']: s['value'] for s in response.context['settings']}
         self.assertEqual(settings['DATABASES']['default']['PASSWORD'], '****')
@@ -286,7 +311,9 @@ class ShowEnvTests(TestCase):
         mock_container = self._mock_container(output)
 
         self.login_verified()
-        with patch.object(App, 'container', new_callable=lambda: property(lambda self: mock_container)):
+        with patch.object(
+            App, 'container', new_callable=lambda: property(lambda self: mock_container)
+        ):
             response = self.client.get(f'/env/show/{self.app.id}/')
         settings = {s['key']: s['value'] for s in response.context['settings']}
         # SECRET_KEY is masked by the key name pattern
@@ -297,7 +324,9 @@ class ShowEnvTests(TestCase):
         mock_container = self._mock_container(b'')
 
         self.login_verified()
-        with patch.object(App, 'container', new_callable=lambda: property(lambda self: mock_container)):
+        with patch.object(
+            App, 'container', new_callable=lambda: property(lambda self: mock_container)
+        ):
             response = self.client.get(f'/env/show/{self.app.id}/')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['settings'], [])
@@ -308,7 +337,9 @@ class ShowEnvTests(TestCase):
         mock_container = self._mock_container(output)
 
         self.login_verified()
-        with patch.object(App, 'container', new_callable=lambda: property(lambda self: mock_container)):
+        with patch.object(
+            App, 'container', new_callable=lambda: property(lambda self: mock_container)
+        ):
             response = self.client.get(f'/env/show/{self.app.id}/')
         settings = {s['key']: s['value'] for s in response.context['settings']}
         self.assertEqual(settings['DEBUG'], True)
@@ -316,22 +347,26 @@ class ShowEnvTests(TestCase):
 
     def test_show_env_strips_triple_hash(self):
         """The ### marker is stripped from setting lines."""
-        output = b"DEBUG = True ###\n"
+        output = b'DEBUG = True ###\n'
         mock_container = self._mock_container(output)
 
         self.login_verified()
-        with patch.object(App, 'container', new_callable=lambda: property(lambda self: mock_container)):
+        with patch.object(
+            App, 'container', new_callable=lambda: property(lambda self: mock_container)
+        ):
             response = self.client.get(f'/env/show/{self.app.id}/')
         settings = {s['key']: s['value'] for s in response.context['settings']}
         self.assertEqual(settings['DEBUG'], True)
 
     def test_show_env_falls_back_to_string(self):
         """Values that cannot be parsed as Python literals are kept as strings."""
-        output = b"MY_SETTING = some_unquoted_value\n"
+        output = b'MY_SETTING = some_unquoted_value\n'
         mock_container = self._mock_container(output)
 
         self.login_verified()
-        with patch.object(App, 'container', new_callable=lambda: property(lambda self: mock_container)):
+        with patch.object(
+            App, 'container', new_callable=lambda: property(lambda self: mock_container)
+        ):
             response = self.client.get(f'/env/show/{self.app.id}/')
         settings = {s['key']: s['value'] for s in response.context['settings']}
         self.assertEqual(settings['MY_SETTING'], 'some_unquoted_value')
@@ -339,18 +374,23 @@ class ShowEnvTests(TestCase):
     def test_show_env_docker_error(self):
         """Docker errors are handled gracefully."""
         from docker.errors import DockerException
+
         mock_container = MagicMock()
         mock_container.exec_run.side_effect = DockerException('Connection refused')
 
         self.login_verified()
-        with patch.object(App, 'container', new_callable=lambda: property(lambda self: mock_container)):
+        with patch.object(
+            App, 'container', new_callable=lambda: property(lambda self: mock_container)
+        ):
             response = self.client.get(f'/env/show/{self.app.id}/')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['settings'], [])
 
     def test_show_env_ownership_check(self):
         """Non-owner is redirected to home by the owner_of_app decorator."""
-        other_user = User.objects.create_user('other', 'other@example.com', self.password)
+        other_user = User.objects.create_user(
+            'other', 'other@example.com', self.password
+        )
         self.client.force_login(other_user)
         response = self.client.get(f'/env/show/{self.app.id}/')
         self.assertRedirects(response, '/', fetch_redirect_response=False)
@@ -367,10 +407,14 @@ class ShowEnvTests(TestCase):
         mock_container = self._mock_container(output)
 
         self.login_verified()
-        with patch.object(App, 'container', new_callable=lambda: property(lambda self: mock_container)):
+        with patch.object(
+            App, 'container', new_callable=lambda: property(lambda self: mock_container)
+        ):
             response = self.client.get(f'/env/show/{self.app.id}/')
         settings = {s['key']: s['value'] for s in response.context['settings']}
-        self.assertEqual(settings['INSTALLED_APPS'], ['django.contrib.admin', 'django.contrib.auth'])
+        self.assertEqual(
+            settings['INSTALLED_APPS'], ['django.contrib.admin', 'django.contrib.auth']
+        )
 
     def test_show_env_tuple_in_setting(self):
         """Tuple values in settings are preserved."""
@@ -378,19 +422,25 @@ class ShowEnvTests(TestCase):
         mock_container = self._mock_container(output)
 
         self.login_verified()
-        with patch.object(App, 'container', new_callable=lambda: property(lambda self: mock_container)):
+        with patch.object(
+            App, 'container', new_callable=lambda: property(lambda self: mock_container)
+        ):
             response = self.client.get(f'/env/show/{self.app.id}/')
         settings = {s['key']: s['value'] for s in response.context['settings']}
         self.assertEqual(settings['TIME_ZONE'], ('UTC',))
 
     def test_show_env_secret_in_nested_list(self):
         """Secret values inside nested lists are masked."""
-        AppEnvVar.objects.create(env=self.env, key='TOKEN', value='hidden_token', secret=True)
+        AppEnvVar.objects.create(
+            env=self.env, key='TOKEN', value='hidden_token', secret=True
+        )
         output = b"MY_LIST = ['visible', 'hidden_token', 'also_visible']\n"
         mock_container = self._mock_container(output)
 
         self.login_verified()
-        with patch.object(App, 'container', new_callable=lambda: property(lambda self: mock_container)):
+        with patch.object(
+            App, 'container', new_callable=lambda: property(lambda self: mock_container)
+        ):
             response = self.client.get(f'/env/show/{self.app.id}/')
         settings = {s['key']: s['value'] for s in response.context['settings']}
         self.assertEqual(settings['MY_LIST'], ['visible', '****', 'also_visible'])
@@ -405,7 +455,9 @@ class ShowEnvTests(TestCase):
         mock_container = self._mock_container(output)
 
         self.login_verified()
-        with patch.object(App, 'container', new_callable=lambda: property(lambda self: mock_container)):
+        with patch.object(
+            App, 'container', new_callable=lambda: property(lambda self: mock_container)
+        ):
             response = self.client.get(f'/env/show/{self.app.id}/')
         self.assertEqual(response.status_code, 200)
         settings = {s['key']: s['value'] for s in response.context['settings']}
@@ -418,7 +470,9 @@ class ShowEnvTests(TestCase):
         mock_container = self._mock_container(output)
 
         self.login_verified()
-        with patch.object(App, 'container', new_callable=lambda: property(lambda self: mock_container)):
+        with patch.object(
+            App, 'container', new_callable=lambda: property(lambda self: mock_container)
+        ):
             response = self.client.get(f'/env/show/{self.app.id}/')
         self.assertEqual(response.status_code, 200)
 

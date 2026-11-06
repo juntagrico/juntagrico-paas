@@ -8,10 +8,28 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.mail import get_connection
 from django.core.validators import RegexValidator
-from django.forms import CharField, TextInput, CheckboxInput, EmailField, BooleanField, RadioSelect, Select, \
-    PasswordInput, ChoiceField, inlineformset_factory
+from django.forms import (
+    CharField,
+    TextInput,
+    CheckboxInput,
+    EmailField,
+    BooleanField,
+    RadioSelect,
+    Select,
+    PasswordInput,
+    ChoiceField,
+    inlineformset_factory,
+)
 
-from adminconsole.models import AppEnv, App, Domain, AppCronjob, AppEnvVar, get_available_cronjobs, get_python_version_choices
+from adminconsole.models import (
+    AppEnv,
+    App,
+    Domain,
+    AppCronjob,
+    AppEnvVar,
+    get_available_cronjobs,
+    get_python_version_choices,
+)
 from adminconsole.util import generate_secret_key
 from adminconsole.util.git import validate_branch
 
@@ -20,7 +38,9 @@ SMTP_CHECK_PORTS = (25, 465, 587, 2525)
 
 
 def is_public_address(address):
-    ip = ipaddress.ip_address(address.split('%')[0])  # strip the scope of IPv6 link-local addresses
+    ip = ipaddress.ip_address(
+        address.split('%')[0]
+    )  # strip the scope of IPv6 link-local addresses
     if ip.version == 6 and ip.ipv4_mapped:
         ip = ip.ipv4_mapped
     return ip.is_global
@@ -37,7 +57,10 @@ def smtp_target_error(host, port):
     if port not in allowed_ports:
         return f'Die Verbindung kann nur für die Ports {", ".join(map(str, allowed_ports))} geprüft werden.'
     try:
-        addresses = {info[4][0] for info in socket.getaddrinfo(host, port, proto=socket.IPPROTO_TCP)}
+        addresses = {
+            info[4][0]
+            for info in socket.getaddrinfo(host, port, proto=socket.IPPROTO_TCP)
+        }
     except (OSError, UnicodeError):
         return 'Der E-Mail-Server wurde nicht gefunden. Prüfe den Servernamen.'
     if not addresses or not all(is_public_address(address) for address in addresses):
@@ -46,13 +69,17 @@ def smtp_target_error(host, port):
 
 
 def smtp_connection_error(connection):
-    """ connects to the mail server, returns a message for the user if it fails or None """
+    """connects to the mail server, returns a message for the user if it fails or None"""
     try:
         connection.open()
         connection.close()
     except smtplib.SMTPAuthenticationError as e:
         # the answer of a public mail server, often with a hint (e.g. about app passwords)
-        answer = e.smtp_error.decode('utf-8', 'replace') if isinstance(e.smtp_error, bytes) else str(e.smtp_error)
+        answer = (
+            e.smtp_error.decode('utf-8', 'replace')
+            if isinstance(e.smtp_error, bytes)
+            else str(e.smtp_error)
+        )
         return f'Anmeldung fehlgeschlagen. Antwort des Servers: {answer[:300]}'
     except (ssl.SSLError, smtplib.SMTPNotSupportedError):
         return 'TLS/SSL-Verbindung fehlgeschlagen. Prüfe die Einstellung TLS bzw. SSL und den Port.'
@@ -68,37 +95,69 @@ def smtp_connection_error(connection):
 
 class ProjectForm(forms.Form):
     project_slug = CharField(
-        label='App Name', max_length=100,
+        label='App Name',
+        max_length=100,
         validators=[RegexValidator(regex='^[a-z0-9]+$')],
-        widget=TextInput(attrs={'readonly': 'readonly', 'class': 'form-control'})
+        widget=TextInput(attrs={'readonly': 'readonly', 'class': 'form-control'}),
     )
     organisation_name = CharField(
-        label='Name der Genossenschaft', max_length=100,
-        widget=TextInput(attrs={'class': 'form-control'})
+        label='Name der Genossenschaft',
+        max_length=100,
+        widget=TextInput(attrs={'class': 'form-control'}),
     )
-    street = CharField(label='Strasse', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))
-    number = CharField(label='Nummer', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))
-    zip = CharField(label='PLZ', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))
-    city = CharField(label='Stadt', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))
+    street = CharField(
+        label='Strasse',
+        max_length=100,
+        widget=TextInput(attrs={'class': 'form-control'}),
+    )
+    number = CharField(
+        label='Nummer',
+        max_length=100,
+        widget=TextInput(attrs={'class': 'form-control'}),
+    )
+    zip = CharField(
+        label='PLZ', max_length=100, widget=TextInput(attrs={'class': 'form-control'})
+    )
+    city = CharField(
+        label='Stadt', max_length=100, widget=TextInput(attrs={'class': 'form-control'})
+    )
     extra = CharField(
-        label='AdressZusatz', max_length=100, required=False,
-        widget=TextInput(attrs={'class': 'form-control'})
+        label='AdressZusatz',
+        max_length=100,
+        required=False,
+        widget=TextInput(attrs={'class': 'form-control'}),
     )
-    PC = CharField(label='PC Kontonummer', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))
-    IBAN = CharField(label='IBAN', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))
-    BIC = CharField(label='BIC', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))
-    NAME = CharField(label='Name der Bank', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))
+    PC = CharField(
+        label='PC Kontonummer',
+        max_length=100,
+        widget=TextInput(attrs={'class': 'form-control'}),
+    )
+    IBAN = CharField(
+        label='IBAN', max_length=100, widget=TextInput(attrs={'class': 'form-control'})
+    )
+    BIC = CharField(
+        label='BIC', max_length=100, widget=TextInput(attrs={'class': 'form-control'})
+    )
+    NAME = CharField(
+        label='Name der Bank',
+        max_length=100,
+        widget=TextInput(attrs={'class': 'form-control'}),
+    )
     ESR = CharField(
-        label='ESR falls vorhanden', max_length=100, required=False,
-        widget=TextInput(attrs={'class': 'form-control'})
+        label='ESR falls vorhanden',
+        max_length=100,
+        required=False,
+        widget=TextInput(attrs={'class': 'form-control'}),
     )
     info_email = CharField(
-        label='info email adresse', max_length=100,
-        widget=TextInput(attrs={'class': 'form-control'})
+        label='info email adresse',
+        max_length=100,
+        widget=TextInput(attrs={'class': 'form-control'}),
     )
     share_price = CharField(
-        label='Preis eines Anteilscheines', max_length=100,
-        widget=TextInput(attrs={'class': 'form-control'})
+        label='Preis eines Anteilscheines',
+        max_length=100,
+        widget=TextInput(attrs={'class': 'form-control'}),
     )
 
 
@@ -111,52 +170,76 @@ class EnvForm(forms.ModelForm):
     ]
 
     clear_email_password = BooleanField(
-        label='Gespeichertes Passwort entfernen', required=False,
+        label='Gespeichertes Passwort entfernen',
+        required=False,
         help_text='Für E-Mail-Server ohne Anmeldung.',
-        widget=CheckboxInput(attrs={'class': 'form-check-input'})
+        widget=CheckboxInput(attrs={'class': 'form-check-input'}),
     )
     new_secret_key = BooleanField(
-        label='Neuen geheimen Schlüssel erzeugen', required=False,
+        label='Neuen geheimen Schlüssel erzeugen',
+        required=False,
         help_text='Nur im Notfall, z. B. wenn der Schlüssel bekannt wurde. Alle Benutzer der Instanz werden abgemeldet.',
-        widget=CheckboxInput(attrs={'class': 'form-check-input'})
+        widget=CheckboxInput(attrs={'class': 'form-check-input'}),
     )
     juntagrico_email_port = ChoiceField(
         label='JUNTAGRICO_EMAIL_PORT',
         widget=Select(attrs={'class': 'form-control'}),
         choices=EMAIL_PORT_CHOICES,
         initial='25',
-        help_text='Postausgansserver Port'
+        help_text='Postausgansserver Port',
     )
     juntagrico_email_security = ChoiceField(
         label='Verschlüsselung',
         widget=Select(attrs={'class': 'form-control'}),
         choices=EMAIL_SECURITY_CHOICES,
         initial='none',
-        help_text='Verschlüsselung der Verbindung zum E-Mail-Server'
+        help_text='Verschlüsselung der Verbindung zum E-Mail-Server',
     )
 
-    field_order = ['juntagrico_admin_email', 'juntagrico_email_user', 'juntagrico_email_password',
-                   'clear_email_password', 'juntagrico_email_host', 'juntagrico_email_port', 'juntagrico_email_security',
-                   'juntagrico_secret_key', 'new_secret_key']
+    field_order = [
+        'juntagrico_admin_email',
+        'juntagrico_email_user',
+        'juntagrico_email_password',
+        'clear_email_password',
+        'juntagrico_email_host',
+        'juntagrico_email_port',
+        'juntagrico_email_security',
+        'juntagrico_secret_key',
+        'new_secret_key',
+    ]
 
     class Meta:
         model = AppEnv
-        fields = ['juntagrico_admin_email',
-                  'juntagrico_email_user',
-                  'juntagrico_email_password',
-                  'juntagrico_email_host',
-                  'juntagrico_email_port',
-                  'juntagrico_secret_key']
+        fields = [
+            'juntagrico_admin_email',
+            'juntagrico_email_user',
+            'juntagrico_email_password',
+            'juntagrico_email_host',
+            'juntagrico_email_port',
+            'juntagrico_secret_key',
+        ]
         # Secrets are never sent to the browser. "new-password" keeps browsers from filling in the saved password
         # of the console, which would otherwise become the password of the mail account.
         widgets = {
             'juntagrico_admin_email': TextInput(attrs={'class': 'form-control'}),
-            'juntagrico_email_user': TextInput(attrs={'class': 'form-control', 'autocomplete': 'off'}),
+            'juntagrico_email_user': TextInput(
+                attrs={'class': 'form-control', 'autocomplete': 'off'}
+            ),
             'juntagrico_email_password': PasswordInput(
-                attrs={'class': 'form-control', 'autocomplete': 'new-password', 'placeholder': '(unverändert)'}),
+                attrs={
+                    'class': 'form-control',
+                    'autocomplete': 'new-password',
+                    'placeholder': '(unverändert)',
+                }
+            ),
             'juntagrico_email_host': TextInput(attrs={'class': 'form-control'}),
             'juntagrico_secret_key': PasswordInput(
-                attrs={'class': 'form-control', 'autocomplete': 'new-password', 'placeholder': '(unverändert)'}),
+                attrs={
+                    'class': 'form-control',
+                    'autocomplete': 'new-password',
+                    'placeholder': '(unverändert)',
+                }
+            ),
         }
 
     def __init__(self, *args, **kwargs):
@@ -176,7 +259,9 @@ class EnvForm(forms.ModelForm):
         # an empty field keeps the stored value
         password = self.fields['juntagrico_email_password']
         if self.instance.juntagrico_email_password:
-            password.help_text = 'Ein Passwort ist gespeichert. Leer lassen, um es zu behalten.'
+            password.help_text = (
+                'Ein Passwort ist gespeichert. Leer lassen, um es zu behalten.'
+            )
         else:
             password.help_text = 'Kein Passwort gespeichert.'
         secret_key = self.fields['juntagrico_secret_key']
@@ -195,7 +280,9 @@ class EnvForm(forms.ModelForm):
         if cleaned_data.get('clear_email_password'):
             cleaned_data['juntagrico_email_password'] = ''
         elif not cleaned_data.get('juntagrico_email_password'):
-            cleaned_data['juntagrico_email_password'] = self.instance.juntagrico_email_password
+            cleaned_data['juntagrico_email_password'] = (
+                self.instance.juntagrico_email_password
+            )
         if cleaned_data.get('new_secret_key'):
             cleaned_data['juntagrico_secret_key'] = generate_secret_key()
         elif not cleaned_data.get('juntagrico_secret_key'):
@@ -229,16 +316,18 @@ class EnvForm(forms.ModelForm):
         error = smtp_target_error(host, port)
         if error:
             return error
-        return smtp_connection_error(get_connection(
-            backend='django.core.mail.backends.smtp.EmailBackend',
-            host=host,
-            port=port,
-            username=cleaned_data.get('juntagrico_email_user'),
-            password=cleaned_data.get('juntagrico_email_password'),
-            use_tls=use_tls,
-            use_ssl=use_ssl,
-            timeout=5,
-        ))
+        return smtp_connection_error(
+            get_connection(
+                backend='django.core.mail.backends.smtp.EmailBackend',
+                host=host,
+                port=port,
+                username=cleaned_data.get('juntagrico_email_user'),
+                password=cleaned_data.get('juntagrico_email_password'),
+                use_tls=use_tls,
+                use_ssl=use_ssl,
+                timeout=5,
+            )
+        )
 
 
 class AppEnvVarForm(forms.ModelForm):
@@ -248,7 +337,9 @@ class AppEnvVarForm(forms.ModelForm):
         model = AppEnvVar
         fields = ['key', 'value', 'secret']
         widgets = {
-            'key': TextInput(attrs={'class': 'form-control', 'placeholder': 'Schlüssel'}),
+            'key': TextInput(
+                attrs={'class': 'form-control', 'placeholder': 'Schlüssel'}
+            ),
             'value': TextInput(attrs={'class': 'form-control', 'placeholder': 'Wert'}),
             'secret': CheckboxInput(attrs={'class': 'form-check-input'}),
         }
@@ -256,26 +347,46 @@ class AppEnvVarForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # For secret fields, mask the value if it's an existing entry with a non-empty value
-        if self.instance and self.instance.pk and self.instance.secret and self.instance.value:
+        if (
+            self.instance
+            and self.instance.pk
+            and self.instance.secret
+            and self.instance.value
+        ):
             self.fields['value'].widget = PasswordInput(
-                attrs={'class': 'form-control', 'autocomplete': 'new-password', 'placeholder': '(unverändert)'}
+                attrs={
+                    'class': 'form-control',
+                    'autocomplete': 'new-password',
+                    'placeholder': '(unverändert)',
+                }
             )
-            self.fields['value'].help_text = 'Leer lassen, um den gespeicherten Wert zu behalten.'
+            self.fields[
+                'value'
+            ].help_text = 'Leer lassen, um den gespeicherten Wert zu behalten.'
             # fields with a callable default render their initial value in a hidden input
             self.fields['value'].show_hidden_initial = False
         elif self.instance and self.instance.pk and self.instance.secret:
             # Secret field exists but value is empty
             self.fields['value'].help_text = 'Geheimer Wert'
-        if self.is_bound and self.instance and self.instance.pk and self.instance.secret:
+        if (
+            self.is_bound
+            and self.instance
+            and self.instance.pk
+            and self.instance.secret
+        ):
             self.fields['value'].widget.render_value = True
         # Style the DELETE checkbox with Bootstrap form-check-input class
         if 'DELETE' in self.fields:
-            self.fields['DELETE'].widget = CheckboxInput(attrs={'class': 'form-check-input'})
+            self.fields['DELETE'].widget = CheckboxInput(
+                attrs={'class': 'form-check-input'}
+            )
 
     def clean_key(self):
         key = self.cleaned_data.get('key', '').strip()
         if key and not key.replace('_', '').replace('-', '').isalnum():
-            raise ValidationError('Schlüssel darf nur Buchstaben, Zahlen, Unterstriche und Bindestriche enthalten.')
+            raise ValidationError(
+                'Schlüssel darf nur Buchstaben, Zahlen, Unterstriche und Bindestriche enthalten.'
+            )
         return key
 
     def clean(self):
@@ -287,7 +398,12 @@ class AppEnvVarForm(forms.ModelForm):
         if not self.instance.pk and not key:
             return cleaned_data
         # Once a secret has a value, it cannot be unmarked to prevent exposing the stored value
-        if self.instance.pk and self.instance.secret and self.instance.value and not secret:
+        if (
+            self.instance.pk
+            and self.instance.secret
+            and self.instance.value
+            and not secret
+        ):
             cleaned_data['secret'] = True
         # For existing secret fields, keep the old value if nothing new is entered
         if self.instance.pk and self.instance.secret and not value:
@@ -309,35 +425,51 @@ class AppEnvVarFormSet(forms.BaseInlineFormSet):
 
 
 AppEnvVarFormSet = inlineformset_factory(
-    AppEnv, AppEnvVar, form=AppEnvVarForm,
-    extra=4, can_delete=True, max_num=50,
-    formset=AppEnvVarFormSet
+    AppEnv,
+    AppEnvVar,
+    form=AppEnvVarForm,
+    extra=4,
+    can_delete=True,
+    max_num=50,
+    formset=AppEnvVarFormSet,
 )
 
 
 class AppForm(forms.ModelForm):
     def clean_name(self):
-        name = self.cleaned_data["name"]
+        name = self.cleaned_data['name']
         if '-' in name:
-            raise ValidationError("Name darf nur Kleinbuchstaben und Zahlen enthalten.")
+            raise ValidationError('Name darf nur Kleinbuchstaben und Zahlen enthalten.')
         return name
 
     class Meta:
         model = App
         fields = ['name', 'managed']
         widgets = {
-            'name': TextInput(attrs={'class': 'form-control', 'aria-describedby': 'app_name_help'}),
-            'managed': CheckboxInput(attrs={'class': 'switch', 'aria-describedby': 'managed_help'})
+            'name': TextInput(
+                attrs={'class': 'form-control', 'aria-describedby': 'app_name_help'}
+            ),
+            'managed': CheckboxInput(
+                attrs={'class': 'switch', 'aria-describedby': 'managed_help'}
+            ),
         }
 
 
 class OverwriteAppForm(forms.Form):
-    overwrite = BooleanField(label='Überschreiben', required=False, initial=False, widget=RadioSelect(
-        choices=[
-            (False, 'Nicht Überschreiben! Das Repo enthält bereits eine Juntagrico app.'),
-            (True, 'Überschreibe alles im Repo mit einer neuen Juntagrico app.'),
-        ]
-    ))
+    overwrite = BooleanField(
+        label='Überschreiben',
+        required=False,
+        initial=False,
+        widget=RadioSelect(
+            choices=[
+                (
+                    False,
+                    'Nicht Überschreiben! Das Repo enthält bereits eine Juntagrico app.',
+                ),
+                (True, 'Überschreibe alles im Repo mit einer neuen Juntagrico app.'),
+            ]
+        ),
+    )
 
 
 class DomainForm(forms.ModelForm):
@@ -360,7 +492,11 @@ class DomainForm(forms.ModelForm):
 
 
 class BranchForm(forms.Form):
-    branch = CharField(label='Branch', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))
+    branch = CharField(
+        label='Branch',
+        max_length=100,
+        widget=TextInput(attrs={'class': 'form-control'}),
+    )
 
 
 class PythonVersionForm(forms.ModelForm):
@@ -374,6 +510,7 @@ class PythonVersionForm(forms.ModelForm):
 
 class RedeployForm(forms.Form):
     """Form for redeploy where python version, branch, and wsgi path can be adjusted before deploying."""
+
     git_clone_url = CharField(
         label='Repository',
         required=False,
@@ -385,11 +522,14 @@ class RedeployForm(forms.Form):
         widget=Select(attrs={'class': 'form-control'}),
     )
     branch = CharField(
-        label='Branch', max_length=100,
+        label='Branch',
+        max_length=100,
         widget=TextInput(attrs={'class': 'form-control'}),
     )
     wsgi = CharField(
-        label='WSGI Pfad', max_length=100, required=False,
+        label='WSGI Pfad',
+        max_length=100,
+        required=False,
         widget=TextInput(attrs={'class': 'form-control'}),
     )
     copy_data = BooleanField(
@@ -423,7 +563,11 @@ class RedeployForm(forms.Form):
 
 
 class ProfileForm(forms.Form):
-    email = EmailField(label='email adresse', max_length=100, widget=TextInput(attrs={'class': 'form-control'}))
+    email = EmailField(
+        label='email adresse',
+        max_length=100,
+        widget=TextInput(attrs={'class': 'form-control'}),
+    )
 
 
 class CronjobForm(forms.Form):
@@ -497,7 +641,9 @@ class CronjobForm(forms.Form):
 
         # Delete unselected cronjobs (but never delete required ones)
         required_ids = {cj['id'] for cj in self.required}
-        self.app.cronjobs.exclude(cronjob_id__in=selected_ids).exclude(cronjob_id__in=required_ids).delete()
+        self.app.cronjobs.exclude(cronjob_id__in=selected_ids).exclude(
+            cronjob_id__in=required_ids
+        ).delete()
 
         # Create or update selected cronjobs with timing values
         all_cronjobs = [self.required] + list(self.groups.values()) + [self.standalone]
@@ -509,14 +655,18 @@ class CronjobForm(forms.Form):
                 defaults = {}
                 if timing == 'hourly':
                     minute = self.data.get(f'minute_{cj_def["id"]}')
-                    defaults['minute'] = int(minute) if minute else self.get_default_minute(cj_def)
+                    defaults['minute'] = (
+                        int(minute) if minute else self.get_default_minute(cj_def)
+                    )
                 elif timing == 'daily':
                     hour = self.data.get(f'hour_{cj_def["id"]}')
                     minute = self.data.get(f'minute_{cj_def["id"]}')
-                    defaults['hour'] = int(hour) if hour else cj_def.get('default_hour', 23)
-                    defaults['minute'] = int(minute) if minute else self.get_default_minute(cj_def)
+                    defaults['hour'] = (
+                        int(hour) if hour else cj_def.get('default_hour', 23)
+                    )
+                    defaults['minute'] = (
+                        int(minute) if minute else self.get_default_minute(cj_def)
+                    )
                 AppCronjob.objects.update_or_create(
-                    app=self.app,
-                    cronjob_id=cj_def['id'],
-                    defaults=defaults
+                    app=self.app, cronjob_id=cj_def['id'], defaults=defaults
                 )

@@ -6,7 +6,11 @@ import docker
 from docker.errors import NotFound, ContainerError
 from docker.models.containers import ExecResult
 
-from adminconsole.util.network import apps_memory_limit, apps_network, ensure_apps_network
+from adminconsole.util.network import (
+    apps_memory_limit,
+    apps_network,
+    ensure_apps_network,
+)
 
 
 def get_container_env_and_network(app, client):
@@ -19,7 +23,7 @@ def get_container_env_and_network(app, client):
     environment = list(app.env.get_lines())
     if app.isolated_network:
         network = ensure_apps_network(client)
-        gateway = apps_network()["gateway"]
+        gateway = apps_network()['gateway']
         environment.append(f'JUNTAGRICO_DATABASE_HOST={gateway}')
         network_kwargs = {'network': network.name}
     else:
@@ -65,9 +69,9 @@ def _run_migration_in_temp_container(app, name):
         app, name + '-migrate', 'python -m manage migrate --noinput', volumes=volumes
     )
     if output:
-        print(output.decode("utf-8", errors="replace"), end="", flush=True)
+        print(output.decode('utf-8', errors='replace'), end='', flush=True)
     if stderr:
-        print(stderr.decode("utf-8", errors="replace"), end="", flush=True)
+        print(stderr.decode('utf-8', errors='replace'), end='', flush=True)
     print(f'Return {exit_code}', flush=True)
     return exit_code
 
@@ -96,9 +100,9 @@ def run_parallel_steps(app, name):
     def _print_output(code, out, err):
         """Print buffered stdout/stderr and return code."""
         if out:
-            print(out.decode("utf-8", errors="replace"), end="", flush=True)
+            print(out.decode('utf-8', errors='replace'), end='', flush=True)
         if err:
-            print(err.decode("utf-8", errors="replace"), end="", flush=True)
+            print(err.decode('utf-8', errors='replace'), end='', flush=True)
         print(f'Return {code}', flush=True)
 
     # Prepare collectstatic arguments
@@ -111,13 +115,19 @@ def run_parallel_steps(app, name):
     # Submit all work as Futures — they start immediately
     with ThreadPoolExecutor(max_workers=3) as executor:
         migrate_future = executor.submit(
-            _run_in_temp_container, app, name + '-migrate',
-            'python -m manage migrate --noinput', volumes={}
+            _run_in_temp_container,
+            app,
+            name + '-migrate',
+            'python -m manage migrate --noinput',
+            volumes={},
         )
         collectstatic_future = executor.submit(
-            _run_in_temp_container, app, name + '-collectstatic',
+            _run_in_temp_container,
+            app,
+            name + '-collectstatic',
             'python -m manage collectstatic --noinput -c',
-            volumes=collectstatic_volumes, user=collectstatic_user,
+            volumes=collectstatic_volumes,
+            user=collectstatic_user,
         )
         restart_future = executor.submit(_do_restart, app, name)
 
@@ -142,20 +152,39 @@ def run_parallel_steps(app, name):
     return [migrate_exit, collectstatic_exit, restart_exit]
 
 
-def exec_run(container, cmd, stdout=True, stderr=True, stdin=False, tty=False,
-             privileged=False, user='', detach=False, stream=False,
-             socket=False, environment=None, workdir=None, demux=False):
+def exec_run(
+    container,
+    cmd,
+    stdout=True,
+    stderr=True,
+    stdin=False,
+    tty=False,
+    privileged=False,
+    user='',
+    detach=False,
+    stream=False,
+    socket=False,
+    environment=None,
+    workdir=None,
+    demux=False,
+):
     """
     workaround to get result code when using exec_run with stream=true
     """
     resp = container.client.api.exec_create(
-        container.id, cmd, stdout=stdout, stderr=stderr, stdin=stdin, tty=tty,
-        privileged=privileged, user=user, environment=environment,
+        container.id,
+        cmd,
+        stdout=stdout,
+        stderr=stderr,
+        stdin=stdin,
+        tty=tty,
+        privileged=privileged,
+        user=user,
+        environment=environment,
         workdir=workdir,
     )
     exec_output = container.client.api.exec_start(
-        resp['Id'], detach=detach, tty=tty, stream=stream, socket=socket,
-        demux=demux
+        resp['Id'], detach=detach, tty=tty, stream=stream, socket=socket, demux=demux
     )
 
     def exit_code():
@@ -165,8 +194,7 @@ def exec_run(container, cmd, stdout=True, stderr=True, stdin=False, tty=False,
         return ExecResult(exit_code, exec_output)
 
     return ExecResult(
-        container.client.api.exec_inspect(resp['Id'])['ExitCode'],
-        exec_output
+        container.client.api.exec_inspect(resp['Id'])['ExitCode'], exec_output
     )
 
 
@@ -204,12 +232,14 @@ def create_container(app):
 
     environment, network_options = get_container_env_and_network(app, client)
     if app.isolated_network:
-        gateway = apps_network()["gateway"]
+        gateway = apps_network()['gateway']
         network_options['ports'] = {f'{app.port}/tcp': ('127.0.0.1', app.port)}
-        network_options['command'] = (
-            ['gunicorn', '--no-control-socket', '--forwarded-allow-ips', gateway]
-            + ['--bind', f'0.0.0.0:{app.port}', '-t', '600', app.wsgi_path]
-        )
+        network_options['command'] = [
+            'gunicorn',
+            '--no-control-socket',
+            '--forwarded-allow-ips',
+            gateway,
+        ] + ['--bind', f'0.0.0.0:{app.port}', '-t', '600', app.wsgi_path]
         network_options['mem_limit'] = apps_memory_limit()
 
     labels = []
@@ -232,5 +262,5 @@ def create_container(app):
         labels=labels,
         **network_options,
         restart_policy={'Name': 'always'},
-        volumes=volumes
+        volumes=volumes,
     )

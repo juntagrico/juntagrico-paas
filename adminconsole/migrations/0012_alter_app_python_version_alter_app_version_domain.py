@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('adminconsole', '0011_app_run_until_alter_app_name'),
     ]
@@ -15,7 +14,19 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='app',
             name='python_version',
-            field=models.CharField(blank=True, choices=[('3.9', '3.9 (Nur mit Juntagrico < 2.0)'), ('3.10', '3.10'), ('3.11', '3.11'), ('3.12', '3.12 (Nur mit Juntagrico >= 2.0)'), ('3.13', '3.13 (Nur mit Juntagrico >= 2.0)'), ('3.14', '3.14 (Nur mit Juntagrico >= 2.0)')], max_length=100, verbose_name='python'),
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ('3.9', '3.9 (Nur mit Juntagrico < 2.0)'),
+                    ('3.10', '3.10'),
+                    ('3.11', '3.11'),
+                    ('3.12', '3.12 (Nur mit Juntagrico >= 2.0)'),
+                    ('3.13', '3.13 (Nur mit Juntagrico >= 2.0)'),
+                    ('3.14', '3.14 (Nur mit Juntagrico >= 2.0)'),
+                ],
+                max_length=100,
+                verbose_name='python',
+            ),
         ),
         migrations.AlterField(
             model_name='app',
@@ -25,9 +36,32 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Domain',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=100, unique=True, validators=[django.core.validators.DomainNameValidator()], verbose_name='name')),
-                ('app', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='domains', to='adminconsole.app')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'name',
+                    models.CharField(
+                        max_length=100,
+                        unique=True,
+                        validators=[django.core.validators.DomainNameValidator()],
+                        verbose_name='name',
+                    ),
+                ),
+                (
+                    'app',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='domains',
+                        to='adminconsole.app',
+                    ),
+                ),
             ],
         ),
     ]

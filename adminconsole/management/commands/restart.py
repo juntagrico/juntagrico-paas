@@ -5,8 +5,8 @@ from adminconsole.util.docker import create_container, stop_container
 
 
 class Command(BaseCommand):
-    """ v2 app command
-    """
+    """v2 app command"""
+
     def add_arguments(self, parser):
         parser.add_argument('app_name', nargs=1)
 

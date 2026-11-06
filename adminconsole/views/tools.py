@@ -28,16 +28,20 @@ def update_permissions(request, app_id):
     if result[0] == 0:
         for line in result[1].decode().split('\n'):
             if line.startswith('Delete permission: '):
-                delete_perms.append(line[len('Delete permission: '):])
+                delete_perms.append(line[len('Delete permission: ') :])
             if line.startswith('Rename permission: '):
-                rename_perms.append(line[len('Rename permission: '):])
+                rename_perms.append(line[len('Rename permission: ') :])
 
-    return render(request, 'app/update_permissions.html', {
-        'app': app,
-        'delete_perms': delete_perms,
-        'rename_perms': rename_perms,
-        'error': result[0],
-    })
+    return render(
+        request,
+        'app/update_permissions.html',
+        {
+            'app': app,
+            'delete_perms': delete_perms,
+            'rename_perms': rename_perms,
+            'error': result[0],
+        },
+    )
 
 
 @user_passes_test(lambda u: u.is_superuser)

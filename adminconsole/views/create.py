@@ -56,10 +56,14 @@ def overwrite_app(request, app_id):
         return redirect('ca-cookiecutter', app_id=app_id)
 
     # Otherwise ask what to do
-    return render(request, 'create/overwrite.html', {
-        'form': form,
-        'files': files,
-    })
+    return render(
+        request,
+        'create/overwrite.html',
+        {
+            'form': form,
+            'files': files,
+        },
+    )
 
 
 @owner_of_app
@@ -120,14 +124,19 @@ def init_domain(request, app_id):
     with open(app.log_file, 'wb') as out:
         proc = subprocess.Popen(
             [settings.PYTHON_BIN, '-m', 'manage', 'add_domain', domain.name],
-            stdout=out, stderr=out
+            stdout=out,
+            stderr=out,
         )
 
-    return render(request, 'generic/wait_next_submit.html', {
-        'step': 'Domain einrichten',
-        'pid': proc.pid,
-        'next': reverse('ca-init-cronjob', args=[app_id])
-    })
+    return render(
+        request,
+        'generic/wait_next_submit.html',
+        {
+            'step': 'Domain einrichten',
+            'pid': proc.pid,
+            'next': reverse('ca-init-cronjob', args=[app_id]),
+        },
+    )
 
 
 @owner_of_app
@@ -137,6 +146,7 @@ def init_cronjob(request, app_id):
 
     # Install default and required cronjobs for new apps
     from adminconsole.models import get_available_cronjobs
+
     available = get_available_cronjobs(app.name)
     for cj_def in available:
         if cj_def.get('default') or cj_def.get('required'):
@@ -150,22 +160,25 @@ def init_cronjob(request, app_id):
                 dm = cj_def.get('default_minute', 0)
                 defaults['minute'] = app.port % 60 if dm == 'spread' else dm
             AppCronjob.objects.get_or_create(
-                app=app,
-                cronjob_id=cj_def['id'],
-                defaults=defaults
+                app=app, cronjob_id=cj_def['id'], defaults=defaults
             )
 
     with open(app.log_file, 'wb') as out:
         proc = subprocess.Popen(
             [settings.PYTHON_BIN, '-m', 'manage', 'install_cronjob', app.name],
-            stdout=out, stderr=out
+            stdout=out,
+            stderr=out,
         )
 
-    return render(request, 'generic/wait_next_submit.html', {
-        'step': 'Cronjob einrichten',
-        'pid': proc.pid,
-        'next': reverse('ca-build', args=[app_id])
-    })
+    return render(
+        request,
+        'generic/wait_next_submit.html',
+        {
+            'step': 'Cronjob einrichten',
+            'pid': proc.pid,
+            'next': reverse('ca-build', args=[app_id]),
+        },
+    )
 
 
 @owner_of_app
@@ -176,15 +189,20 @@ def build(request, app_id):
     with open(app.log_file, 'wb') as out:
         proc = subprocess.Popen(
             [settings.PYTHON_BIN, '-m', 'manage', 'redeploy', app.name],
-            stdout=out, stderr=out
+            stdout=out,
+            stderr=out,
         )
 
-    return render(request, 'generic/wait_redeploy_submit.html', {
-        'step': 'docker build und starten',
-        'url': reverse('progress', args=[app_id, proc.pid]),
-        'pid': proc.pid,
-        'next': reverse('ca-create-admin', args=[app.id])
-    })
+    return render(
+        request,
+        'generic/wait_redeploy_submit.html',
+        {
+            'step': 'docker build und starten',
+            'url': reverse('progress', args=[app_id, proc.pid]),
+            'pid': proc.pid,
+            'next': reverse('ca-create-admin', args=[app.id]),
+        },
+    )
 
 
 @owner_of_app
@@ -198,13 +216,15 @@ def create_admin(request, app_id):
     with open(app.log_file, 'wb') as out:
         proc = subprocess.Popen(
             [settings.PYTHON_BIN, '-m', 'manage', 'create_admin', app.name],
-            stdout=out, stderr=out, env={**os.environ, PASSWORD_ENV: password}
+            stdout=out,
+            stderr=out,
+            env={**os.environ, PASSWORD_ENV: password},
         )
 
     render_dict = {
         'title': 'Notiere dieses Passwort: ' + password,
         'step': 'Admin erstellen',
         'pid': proc.pid,
-        'next': reverse('overview', args=[app.id])
+        'next': reverse('overview', args=[app.id]),
     }
     return render(request, 'app/wait_next.html', render_dict)

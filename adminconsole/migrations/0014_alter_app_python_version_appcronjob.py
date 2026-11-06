@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('adminconsole', '0013_app_juntagrico_version'),
     ]
@@ -14,16 +13,52 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='app',
             name='python_version',
-            field=models.CharField(blank=True, choices=[('3.10', '3.10'), ('3.11', '3.11'), ('3.12', '3.12 (Nur mit Juntagrico >= 2.0)'), ('3.13', '3.13 (Nur mit Juntagrico >= 2.0)'), ('3.14', '3.14 (Nur mit Juntagrico >= 2.0)')], max_length=100, verbose_name='python'),
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ('3.10', '3.10'),
+                    ('3.11', '3.11'),
+                    ('3.12', '3.12 (Nur mit Juntagrico >= 2.0)'),
+                    ('3.13', '3.13 (Nur mit Juntagrico >= 2.0)'),
+                    ('3.14', '3.14 (Nur mit Juntagrico >= 2.0)'),
+                ],
+                max_length=100,
+                verbose_name='python',
+            ),
         ),
         migrations.CreateModel(
             name='AppCronjob',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('cronjob_id', models.CharField(max_length=100)),
-                ('minute', models.PositiveIntegerField(blank=True, help_text='Minute (0-59)', null=True)),
-                ('hour', models.PositiveIntegerField(blank=True, help_text='Hour (0-23)', null=True)),
-                ('app', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='cronjobs', to='adminconsole.app')),
+                (
+                    'minute',
+                    models.PositiveIntegerField(
+                        blank=True, help_text='Minute (0-59)', null=True
+                    ),
+                ),
+                (
+                    'hour',
+                    models.PositiveIntegerField(
+                        blank=True, help_text='Hour (0-23)', null=True
+                    ),
+                ),
+                (
+                    'app',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='cronjobs',
+                        to='adminconsole.app',
+                    ),
+                ),
             ],
             options={
                 'unique_together': {('app', 'cronjob_id')},

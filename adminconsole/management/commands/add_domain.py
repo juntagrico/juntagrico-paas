@@ -13,20 +13,31 @@ class Command(BaseCommand):
     # entry point used by manage.py
     def handle(self, *args, **options):
         for domain in Domain.objects.filter(name__in=options['domains']):
-            with open('/etc/nginx/sites-available/' + domain.name, "w") as domain_file:
-                domain_file.write(get_template('infra/domain.txt').render({
-                    'name': domain.app.name,
-                    'port': domain.app.port,
-                    'domain': domain.name,
-                }))
+            with open('/etc/nginx/sites-available/' + domain.name, 'w') as domain_file:
+                domain_file.write(
+                    get_template('infra/domain.txt').render({
+                        'name': domain.app.name,
+                        'port': domain.app.port,
+                        'domain': domain.name,
+                    })
+                )
 
             # activate site
-            proc = subprocess.run(['ln', '-sf', '/etc/nginx/sites-available/' + domain.name, '/etc/nginx/sites-enabled'],
-                                  stdout=subprocess.PIPE)
+            proc = subprocess.run(
+                [
+                    'ln',
+                    '-sf',
+                    '/etc/nginx/sites-available/' + domain.name,
+                    '/etc/nginx/sites-enabled',
+                ],
+                stdout=subprocess.PIPE,
+            )
             print(str(proc.stdout))
             # install ssl, the wrapper is the only command the user may run with sudo
-            proc = subprocess.run(['sudo', '/usr/local/sbin/juntagrico-certbot', domain.name],
-                                  stdout=subprocess.PIPE)
+            proc = subprocess.run(
+                ['sudo', '/usr/local/sbin/juntagrico-certbot', domain.name],
+                stdout=subprocess.PIPE,
+            )
             print(str(proc.stdout))
 
             print('Return', proc.returncode)

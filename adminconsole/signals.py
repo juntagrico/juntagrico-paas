@@ -12,5 +12,6 @@ def on_domain_delete(sender, instance, **kwargs):
     # remove related nginx config file
     subprocess.run(
         [settings.PYTHON_BIN, '-m', 'manage', 'remove_domain', instance.name],
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
     )

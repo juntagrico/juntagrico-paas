@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('adminconsole', '0004_auto_20180219_1108'),
     ]
@@ -14,16 +13,25 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='appenv',
             name='juntagrico_email_ssl',
-            field=models.BooleanField(default=False, verbose_name='JUNTAGRICO_EMAIL_SSL'),
+            field=models.BooleanField(
+                default=False, verbose_name='JUNTAGRICO_EMAIL_SSL'
+            ),
         ),
         migrations.AddField(
             model_name='appenv',
             name='juntagrico_email_tls',
-            field=models.BooleanField(default=False, verbose_name='JUNTAGRICO_EMAIL_TLS'),
+            field=models.BooleanField(
+                default=False, verbose_name='JUNTAGRICO_EMAIL_TLS'
+            ),
         ),
         migrations.AlterField(
             model_name='app',
             name='name',
-            field=models.CharField(max_length=100, unique=True, validators=[django.core.validators.RegexValidator(regex='^[a-z0-9]+$')], verbose_name='name'),
+            field=models.CharField(
+                max_length=100,
+                unique=True,
+                validators=[django.core.validators.RegexValidator(regex='^[a-z0-9]+$')],
+                verbose_name='name',
+            ),
         ),
     ]

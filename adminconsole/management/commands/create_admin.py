@@ -21,11 +21,12 @@ class Command(BaseCommand):
             raise CommandError(f'{PASSWORD_ENV} is not set')
 
         container = docker.from_env().containers.get(app_name)
-        result = container.exec_run([
-            'python', '-m', 'manage', 'createadmin', '--noinput'
-        ], environment={
-            'DJANGO_SUPERUSER_USERNAME': ADMIN_USERNAME,
-            'DJANGO_SUPERUSER_PASSWORD': password,
-            'DJANGO_SUPERUSER_EMAIL': 'admin@example.com',
-        })
+        result = container.exec_run(
+            ['python', '-m', 'manage', 'createadmin', '--noinput'],
+            environment={
+                'DJANGO_SUPERUSER_USERNAME': ADMIN_USERNAME,
+                'DJANGO_SUPERUSER_PASSWORD': password,
+                'DJANGO_SUPERUSER_EMAIL': 'admin@example.com',
+            },
+        )
         print(result[1])

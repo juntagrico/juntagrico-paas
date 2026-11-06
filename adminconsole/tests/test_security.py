@@ -32,18 +32,24 @@ TOKEN = 'gho_TestToken123'
 
 
 def git(*args, cwd):
-    return subprocess.run(['git', *args], capture_output=True, text=True, cwd=cwd, check=True).stdout.strip()
+    return subprocess.run(
+        ['git', *args], capture_output=True, text=True, cwd=cwd, check=True
+    ).stdout.strip()
 
 
 # The GitHub token must never be stored in an app repository, which is mounted into the app container.
-@modify_settings(MIDDLEWARE={'remove': ['adminconsole.middleware.RequireOTPMiddleware']})
+@modify_settings(
+    MIDDLEWARE={'remove': ['adminconsole.middleware.RequireOTPMiddleware']}
+)
 @override_settings(TEST_LOCALHOST=False)
 class GitCredentialTests(TestCase):
     def setUp(self):
         self.base = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, self.base, ignore_errors=True)
         for patcher in [
-            mock.patch.object(App, 'dir', new=property(lambda app: self.base / app.name)),
+            mock.patch.object(
+                App, 'dir', new=property(lambda app: self.base / app.name)
+            ),
             # git must not find a repository outside of the test directory
             mock.patch.dict('os.environ', {'GIT_CEILING_DIRECTORIES': str(self.base)}),
         ]:
@@ -61,8 +67,10 @@ class GitCredentialTests(TestCase):
     def test_auth_env_sends_token_only_to_github(self):
         env = github_auth_env(TOKEN)
         header = env['GIT_CONFIG_VALUE_0']
-        self.assertEqual(base64.b64decode(header.removeprefix('Authorization: Basic ')).decode(),
-                         f'{TOKEN}:x-oauth-basic')
+        self.assertEqual(
+            base64.b64decode(header.removeprefix('Authorization: Basic ')).decode(),
+            f'{TOKEN}:x-oauth-basic',
+        )
         # ask git itself which urls get the header
         for url, expected in [
             ('https://github.com/juntagrico/foo.git', header),
@@ -71,26 +79,47 @@ class GitCredentialTests(TestCase):
             ('http://github.com/juntagrico/foo.git', None),
         ]:
             with self.subTest(url=url):
-                proc = subprocess.run(['git', 'config', '--get-urlmatch', 'http.extraHeader', url],
-                                      capture_output=True, text=True, env=env)
+                proc = subprocess.run(
+                    ['git', 'config', '--get-urlmatch', 'http.extraHeader', url],
+                    capture_output=True,
+                    text=True,
+                    env=env,
+                )
                 self.assertEqual(proc.stdout.strip() or None, expected)
 
     def test_auth_env_disables_credential_helpers(self):
         # Replace system and global git config by a helper that hands out stored credentials.
         # The real credential store of the machine running the tests is never asked.
         config = self.base / 'gitconfig'
-        config.write_text('[credential]\n\thelper = "!f() { echo username=stored; echo password=StoredSecret; }; f"\n')
+        config.write_text(
+            '[credential]\n\thelper = "!f() { echo username=stored; echo password=StoredSecret; }; f"\n'
+        )
         request = 'protocol=https\nhost=example.invalid\n\n'
-        isolated = {'GIT_CONFIG_NOSYSTEM': '1', 'GIT_CONFIG_GLOBAL': str(config), 'GIT_TERMINAL_PROMPT': '0',
-                    'GCM_INTERACTIVE': 'never'}
+        isolated = {
+            'GIT_CONFIG_NOSYSTEM': '1',
+            'GIT_CONFIG_GLOBAL': str(config),
+            'GIT_TERMINAL_PROMPT': '0',
+            'GCM_INTERACTIVE': 'never',
+        }
         with mock.patch.dict('os.environ', isolated):
             # without the token environment, git asks the helper
-            proc = subprocess.run(['git', 'credential', 'fill'], input=request, capture_output=True, text=True,
-                                  cwd=self.base)
+            proc = subprocess.run(
+                ['git', 'credential', 'fill'],
+                input=request,
+                capture_output=True,
+                text=True,
+                cwd=self.base,
+            )
             self.assertIn('password=StoredSecret', proc.stdout)
             # with it, no helper is asked
-            proc = subprocess.run(['git', 'credential', 'fill'], input=request, capture_output=True, text=True,
-                                  cwd=self.base, env=github_auth_env(TOKEN))
+            proc = subprocess.run(
+                ['git', 'credential', 'fill'],
+                input=request,
+                capture_output=True,
+                text=True,
+                cwd=self.base,
+                env=github_auth_env(TOKEN),
+            )
             self.assertNotEqual(proc.returncode, 0)
             self.assertNotIn('StoredSecret', proc.stdout)
 
@@ -99,18 +128,32 @@ class GitCredentialTests(TestCase):
         source = self.base / 'source'
         source.mkdir()
         git('init', '-q', '-b', 'main', cwd=source)
-        git('-c', 'user.name=t', '-c', 'user.email=t@example.org', 'commit', '-q', '--allow-empty', '-m', 'init',
-            cwd=source)
+        git(
+            '-c',
+            'user.name=t',
+            '-c',
+            'user.email=t@example.org',
+            'commit',
+            '-q',
+            '--allow-empty',
+            '-m',
+            'init',
+            cwd=source,
+        )
         app = App.objects.create(name='foo', port=8010, git_clone_url=source.as_uri())
         app.dir.mkdir()
 
-        with mock.patch('adminconsole.util.git.subprocess.run', wraps=subprocess.run) as run:
+        with mock.patch(
+            'adminconsole.util.git.subprocess.run', wraps=subprocess.run
+        ) as run:
             self.assertTrue(git_clone(app, TOKEN))
 
         args, kwargs = run.call_args
         self.assertNotIn(TOKEN, ' '.join(args[0]))
         self.assertEqual(kwargs['env'], github_auth_env(TOKEN))
-        self.assertEqual(git('remote', 'get-url', 'origin', cwd=app.code_dir), source.as_uri())
+        self.assertEqual(
+            git('remote', 'get-url', 'origin', cwd=app.code_dir), source.as_uri()
+        )
         encoded = base64.b64encode(f'{TOKEN}:x-oauth-basic'.encode()).decode()
         for file in (app.code_dir / '.git').rglob('*'):
             if file.is_file():
@@ -119,16 +162,30 @@ class GitCredentialTests(TestCase):
                 self.assertNotIn(encoded.encode(), content, file)
 
     def test_clone_without_token(self):
-        app = App.objects.create(name='foo', port=8010, git_clone_url='https://github.com/a/b.git@main')
+        app = App.objects.create(
+            name='foo', port=8010, git_clone_url='https://github.com/a/b.git@main'
+        )
         with mock.patch('adminconsole.util.git.subprocess.run') as run:
             run.return_value = mock.MagicMock(returncode=0, stdout=b'')
             git_clone(app)
         args, kwargs = run.call_args
-        self.assertEqual(args[0], ['git', 'clone', '-b', 'main', '--depth=1', 'https://github.com/a/b.git@main', 'code'])
+        self.assertEqual(
+            args[0],
+            [
+                'git',
+                'clone',
+                '-b',
+                'main',
+                '--depth=1',
+                'https://github.com/a/b.git@main',
+                'code',
+            ],
+        )
         self.assertIsNone(kwargs['env'])
 
     def test_push_passes_token_only_to_git_push(self):
         from django.http import HttpResponse
+
         user = User.objects.create_user('owner')
         GitHubKey.objects.create(user=user, key=TOKEN)
         app = App.objects.create(name='foo', port=8010, user=user)
@@ -136,8 +193,10 @@ class GitCredentialTests(TestCase):
         git('init', '-q', cwd=app.code_dir)
         git('remote', 'add', 'origin', 'https://github.com/a/b.git', cwd=app.code_dir)
         self.client.force_login(user)
-        with mock.patch('subprocess.run') as run, \
-                mock.patch('adminconsole.views.git.render', return_value=HttpResponse()):
+        with (
+            mock.patch('subprocess.run') as run,
+            mock.patch('adminconsole.views.git.render', return_value=HttpResponse()),
+        ):
             run.return_value = mock.MagicMock(returncode=0, stdout=b'')
             self.client.post(f'/git/push/{app.id}/')
 
@@ -145,17 +204,23 @@ class GitCredentialTests(TestCase):
         # Only git push should have the auth env
         calls_with_env = [call for call in run.call_args_list if call.kwargs.get('env')]
         self.assertEqual(len(calls_with_env), 1, 'only git push should have env')
-        push_call, = calls_with_env
+        (push_call,) = calls_with_env
         self.assertEqual(tuple(push_call.args[0]), ('git', 'push'))
         for call in run.call_args_list:
             self.assertNotIn(TOKEN, ' '.join(call.args[0]))
 
     def test_remove_credentials(self):
         for url, expected in [
-            (f'https://{TOKEN}:x-oauth-basic@github.com/a/b.git', 'https://github.com/a/b.git'),
+            (
+                f'https://{TOKEN}:x-oauth-basic@github.com/a/b.git',
+                'https://github.com/a/b.git',
+            ),
             ('https://user@github.com/a/b.git', 'https://github.com/a/b.git'),
             ('https://github.com/a/b.git', 'https://github.com/a/b.git'),
-            ('git@github.com:a/b.git', 'git@github.com:a/b.git'),  # ssh, no credentials stored
+            (
+                'git@github.com:a/b.git',
+                'git@github.com:a/b.git',
+            ),  # ssh, no credentials stored
         ]:
             with self.subTest(url=url):
                 self.assertEqual(remove_credentials(url), expected)
@@ -175,21 +240,29 @@ class CertbotWrapperTests(TestCase):
         # replace certbot by a stub that records its arguments
         self.log = self.base / 'certbot-args'
         stub = self.base / 'certbot'
-        stub.write_text(f'#!/bin/sh\nprintf "%s\\n" "$@" > "{self.log.as_posix()}"\n', newline='\n')
+        stub.write_text(
+            f'#!/bin/sh\nprintf "%s\\n" "$@" > "{self.log.as_posix()}"\n', newline='\n'
+        )
         stub.chmod(0o755)
         script = (SETUP_DIR / 'juntagrico-certbot').read_text().replace('\r\n', '\n')
         self.assertIn('exec /usr/local/bin/certbot ', script)
         self.wrapper = self.base / 'juntagrico-certbot'
-        self.wrapper.write_text(script.replace('/usr/local/bin/certbot', stub.as_posix()), newline='\n')
+        self.wrapper.write_text(
+            script.replace('/usr/local/bin/certbot', stub.as_posix()), newline='\n'
+        )
 
     def run_wrapper(self, *args):
-        return subprocess.run(['sh', self.wrapper.as_posix(), *args], capture_output=True, text=True)
+        return subprocess.run(
+            ['sh', self.wrapper.as_posix(), *args], capture_output=True, text=True
+        )
 
     def test_valid_domain(self):
         proc = self.run_wrapper('foo.juntagrico.app')
         self.assertEqual(proc.returncode, 0, proc.stderr)
-        self.assertEqual(self.log.read_text().split('\n')[:-1],
-                         ['--nginx', '--redirect', '--keep', '-n', '-d', 'foo.juntagrico.app'])
+        self.assertEqual(
+            self.log.read_text().split('\n')[:-1],
+            ['--nginx', '--redirect', '--keep', '-n', '-d', 'foo.juntagrico.app'],
+        )
 
     def test_rejects_invalid_arguments(self):
         for args in [
@@ -219,43 +292,68 @@ class CertbotWrapperTests(TestCase):
     def test_add_domain_uses_wrapper(self):
         app = App.objects.create(name='foo', port=8010)
         app.domains.create(name='foo.example.org')
-        with mock.patch('adminconsole.management.commands.add_domain.open', mock.mock_open(), create=True), \
-                mock.patch('subprocess.run') as run:
+        with (
+            mock.patch(
+                'adminconsole.management.commands.add_domain.open',
+                mock.mock_open(),
+                create=True,
+            ),
+            mock.patch('subprocess.run') as run,
+        ):
             run.return_value = mock.MagicMock(stdout=b'')
             call_command('add_domain', 'foo.example.org')
-        self.assertIn(mock.call(['sudo', CERTBOT_WRAPPER, 'foo.example.org'], stdout=subprocess.PIPE),
-                      run.call_args_list)
+        self.assertIn(
+            mock.call(
+                ['sudo', CERTBOT_WRAPPER, 'foo.example.org'], stdout=subprocess.PIPE
+            ),
+            run.call_args_list,
+        )
 
 
 # New apps are generated from a pinned version of the template, without running its hooks.
-@modify_settings(MIDDLEWARE={'remove': ['adminconsole.middleware.RequireOTPMiddleware']})
+@modify_settings(
+    MIDDLEWARE={'remove': ['adminconsole.middleware.RequireOTPMiddleware']}
+)
 class CookiecutterTests(TestCase):
     def test_template_is_pinned_and_hooks_are_disabled(self):
         user = User.objects.create_user('owner')
         app = App.objects.create(name='foo', port=8010, user=user)
         self.client.force_login(user)
         data = {
-            'project_slug': 'foo', 'organisation_name': 'Solawi Foo', 'street': 'Weg', 'number': '1', 'zip': '8000',
-            'city': 'Zürich', 'PC': '80-1-1', 'IBAN': 'CH00', 'BIC': 'X', 'NAME': 'Bank', 'info_email': 'a@b.ch',
+            'project_slug': 'foo',
+            'organisation_name': 'Solawi Foo',
+            'street': 'Weg',
+            'number': '1',
+            'zip': '8000',
+            'city': 'Zürich',
+            'PC': '80-1-1',
+            'IBAN': 'CH00',
+            'BIC': 'X',
+            'NAME': 'Bank',
+            'info_email': 'a@b.ch',
             'share_price': '250',
         }
         with mock.patch('adminconsole.views.create.cookiecutter') as cookiecutter:
             self.client.post(f'/ck/form/{app.id}/', data)
 
         kwargs = cookiecutter.call_args.kwargs
-        self.assertRegex(kwargs['checkout'], '^[0-9a-f]{40}$')  # a commit, not a branch or tag that can move
+        self.assertRegex(
+            kwargs['checkout'], '^[0-9a-f]{40}$'
+        )  # a commit, not a branch or tag that can move
         self.assertIs(kwargs['accept_hooks'], False)
 
 
 def github_response(payload):
-    """ simulated response of GitHub's token endpoint """
+    """simulated response of GitHub's token endpoint"""
     response = mock.MagicMock()
     response.__enter__.return_value = BytesIO(json.dumps(payload).encode())
     return response
 
 
 # The OAuth callback must only accept answers to a request started by the same session (state parameter).
-@modify_settings(MIDDLEWARE={'remove': ['adminconsole.middleware.RequireOTPMiddleware']})
+@modify_settings(
+    MIDDLEWARE={'remove': ['adminconsole.middleware.RequireOTPMiddleware']}
+)
 @override_settings(GITHUB_CLIENT_ID='client-id', GITHUB_CLIENT_SECRET='client-secret')
 class GitHubOAuthTests(TestCase):
     def setUp(self):
@@ -264,10 +362,13 @@ class GitHubOAuthTests(TestCase):
         patcher = mock.patch('adminconsole.views.git.r.urlopen')
         self.urlopen = patcher.start()
         self.addCleanup(patcher.stop)
-        self.urlopen.return_value = github_response({'access_token': TOKEN, 'scope': 'public_repo'})
+        self.urlopen.return_value = github_response({
+            'access_token': TOKEN,
+            'scope': 'public_repo',
+        })
 
     def start(self):
-        """ starts the OAuth flow and returns the state sent to GitHub """
+        """starts the OAuth flow and returns the state sent to GitHub"""
         response = self.client.get('/github/request')
         query = parse_qs(urlsplit(response['Location']).query)
         self.assertEqual(query['client_id'], ['client-id'])
@@ -312,51 +413,85 @@ class GitHubOAuthTests(TestCase):
 
         # the state can be used only once
         self.urlopen.reset_mock()
-        self.assert_rejected(self.client.get('/github/callback', {'code': 'c', 'state': state}))
+        self.assert_rejected(
+            self.client.get('/github/callback', {'code': 'c', 'state': state})
+        )
 
     def test_token_request(self):
         state = self.start()
         self.client.get('/github/callback', {'code': 'the-code', 'state': state})
-        request, = self.urlopen.call_args.args
+        (request,) = self.urlopen.call_args.args
         self.assertEqual(self.urlopen.call_args.kwargs['timeout'], 10)
-        self.assertEqual(request.full_url, 'https://github.com/login/oauth/access_token')
+        self.assertEqual(
+            request.full_url, 'https://github.com/login/oauth/access_token'
+        )
         self.assertEqual(request.get_header('Accept'), 'application/json')
-        self.assertEqual(parse_qs(request.data.decode()), {
-            'code': ['the-code'], 'client_id': ['client-id'], 'client_secret': ['client-secret'],
-        })
+        self.assertEqual(
+            parse_qs(request.data.decode()),
+            {
+                'code': ['the-code'],
+                'client_id': ['client-id'],
+                'client_secret': ['client-secret'],
+            },
+        )
 
     def test_failures_keep_existing_token(self):
         GitHubKey.objects.create(user=self.user, key='existing')
         for description, side_effect, return_value in [
-            ('error from GitHub', None, github_response({'error': 'bad_verification_code'})),
+            (
+                'error from GitHub',
+                None,
+                github_response({'error': 'bad_verification_code'}),
+            ),
             ('network error', URLError('timeout'), None),
-            ('invalid json', None, mock.MagicMock(**{'__enter__.return_value': BytesIO(b'access_token=x')})),
+            (
+                'invalid json',
+                None,
+                mock.MagicMock(**{
+                    '__enter__.return_value': BytesIO(b'access_token=x')
+                }),
+            ),
         ]:
             with self.subTest(description):
-                self.urlopen.side_effect, self.urlopen.return_value = side_effect, return_value
+                self.urlopen.side_effect, self.urlopen.return_value = (
+                    side_effect,
+                    return_value,
+                )
                 state = self.start()
-                response = self.client.get('/github/callback', {'code': 'c', 'state': state})
+                response = self.client.get(
+                    '/github/callback', {'code': 'c', 'state': state}
+                )
                 self.assertRedirects(response, '/', fetch_redirect_response=False)
                 self.assertEqual(GitHubKey.objects.get(user=self.user).key, 'existing')
 
     def test_denied_access_does_not_contact_github(self):
         state = self.start()
-        self.assert_rejected(self.client.get('/github/callback', {'error': 'access_denied', 'state': state}))
+        self.assert_rejected(
+            self.client.get(
+                '/github/callback', {'error': 'access_denied', 'state': state}
+            )
+        )
 
 
 class SecretGenerationTests(TestCase):
     def test_generators_use_secrets(self):
-        with mock.patch('adminconsole.util.secrets.choice', wraps=__import__('secrets').choice) as choice:
+        with mock.patch(
+            'adminconsole.util.secrets.choice', wraps=__import__('secrets').choice
+        ) as choice:
             password, key = generate_password(), generate_secret_key()
         self.assertEqual(choice.call_count, 70)
         self.assertEqual(len(password), 20)
         self.assertTrue(set(password) <= set(string.ascii_uppercase + string.digits))
         self.assertEqual(len(key), 50)
-        self.assertTrue(set(key) <= set(string.ascii_letters + string.digits + string.punctuation))
+        self.assertTrue(
+            set(key) <= set(string.ascii_letters + string.digits + string.punctuation)
+        )
 
 
 # The admin password of an instance is independent of the database password and never appears in a command line.
-@modify_settings(MIDDLEWARE={'remove': ['adminconsole.middleware.RequireOTPMiddleware']})
+@modify_settings(
+    MIDDLEWARE={'remove': ['adminconsole.middleware.RequireOTPMiddleware']}
+)
 @override_settings(PYTHON_BIN='python')
 class AdminPasswordTests(TestCase):
     def setUp(self):
@@ -375,13 +510,22 @@ class AdminPasswordTests(TestCase):
     def test_create_admin_step(self):
         tmp = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, tmp)
-        with mock.patch.object(App, 'log_file', new_callable=mock.PropertyMock, return_value=str(tmp / 'log')), \
-                mock.patch('subprocess.Popen') as popen:
+        with (
+            mock.patch.object(
+                App,
+                'log_file',
+                new_callable=mock.PropertyMock,
+                return_value=str(tmp / 'log'),
+            ),
+            mock.patch('subprocess.Popen') as popen,
+        ):
             popen.return_value.pid = 4242
             response = self.client.post(f'/ca/createadmin/{self.app.id}/')
 
         password = popen.call_args.kwargs['env'][PASSWORD_ENV]
-        self.assertEqual(popen.call_args.args[0], ['python', '-m', 'manage', 'create_admin', 'foo'])
+        self.assertEqual(
+            popen.call_args.args[0], ['python', '-m', 'manage', 'create_admin', 'foo']
+        )
         self.assertNotEqual(password, 'DBPASSWORD')
         self.assertEqual(len(password), 20)
         self.assertContains(response, password)
@@ -391,9 +535,13 @@ class AdminPasswordTests(TestCase):
         with mock.patch.dict(os.environ, {PASSWORD_ENV: 'NEWPASSWORD'}):
             call_command('create_admin', 'foo')
         args, kwargs = self.container.exec_run.call_args
-        self.assertEqual(args[0], ['python', '-m', 'manage', 'createadmin', '--noinput'])
+        self.assertEqual(
+            args[0], ['python', '-m', 'manage', 'createadmin', '--noinput']
+        )
         self.assertEqual(kwargs['environment']['DJANGO_SUPERUSER_USERNAME'], 'admin')
-        self.assertEqual(kwargs['environment']['DJANGO_SUPERUSER_PASSWORD'], 'NEWPASSWORD')
+        self.assertEqual(
+            kwargs['environment']['DJANGO_SUPERUSER_PASSWORD'], 'NEWPASSWORD'
+        )
 
     def test_create_admin_command_requires_password(self):
         with mock.patch.dict(os.environ, {}, clear=False):
@@ -407,7 +555,9 @@ class AdminPasswordTests(TestCase):
 
         args, kwargs = self.container.exec_run.call_args
         password = kwargs['environment'][PASSWORD_ENV]
-        self.assertEqual(args[0], ['python', '-m', 'manage', 'shell', '-c', SET_PASSWORD_SCRIPT])
+        self.assertEqual(
+            args[0], ['python', '-m', 'manage', 'shell', '-c', SET_PASSWORD_SCRIPT]
+        )
         self.assertNotIn(password, ' '.join(args[0]))
         self.assertNotEqual(password, 'DBPASSWORD')
         self.assertTemplateUsed(response, 'app/admin_password.html')
@@ -417,14 +567,19 @@ class AdminPasswordTests(TestCase):
 
     def test_reset_admin_password_failures(self):
         for description, exec_run in [
-            ('no admin user', {'return_value': mock.MagicMock(exit_code=1, output=b'DoesNotExist')}),
+            (
+                'no admin user',
+                {'return_value': mock.MagicMock(exit_code=1, output=b'DoesNotExist')},
+            ),
             ('container not found', {'side_effect': NotFound('no such container')}),
         ]:
             with self.subTest(description):
                 self.container.exec_run.reset_mock(return_value=True, side_effect=True)
                 self.container.exec_run.configure_mock(**exec_run)
                 response = self.client.post(f'/app/{self.app.id}/admin-password/')
-                self.assertRedirects(response, f'/overview/{self.app.id}/', fetch_redirect_response=False)
+                self.assertRedirects(
+                    response, f'/overview/{self.app.id}/', fetch_redirect_response=False
+                )
 
     def test_set_password_script(self):
         # run the script that is executed in the app container against this test database
@@ -440,15 +595,26 @@ REAL_GETADDRINFO = socket.getaddrinfo
 
 
 def resolves_to(*addresses):
-    """ simulated result of socket.getaddrinfo """
-    return [(socket.AF_INET6 if ':' in a else socket.AF_INET, socket.SOCK_STREAM, 6, '', (a, 25)) for a in addresses]
+    """simulated result of socket.getaddrinfo"""
+    return [
+        (
+            socket.AF_INET6 if ':' in a else socket.AF_INET,
+            socket.SOCK_STREAM,
+            6,
+            '',
+            (a, 25),
+        )
+        for a in addresses
+    ]
 
 
 # The SMTP connection test runs in the console and must not reach its own network.
 class SmtpCheckTests(TestCase):
     def setUp(self):
-        for name, target in [('getaddrinfo', 'adminconsole.forms.socket.getaddrinfo'),
-                             ('get_connection', 'adminconsole.forms.get_connection')]:
+        for name, target in [
+            ('getaddrinfo', 'adminconsole.forms.socket.getaddrinfo'),
+            ('get_connection', 'adminconsole.forms.get_connection'),
+        ]:
             patcher = mock.patch(target)
             setattr(self, name, patcher.start())
             self.addCleanup(patcher.stop)
@@ -456,8 +622,14 @@ class SmtpCheckTests(TestCase):
 
     def form(self, **data):
         from adminconsole.forms import EnvForm
-        return EnvForm({'juntagrico_secret_key': 'x' * 50, 'juntagrico_email_host': 'mail.example.org',
-                        'juntagrico_email_port': '587', 'juntagrico_email_security': 'tls', **data})
+
+        return EnvForm({
+            'juntagrico_secret_key': 'x' * 50,
+            'juntagrico_email_host': 'mail.example.org',
+            'juntagrico_email_port': '587',
+            'juntagrico_email_security': 'tls',
+            **data,
+        })
 
     def assert_rejected_without_connection(self, form, message):
         self.assertFalse(form.is_valid())
@@ -466,7 +638,9 @@ class SmtpCheckTests(TestCase):
 
     def test_public_server_is_checked(self):
         self.assertTrue(self.form().is_valid())
-        self.assertEqual(self.get_connection.call_args.kwargs['host'], 'mail.example.org')
+        self.assertEqual(
+            self.get_connection.call_args.kwargs['host'], 'mail.example.org'
+        )
         self.assertEqual(self.get_connection.call_args.kwargs['port'], 587)
         self.assertTrue(self.get_connection.return_value.open.called)
 
@@ -478,9 +652,20 @@ class SmtpCheckTests(TestCase):
                 self.assertIn('juntagrico_email_port', form.errors)
 
     def test_internal_addresses_are_not_checked(self):
-        for addresses in [('127.0.0.1',), ('10.20.0.1',), ('192.168.1.1',), ('172.17.0.1',), ('169.254.169.254',),
-                          ('100.64.0.1',), ('0.0.0.0',), ('::1',), ('fe80::1%eth0',), ('fd00::1',),
-                          ('::ffff:127.0.0.1',), ('8.8.8.8', '10.0.0.1')]:
+        for addresses in [
+            ('127.0.0.1',),
+            ('10.20.0.1',),
+            ('192.168.1.1',),
+            ('172.17.0.1',),
+            ('169.254.169.254',),
+            ('100.64.0.1',),
+            ('0.0.0.0',),
+            ('::1',),
+            ('fe80::1%eth0',),
+            ('fd00::1',),
+            ('::ffff:127.0.0.1',),
+            ('8.8.8.8', '10.0.0.1'),
+        ]:
             with self.subTest(addresses=addresses):
                 self.getaddrinfo.return_value = resolves_to(*addresses)
                 self.assert_rejected_without_connection(self.form(), 'internen Netz')
@@ -488,12 +673,16 @@ class SmtpCheckTests(TestCase):
     def test_localhost_is_not_checked(self):
         # resolve for real, this needs no network
         self.getaddrinfo.side_effect = REAL_GETADDRINFO
-        self.assert_rejected_without_connection(self.form(juntagrico_email_host='localhost'), 'internen Netz')
+        self.assert_rejected_without_connection(
+            self.form(juntagrico_email_host='localhost'), 'internen Netz'
+        )
 
     def test_unknown_server_and_missing_values(self):
         self.getaddrinfo.side_effect = socket.gaierror('not found')
         self.assert_rejected_without_connection(self.form(), 'nicht gefunden')
-        self.assert_rejected_without_connection(self.form(juntagrico_email_host=''), 'kein E-Mail-Server')
+        self.assert_rejected_without_connection(
+            self.form(juntagrico_email_host=''), 'kein E-Mail-Server'
+        )
         # port 'abc' is rejected at field level (ChoiceField), not in clean()
         form = self.form(juntagrico_email_port='abc')
         self.assertFalse(form.is_valid())
@@ -501,11 +690,20 @@ class SmtpCheckTests(TestCase):
 
     def test_error_messages_have_no_details(self):
         for error, message in [
-            (ConnectionRefusedError('[Errno 111] Connection refused'), 'lehnt die Verbindung ab'),
+            (
+                ConnectionRefusedError('[Errno 111] Connection refused'),
+                'lehnt die Verbindung ab',
+            ),
             (TimeoutError('timed out'), 'antwortet nicht'),
             (ssl.SSLError('WRONG_VERSION_NUMBER'), 'TLS/SSL'),
-            (smtplib.SMTPServerDisconnected('Connection unexpectedly closed'), 'Prüfe deine Einstellungen'),
-            (smtplib.SMTPConnectError(-1, b'HTTP/1.1 400 Bad Request'), 'Prüfe deine Einstellungen'),
+            (
+                smtplib.SMTPServerDisconnected('Connection unexpectedly closed'),
+                'Prüfe deine Einstellungen',
+            ),
+            (
+                smtplib.SMTPConnectError(-1, b'HTTP/1.1 400 Bad Request'),
+                'Prüfe deine Einstellungen',
+            ),
         ]:
             with self.subTest(error=error):
                 self.get_connection.return_value.open.side_effect = error
@@ -513,12 +711,21 @@ class SmtpCheckTests(TestCase):
                 self.assertFalse(form.is_valid())
                 text = form.non_field_errors()[0]
                 self.assertIn(message, text)
-                for detail in ['Errno', 'timed out', 'WRONG_VERSION', 'unexpectedly', 'HTTP']:
+                for detail in [
+                    'Errno',
+                    'timed out',
+                    'WRONG_VERSION',
+                    'unexpectedly',
+                    'HTTP',
+                ]:
                     self.assertNotIn(detail, text)
 
     def test_authentication_error_shows_server_answer(self):
-        self.get_connection.return_value.open.side_effect = smtplib.SMTPAuthenticationError(
-            535, b'5.7.8 Username and Password not accepted. Use an app password.')
+        self.get_connection.return_value.open.side_effect = (
+            smtplib.SMTPAuthenticationError(
+                535, b'5.7.8 Username and Password not accepted. Use an app password.'
+            )
+        )
         form = self.form()
         self.assertFalse(form.is_valid())
         self.assertIn('Use an app password', form.non_field_errors()[0])
@@ -535,18 +742,33 @@ SECRET_KEY = 'S' * 50
 
 
 # Stored secrets of an app are never sent to the browser; an empty field keeps them.
-@modify_settings(MIDDLEWARE={'remove': ['adminconsole.middleware.RequireOTPMiddleware']})
+@modify_settings(
+    MIDDLEWARE={'remove': ['adminconsole.middleware.RequireOTPMiddleware']}
+)
 class EnvSecretTests(TestCase):
     def setUp(self):
         self.owner = User.objects.create_user('owner')
         self.app = App.objects.create(name='foo', port=8010, user=self.owner)
-        self.env = AppEnv.objects.create(app=self.app, juntagrico_email_password=MAIL_PASSWORD,
-                                         juntagrico_secret_key=SECRET_KEY, juntagrico_email_host='mail.example.org')
+        self.env = AppEnv.objects.create(
+            app=self.app,
+            juntagrico_email_password=MAIL_PASSWORD,
+            juntagrico_secret_key=SECRET_KEY,
+            juntagrico_email_host='mail.example.org',
+        )
 
     def save(self, **data):
         from adminconsole.forms import EnvForm
-        form = EnvForm({'juntagrico_email_host': 'mail.example.org', 'juntagrico_email_port': '587',
-                        'juntagrico_email_security': 'none', 'skip_check': '', **data}, instance=self.env)
+
+        form = EnvForm(
+            {
+                'juntagrico_email_host': 'mail.example.org',
+                'juntagrico_email_port': '587',
+                'juntagrico_email_security': 'none',
+                'skip_check': '',
+                **data,
+            },
+            instance=self.env,
+        )
         self.assertTrue(form.is_valid(), form.errors)
         form.save()
         self.env.refresh_from_db()
@@ -568,7 +790,9 @@ class EnvSecretTests(TestCase):
         self.assertEqual(self.env.juntagrico_secret_key, SECRET_KEY)
 
     def test_new_values(self):
-        self.save(juntagrico_email_password='NewMailPassword', juntagrico_secret_key='K' * 50)
+        self.save(
+            juntagrico_email_password='NewMailPassword', juntagrico_secret_key='K' * 50
+        )
         self.assertEqual(self.env.juntagrico_email_password, 'NewMailPassword')
         self.assertEqual(self.env.juntagrico_secret_key, 'K' * 50)
 
@@ -586,14 +810,23 @@ class EnvSecretTests(TestCase):
     def test_failed_check_keeps_typed_password(self):
         # after a failed check the page offers "skip check and save", which must save the new password
         self.client.force_login(self.owner)
-        with mock.patch('adminconsole.forms.socket.getaddrinfo', return_value=resolves_to('8.8.8.8')), \
-                mock.patch('adminconsole.forms.get_connection') as get_connection:
+        with (
+            mock.patch(
+                'adminconsole.forms.socket.getaddrinfo',
+                return_value=resolves_to('8.8.8.8'),
+            ),
+            mock.patch('adminconsole.forms.get_connection') as get_connection,
+        ):
             get_connection.return_value.open.side_effect = ConnectionRefusedError()
-            content = self.client.post(f'/env/{self.app.id}/', {
-                'juntagrico_email_host': 'mail.example.org', 'juntagrico_email_port': '587',
-                'juntagrico_email_security': 'none',
-                'juntagrico_email_password': 'TypedNewPassword',
-            }).content.decode()
+            content = self.client.post(
+                f'/env/{self.app.id}/',
+                {
+                    'juntagrico_email_host': 'mail.example.org',
+                    'juntagrico_email_port': '587',
+                    'juntagrico_email_security': 'none',
+                    'juntagrico_email_password': 'TypedNewPassword',
+                },
+            ).content.decode()
         self.assertIn('Prüfung überspringen', content)
         self.assertIn('value="TypedNewPassword"', content)
         self.assertNotIn(MAIL_PASSWORD, content)
@@ -601,23 +834,48 @@ class EnvSecretTests(TestCase):
 
     def test_smtp_check_uses_stored_password(self):
         from adminconsole.forms import EnvForm
-        with mock.patch('adminconsole.forms.socket.getaddrinfo', return_value=resolves_to('8.8.8.8')), \
-                mock.patch('adminconsole.forms.get_connection') as get_connection:
-            for data, expected in [({}, MAIL_PASSWORD), ({'clear_email_password': 'on'}, '')]:
+
+        with (
+            mock.patch(
+                'adminconsole.forms.socket.getaddrinfo',
+                return_value=resolves_to('8.8.8.8'),
+            ),
+            mock.patch('adminconsole.forms.get_connection') as get_connection,
+        ):
+            for data, expected in [
+                ({}, MAIL_PASSWORD),
+                ({'clear_email_password': 'on'}, ''),
+            ]:
                 with self.subTest(data=data):
-                    form = EnvForm({'juntagrico_email_host': 'mail.example.org', 'juntagrico_email_port': '587',
-                                    'juntagrico_email_security': 'none', **data}, instance=self.env)
+                    form = EnvForm(
+                        {
+                            'juntagrico_email_host': 'mail.example.org',
+                            'juntagrico_email_port': '587',
+                            'juntagrico_email_security': 'none',
+                            **data,
+                        },
+                        instance=self.env,
+                    )
                     self.assertTrue(form.is_valid(), form.errors)
-                    self.assertEqual(get_connection.call_args.kwargs['password'], expected)
+                    self.assertEqual(
+                        get_connection.call_args.kwargs['password'], expected
+                    )
 
 
-def docker_network(subnet='172.30.0.0/22', gateway='172.30.0.1', icc='false', bridge='br-juntagrico'):
-    """ simulated existing Docker network """
+def docker_network(
+    subnet='172.30.0.0/22', gateway='172.30.0.1', icc='false', bridge='br-juntagrico'
+):
+    """simulated existing Docker network"""
     network = mock.MagicMock()
     network.name = 'juntagrico-apps'
-    network.attrs = {'Driver': 'bridge', 'IPAM': {'Config': [{'Subnet': subnet, 'Gateway': gateway}]},
-                     'Options': {'com.docker.network.bridge.enable_icc': icc,
-                                 'com.docker.network.bridge.name': bridge}}
+    network.attrs = {
+        'Driver': 'bridge',
+        'IPAM': {'Config': [{'Subnet': subnet, 'Gateway': gateway}]},
+        'Options': {
+            'com.docker.network.bridge.enable_icc': icc,
+            'com.docker.network.bridge.name': bridge,
+        },
+    }
     return network
 
 
@@ -652,14 +910,29 @@ class NetworkIsolationTests(TestCase):
         self.assertNotIn('network_mode', kwargs)
         self.assertEqual(kwargs['network'], 'juntagrico-apps')
         self.assertEqual(kwargs['ports'], {'8010/tcp': ('127.0.0.1', 8010)})
-        self.assertEqual(kwargs['command'],
-                        ['gunicorn', '--no-control-socket', '--forwarded-allow-ips', '172.30.0.1',
-                         '--bind', '0.0.0.0:8010', '-t', '600', 'foo.wsgi'])
+        self.assertEqual(
+            kwargs['command'],
+            [
+                'gunicorn',
+                '--no-control-socket',
+                '--forwarded-allow-ips',
+                '172.30.0.1',
+                '--bind',
+                '0.0.0.0:8010',
+                '-t',
+                '600',
+                'foo.wsgi',
+            ],
+        )
         self.assertEqual(kwargs['mem_limit'], '600m')
         # the database is reached at the gateway; the last value of a variable wins
-        self.assertEqual(kwargs['environment'][-1], 'JUNTAGRICO_DATABASE_HOST=172.30.0.1')
+        self.assertEqual(
+            kwargs['environment'][-1], 'JUNTAGRICO_DATABASE_HOST=172.30.0.1'
+        )
         # the stored setting is unchanged, so switching back works
-        self.assertEqual(AppEnv.objects.get(app=self.app).juntagrico_database_host, 'localhost')
+        self.assertEqual(
+            AppEnv.objects.get(app=self.app).juntagrico_database_host, 'localhost'
+        )
 
     def test_network_is_created_if_missing(self):
         App.objects.filter(pk=self.app.pk).update(isolated_network=True)
@@ -669,35 +942,61 @@ class NetworkIsolationTests(TestCase):
         args, kwargs = self.client.networks.create.call_args
         self.assertEqual(args, ('juntagrico-apps',))
         self.assertEqual(kwargs['driver'], 'bridge')
-        pool, = kwargs['ipam']['Config']
-        self.assertEqual((pool['Subnet'], pool['Gateway']), ('172.30.0.0/22', '172.30.0.1'))
-        self.assertEqual(kwargs['options'], {'com.docker.network.bridge.enable_icc': 'false',
-                                             'com.docker.network.bridge.name': 'br-juntagrico'})
+        (pool,) = kwargs['ipam']['Config']
+        self.assertEqual(
+            (pool['Subnet'], pool['Gateway']), ('172.30.0.0/22', '172.30.0.1')
+        )
+        self.assertEqual(
+            kwargs['options'],
+            {
+                'com.docker.network.bridge.enable_icc': 'false',
+                'com.docker.network.bridge.name': 'br-juntagrico',
+            },
+        )
 
     @patch('adminconsole.management.commands.restart.stop_container')
     def test_wrong_network_keeps_the_running_container(self, mock_stop):
         App.objects.filter(pk=self.app.pk).update(isolated_network=True)
-        for network in [docker_network(subnet='172.31.0.0/16'), docker_network(icc='true'),
-                        docker_network(bridge='br-other'), docker_network(gateway='172.30.0.254')]:
+        for network in [
+            docker_network(subnet='172.31.0.0/16'),
+            docker_network(icc='true'),
+            docker_network(bridge='br-other'),
+            docker_network(gateway='172.30.0.254'),
+        ]:
             with self.subTest(attrs=network.attrs):
                 self.client.reset_mock()
                 self.client.networks.get.return_value = network
                 with self.assertRaises(NetworkMismatch):
                     self.restart()
-                self.assertFalse(self.client.containers.run.called, 'a new container was started')
+                self.assertFalse(
+                    self.client.containers.run.called, 'a new container was started'
+                )
 
-    @override_settings(APPS_NETWORK={'name': 'juntagrico-apps', 'subnet': '10.99.0.0/24',
-                                      'gateway': '10.99.0.1', 'bridge': 'br-juntagrico'},
-                        APPS_MEMORY_LIMIT='1g')
+    @override_settings(
+        APPS_NETWORK={
+            'name': 'juntagrico-apps',
+            'subnet': '10.99.0.0/24',
+            'gateway': '10.99.0.1',
+            'bridge': 'br-juntagrico',
+        },
+        APPS_MEMORY_LIMIT='1g',
+    )
     def test_settings(self):
         App.objects.filter(pk=self.app.pk).update(isolated_network=True)
-        self.client.networks.get.return_value = docker_network(subnet='10.99.0.0/24', gateway='10.99.0.1')
+        self.client.networks.get.return_value = docker_network(
+            subnet='10.99.0.0/24', gateway='10.99.0.1'
+        )
         kwargs = self.restart()
-        self.assertEqual(kwargs['environment'][-1], 'JUNTAGRICO_DATABASE_HOST=10.99.0.1')
+        self.assertEqual(
+            kwargs['environment'][-1], 'JUNTAGRICO_DATABASE_HOST=10.99.0.1'
+        )
         self.assertEqual(kwargs['mem_limit'], '1g')
 
     def test_setup_files(self):
-        self.assertIn('net.ipv4.ip_nonlocal_bind = 1', (SETUP_DIR / '99-juntagrico-nonlocal-bind.conf').read_text())
+        self.assertIn(
+            'net.ipv4.ip_nonlocal_bind = 1',
+            (SETUP_DIR / '99-juntagrico-nonlocal-bind.conf').read_text(),
+        )
         firewall = (SETUP_DIR / 'juntagrico-apps-firewall').read_text()
         self.assertIn('BRIDGE=br-juntagrico', firewall)
         unit = (SETUP_DIR / 'juntagrico-apps-firewall.service').read_text()
@@ -706,7 +1005,9 @@ class NetworkIsolationTests(TestCase):
 
 
 # Exporting member data needs the password of the user, so a stolen session alone is not enough.
-@modify_settings(MIDDLEWARE={'remove': ['adminconsole.middleware.RequireOTPMiddleware']})
+@modify_settings(
+    MIDDLEWARE={'remove': ['adminconsole.middleware.RequireOTPMiddleware']}
+)
 class ExportConfirmationTests(TestCase):
     EXPORTS = ['/dumpdata/{}/', '/pgdump/{}/']
 
@@ -719,11 +1020,16 @@ class ExportConfirmationTests(TestCase):
             patcher = mock.patch(target)
             setattr(self, name, patcher.start())
             self.addCleanup(patcher.stop)
-        self.docker.return_value.containers.get.return_value.exec_run.return_value = mock.MagicMock(output=b'[]')
+        self.docker.return_value.containers.get.return_value.exec_run.return_value = (
+            mock.MagicMock(output=b'[]')
+        )
         self.run.return_value = mock.MagicMock(stdout=b'-- dump')
 
     def exported(self):
-        return self.docker.return_value.containers.get.return_value.exec_run.called or self.run.called
+        return (
+            self.docker.return_value.containers.get.return_value.exec_run.called
+            or self.run.called
+        )
 
     def test_get_asks_for_password(self):
         for url in self.EXPORTS:
@@ -734,17 +1040,28 @@ class ExportConfirmationTests(TestCase):
 
     def test_wrong_password_exports_nothing(self):
         for url in self.EXPORTS:
-            with self.subTest(url=url), self.assertLogs('adminconsole.security', 'WARNING') as logs:
-                response = self.client.post(url.format(self.app.id), {'password': 'wrong'})
+            with (
+                self.subTest(url=url),
+                self.assertLogs('adminconsole.security', 'WARNING') as logs,
+            ):
+                response = self.client.post(
+                    url.format(self.app.id), {'password': 'wrong'}
+                )
                 self.assertContains(response, 'Das Passwort ist falsch.')
                 self.assertFalse(self.exported())
                 self.assertIn('wrong password', logs.output[0])
 
     def test_correct_password_exports_and_logs(self):
         for url, extension in zip(self.EXPORTS, ['json', 'sql']):
-            with self.subTest(url=url), self.assertLogs('adminconsole.security', 'INFO') as logs:
-                response = self.client.post(url.format(self.app.id), {'password': 'secret-pw'},
-                                            HTTP_X_REAL_IP='203.0.113.7')
+            with (
+                self.subTest(url=url),
+                self.assertLogs('adminconsole.security', 'INFO') as logs,
+            ):
+                response = self.client.post(
+                    url.format(self.app.id),
+                    {'password': 'secret-pw'},
+                    HTTP_X_REAL_IP='203.0.113.7',
+                )
                 self.assertIn(f'.{extension}', response['Content-Disposition'])
                 self.assertIn('owner exports', logs.output[0])
                 self.assertIn('foo', logs.output[0])
@@ -777,26 +1094,44 @@ class ExportConfirmationTests(TestCase):
         other.force_login(User.objects.create_user('other', password='other-pw'))
         for url in self.EXPORTS:
             with self.subTest(url=url):
-                self.assertEqual(client.post(url.format(self.app.id), {'password': 'secret-pw'}).status_code, 403)
+                self.assertEqual(
+                    client.post(
+                        url.format(self.app.id), {'password': 'secret-pw'}
+                    ).status_code,
+                    403,
+                )
                 response = other.post(url.format(self.app.id), {'password': 'other-pw'})
                 self.assertRedirects(response, '/', fetch_redirect_response=False)
                 self.assertFalse(self.exported())
 
 
 # The progress check must not reveal whether other processes exist on the server.
-@modify_settings(MIDDLEWARE={'remove': ['adminconsole.middleware.RequireOTPMiddleware']})
+@modify_settings(
+    MIDDLEWARE={'remove': ['adminconsole.middleware.RequireOTPMiddleware']}
+)
 class PidCheckTests(TestCase):
     def test_only_console_processes_are_reported(self):
         from adminconsole.util import pid_finished
+
         # a process like the ones the console starts (python -m manage ...)
-        job = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30)', '-m', 'manage'])
+        job = subprocess.Popen([
+            sys.executable,
+            '-c',
+            'import time; time.sleep(30)',
+            '-m',
+            'manage',
+        ])
         self.addCleanup(job.kill)
         other = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30)'])
         self.addCleanup(other.kill)
-        self.assertFalse(pid_finished(job.pid), 'running console job reported as finished')
+        self.assertFalse(
+            pid_finished(job.pid), 'running console job reported as finished'
+        )
         self.assertTrue(pid_finished(other.pid), 'other process revealed')
         self.assertTrue(pid_finished(os.getpid()), 'test runner revealed')
-        self.assertTrue(pid_finished(4 if os.name == 'nt' else 1), 'system process revealed')
+        self.assertTrue(
+            pid_finished(4 if os.name == 'nt' else 1), 'system process revealed'
+        )
         job.kill()
         job.wait()
         self.assertTrue(pid_finished(job.pid))
@@ -804,7 +1139,9 @@ class PidCheckTests(TestCase):
     def test_view(self):
         user = User.objects.create_user('owner')
         self.client.force_login(user)
-        with mock.patch('adminconsole.views.pid_finished', return_value=True) as finished:
+        with mock.patch(
+            'adminconsole.views.pid_finished', return_value=True
+        ) as finished:
             self.assertEqual(self.client.get('/pid/1/').json(), {'finished': True})
         finished.assert_called_once_with(1)
 
@@ -813,28 +1150,36 @@ class PidCheckTests(TestCase):
 class CreateDatabaseTests(TestCase):
     def statements(self, name, password='ABC123', replace=False):
         from adminconsole.util.create_app import create_database
+
         app = App.objects.create(name=name, port=8010 + App.objects.count())
         env = AppEnv.objects.create(app=app)
         cursor = mock.MagicMock()
-        with mock.patch('adminconsole.util.create_app.connection') as connection, \
-                mock.patch('adminconsole.util.create_app.generate_password', return_value=password):
+        with (
+            mock.patch('adminconsole.util.create_app.connection') as connection,
+            mock.patch(
+                'adminconsole.util.create_app.generate_password', return_value=password
+            ),
+        ):
             connection.ops.quote_name = lambda value: '"%s"' % value
             connection.cursor.return_value.__enter__.return_value = cursor
             create_database(env, name, name, replace=replace)
         return [call.args[0] for call in cursor.execute.call_args_list]
 
     def test_statements(self):
-        self.assertEqual(self.statements('foo-staging', replace=True), [
-            'SET ROLE "foo_staging"',
-            'DROP DATABASE IF EXISTS "foo_staging"',
-            'RESET ROLE',
-            'DROP USER IF EXISTS "foo_staging"',
-            "CREATE USER \"foo_staging\" WITH PASSWORD 'ABC123'",
-            "ALTER ROLE \"foo_staging\" SET client_encoding TO 'utf8'",
-            "ALTER ROLE \"foo_staging\" SET default_transaction_isolation TO 'read committed'",
-            "ALTER ROLE \"foo_staging\" SET timezone TO 'Europe/Zurich'",
-            "CREATE DATABASE \"foo_staging\" OWNER \"foo_staging\" TEMPLATE template0 ENCODING 'UTF8' LC_COLLATE 'en_US.UTF-8' LC_CTYPE 'en_US.UTF-8'",
-        ])
+        self.assertEqual(
+            self.statements('foo-staging', replace=True),
+            [
+                'SET ROLE "foo_staging"',
+                'DROP DATABASE IF EXISTS "foo_staging"',
+                'RESET ROLE',
+                'DROP USER IF EXISTS "foo_staging"',
+                'CREATE USER "foo_staging" WITH PASSWORD \'ABC123\'',
+                'ALTER ROLE "foo_staging" SET client_encoding TO \'utf8\'',
+                'ALTER ROLE "foo_staging" SET default_transaction_isolation TO \'read committed\'',
+                'ALTER ROLE "foo_staging" SET timezone TO \'Europe/Zurich\'',
+                "CREATE DATABASE \"foo_staging\" OWNER \"foo_staging\" TEMPLATE template0 ENCODING 'UTF8' LC_COLLATE 'en_US.UTF-8' LC_CTYPE 'en_US.UTF-8'",
+            ],
+        )
 
     def test_password_must_be_alphanumeric(self):
         for password in ["abc'; DROP USER x; --", 'äöü123', 'with space']:

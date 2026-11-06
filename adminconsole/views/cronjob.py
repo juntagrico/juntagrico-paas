@@ -20,17 +20,26 @@ def manage(request, app_id):
                 out.write(b'# Cronjobs erstellen\n')
                 proc = subprocess.Popen(
                     [settings.PYTHON_BIN, '-m', 'manage', 'install_cronjob', app.name],
-                    stdout=out, stderr=out
+                    stdout=out,
+                    stderr=out,
                 )
-            return render(request, 'app/wait_next.html', {
-                'step': 'Cronjobs installieren',
-                'pid': proc.pid,
-                'next': reverse('show-result', args=[app.id]),
-            })
+            return render(
+                request,
+                'app/wait_next.html',
+                {
+                    'step': 'Cronjobs installieren',
+                    'pid': proc.pid,
+                    'next': reverse('show-result', args=[app.id]),
+                },
+            )
     else:
         form = CronjobForm(app=app)
 
-    return render(request, 'app/cronjob_form.html', {
-        'form': form,
-        'app': app,
-    })
+    return render(
+        request,
+        'app/cronjob_form.html',
+        {
+            'form': form,
+            'app': app,
+        },
+    )

@@ -5,7 +5,10 @@ import re
 # These use \b for word boundaries to avoid false positives on package/library names
 # Combined into fewer patterns using alternation to reduce the number of .search() calls per line
 # Group 1: Single-word error indicators (case-insensitive)
-ERROR_SINGLE_WORD_RE = re.compile(r'\b(error|failed|failure|exception|traceback|fatal|critical|warning|refused|denied|timeout)\b', re.IGNORECASE)
+ERROR_SINGLE_WORD_RE = re.compile(
+    r'\b(error|failed|failure|exception|traceback|fatal|critical|warning|refused|denied|timeout)\b',
+    re.IGNORECASE,
+)
 # Group 2: Multi-word phrases (case-insensitive)
 ERROR_PHRASE_RE = re.compile(r'\b(could not|permission denied)\b', re.IGNORECASE)
 # Group 3: Compound error/exception names after a dot (module path) or at line start
@@ -32,7 +35,13 @@ def _is_error_line(line):
         return False
     # Skip lines that are just package lists (common in apt output, space-separated package names)
     stripped = line.strip()
-    if stripped and not stripped[0].isupper() and ':' not in stripped and '(' not in stripped and '=' not in stripped:
+    if (
+        stripped
+        and not stripped[0].isupper()
+        and ':' not in stripped
+        and '(' not in stripped
+        and '=' not in stripped
+    ):
         # Likely a package list line like "  git git-man libbrotli1 liberror-perl ..."
         parts = stripped.split()
         if len(parts) > 3 and all('.' not in p and '/' not in p for p in parts):
@@ -64,7 +73,9 @@ BUILDKIT_EXPORT_RE = re.compile(r'^\[(exporting|writing|importing|naming)')
 BUILDKIT_ERROR_RE = re.compile(r'^ERROR:', re.IGNORECASE)
 
 # Docker BuildKit completed line: "successfully built" or "exported to image"
-BUILDKIT_SUCCESS_RE = re.compile(r'(successfully built|exported to image|named as)', re.IGNORECASE)
+BUILDKIT_SUCCESS_RE = re.compile(
+    r'(successfully built|exported to image|named as)', re.IGNORECASE
+)
 
 # Docker build with #N prefix: "#0 building with ..." or "#1 [internal] load build definition"
 HASH_STEP_RE = re.compile(r'^#(\d+)\s+')
@@ -88,7 +99,9 @@ LEGACY_ERROR_RE = re.compile(r'^The command.*returned a non-zero code', re.IGNOR
 DJANGO_MIGRATE_HEADER_RE = re.compile(r'^(Operations to perform:|Running migrations:)')
 
 # Django migration: "Apply all migrations: admin, auth, contenttypes"
-DJANGO_MIGRATE_APPLY_ALL_RE = re.compile(r'^Apply all migrations:\s*(.*)', re.IGNORECASE)
+DJANGO_MIGRATE_APPLY_ALL_RE = re.compile(
+    r'^Apply all migrations:\s*(.*)', re.IGNORECASE
+)
 
 # Django migration: "Applying admin.0001_initial..." or " OK" or " FAKED"
 # Note: log parser strips leading whitespace, so no \s+ prefix needed
@@ -102,14 +115,19 @@ DJANGO_MIGRATE_NONE_RE = re.compile(r'^No migrations to apply', re.IGNORECASE)
 
 # Django collectstatic: "123 static files copied to '...'"
 # MULTILINE needed because this line may not be the first line of the log
-COLLECTSTATIC_COPIED_RE = re.compile(r'^(\d+)\s+static files?\s+(copied|found)', re.IGNORECASE | re.MULTILINE)
+COLLECTSTATIC_COPIED_RE = re.compile(
+    r'^(\d+)\s+static files?\s+(copied|found)', re.IGNORECASE | re.MULTILINE
+)
 
 # Django collectstatic: "456 post-processed" (standalone line)
-COLLECTSTATIC_POST_RE = re.compile(r'^(\d+)\s+post-processed', re.IGNORECASE | re.MULTILINE)
+COLLECTSTATIC_POST_RE = re.compile(
+    r'^(\d+)\s+post-processed', re.IGNORECASE | re.MULTILINE
+)
 
 # Django collectstatic: "123 static files copied to '...', 456 post-processed."
 COLLECTSTATIC_COMBINED_RE = re.compile(
-    r'^(\d+)\s+static files?\s+(copied|found).*?,\s*(\d+)\s+post-processed', re.IGNORECASE | re.MULTILINE
+    r'^(\d+)\s+static files?\s+(copied|found).*?,\s*(\d+)\s+post-processed',
+    re.IGNORECASE | re.MULTILINE,
 )
 
 # Django collectstatic: "Copying ..."
@@ -310,10 +328,12 @@ def _detect_format(text):
         return 'hash'
     if LEGACY_STEP_RE.search(first_lines):
         return 'legacy'
-    if (DJANGO_MIGRATE_APPLYING_RE.search(first_lines)
+    if (
+        DJANGO_MIGRATE_APPLYING_RE.search(first_lines)
         or DJANGO_MIGRATE_CREATING_RE.search(first_lines)
         or DJANGO_MIGRATE_HEADER_RE.search(first_lines)
-        or DJANGO_MIGRATE_APPLY_ALL_RE.search(first_lines)):
+        or DJANGO_MIGRATE_APPLY_ALL_RE.search(first_lines)
+    ):
         return 'migrate'
     if COLLECTSTATIC_COPIED_RE.search(first_lines):
         return 'collectstatic'
@@ -325,13 +345,13 @@ def _detect_format(text):
 
 def build_header_summary(text, result, section_name=''):
     """Build a single-line summary for display in the card header next to the step name.
-    
+
     Returns a short string like '8 steps, 12s' or '3 migrations applied' or '' if nothing useful.
     """
     stripped = text.strip()
     if not stripped:
         return ''
-    
+
     # If there's an error, show the first error line (truncated if too long)
     if result != 0:
         first_error = _get_first_error(text)
@@ -340,11 +360,11 @@ def build_header_summary(text, result, section_name=''):
             if len(first_error) > 80:
                 return first_error[:77] + '...'
             return first_error
-    
+
     # Determine format
     section_lower = section_name.lower() if section_name else ''
     fmt = None
-    
+
     # Dispatch by section name first
     if 'docker rebuild' in section_lower or 'docker build' in section_lower:
         fmt = 'docker'
@@ -363,7 +383,7 @@ def build_header_summary(text, result, section_name=''):
             fmt = 'collectstatic'
         elif detected == 'psql':
             fmt = 'psql'
-    
+
     if fmt == 'docker':
         duration = _extract_duration(text)
         steps = _count_docker_steps(text)
@@ -373,7 +393,7 @@ def build_header_summary(text, result, section_name=''):
         if duration:
             parts.append(f'{duration}s')
         return ', '.join(parts) if parts else ''
-    
+
     elif fmt == 'migrate':
         count = _count_migrations(text)
         if count:
@@ -382,13 +402,13 @@ def build_header_summary(text, result, section_name=''):
         if re.search(DJANGO_MIGRATE_NONE_RE.pattern, text, re.MULTILINE):
             return 'Keine Migrationen anzuwenden'
         return ''
-    
+
     elif fmt == 'collectstatic':
         count = _count_collectstatic_files(text)
         if count:
             return f'{count} Dateien kopiert'
         return ''
-    
+
     elif fmt == 'psql':
         tables = _count_psql_tables(text)
         rows = _count_psql_rows(text)
@@ -398,7 +418,7 @@ def build_header_summary(text, result, section_name=''):
         if rows:
             parts.append(f'{rows} Zeilen')
         return ', '.join(parts) if parts else ''
-    
+
     return ''
 
 
@@ -422,17 +442,27 @@ def build_summary(text, result, section_name=''):
     if 'django collectstatic' in section_lower or 'collectstatic' in section_lower:
         summary = _summarize_django_collectstatic(text, result)
 
-    if 'clone database' in section_lower or 'clone_db' in section_lower or 'psql' in section_lower:
+    if (
+        'clone database' in section_lower
+        or 'clone_db' in section_lower
+        or 'psql' in section_lower
+    ):
         summary = _summarize_psql(text, result)
 
     # Auto-detect format from content when section name is not specific enough
     first_lines = text[:500]
-    if BUILDKIT_BUILDING_RE.search(first_lines) or LEGACY_STEP_RE.search(first_lines) or HASH_STEP_RE.search(first_lines):
+    if (
+        BUILDKIT_BUILDING_RE.search(first_lines)
+        or LEGACY_STEP_RE.search(first_lines)
+        or HASH_STEP_RE.search(first_lines)
+    ):
         summary = _summarize_docker_build(text, result)
-    elif (DJANGO_MIGRATE_APPLYING_RE.search(first_lines)
-          or DJANGO_MIGRATE_CREATING_RE.search(first_lines)
-          or DJANGO_MIGRATE_HEADER_RE.search(first_lines)
-          or DJANGO_MIGRATE_APPLY_ALL_RE.search(first_lines)):
+    elif (
+        DJANGO_MIGRATE_APPLYING_RE.search(first_lines)
+        or DJANGO_MIGRATE_CREATING_RE.search(first_lines)
+        or DJANGO_MIGRATE_HEADER_RE.search(first_lines)
+        or DJANGO_MIGRATE_APPLY_ALL_RE.search(first_lines)
+    ):
         summary = _summarize_django_migrate(text, result)
     elif COLLECTSTATIC_COPIED_RE.search(first_lines):
         summary = _summarize_django_collectstatic(text, result)

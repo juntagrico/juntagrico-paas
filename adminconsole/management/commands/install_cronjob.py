@@ -52,14 +52,22 @@ def install_cronjobs_for_app(app):
 
         elif timing == 'hourly':
             # Every hour at the specified minute
-            minute = app_cronjob.minute if app_cronjob.minute is not None else app.port % 60
+            minute = (
+                app_cronjob.minute if app_cronjob.minute is not None else app.port % 60
+            )
             job.minute.on(minute)
             job.hour.every(1)
 
         elif timing == 'daily':
             # Once a day at the specified hour and minute
-            hour = app_cronjob.hour if app_cronjob.hour is not None else definition.get('default_hour', 23)
-            minute = app_cronjob.minute if app_cronjob.minute is not None else app.port % 60
+            hour = (
+                app_cronjob.hour
+                if app_cronjob.hour is not None
+                else definition.get('default_hour', 23)
+            )
+            minute = (
+                app_cronjob.minute if app_cronjob.minute is not None else app.port % 60
+            )
             job.hour.on(hour)
             job.minute.on(minute)
 
@@ -70,7 +78,12 @@ def install_cronjobs_for_app(app):
 class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('app_name', nargs='?', default=None, help='Name of the app')
-        parser.add_argument('--all', action='store_true', dest='all_apps', help='Reinstall cronjobs for all apps')
+        parser.add_argument(
+            '--all',
+            action='store_true',
+            dest='all_apps',
+            help='Reinstall cronjobs for all apps',
+        )
 
     # entry point used by manage.py
     def handle(self, *args, **options):
@@ -97,5 +110,7 @@ class Command(BaseCommand):
                 print('Return 1')
         except Exception as e:
             logger.error(f'Cronjob installation failed for app: {e}', exc_info=True)
-            print('Cronjob-Installation fehlgeschlagen. Bitte kontaktieren Sie den Administrator.')
+            print(
+                'Cronjob-Installation fehlgeschlagen. Bitte kontaktieren Sie den Administrator.'
+            )
             print('Return 1')

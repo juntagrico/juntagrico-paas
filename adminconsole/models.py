@@ -38,18 +38,20 @@ def get_available_cronjobs(app_name=None):
 def get_python_version_choices():
     """Return Python version choices with an automatic (default) option prepended."""
     fixed = [
-        ("3.10", "3.10"),
-        ("3.11", "3.11"),
-        ("3.12", "3.12 (Nur mit Juntagrico >= 2.0)"),
-        ("3.13", "3.13 (Nur mit Juntagrico >= 2.0)"),
-        ("3.14", "3.14 (Nur mit Juntagrico >= 2.0)"),
+        ('3.10', '3.10'),
+        ('3.11', '3.11'),
+        ('3.12', '3.12 (Nur mit Juntagrico >= 2.0)'),
+        ('3.13', '3.13 (Nur mit Juntagrico >= 2.0)'),
+        ('3.14', '3.14 (Nur mit Juntagrico >= 2.0)'),
     ]
     default_label = f'Automatisch ({settings.DEFAULT_PYTHON_VERSION})'
-    return [("", default_label)] + fixed
+    return [('', default_label)] + fixed
 
 
 class GitHubKey(models.Model):
-    user = models.OneToOneField(User, related_name='githubkey', null=True, blank=True, on_delete=models.CASCADE)
+    user = models.OneToOneField(
+        User, related_name='githubkey', null=True, blank=True, on_delete=models.CASCADE
+    )
     key = models.CharField(max_length=500)
 
     def __str__(self):
@@ -57,22 +59,34 @@ class GitHubKey(models.Model):
 
 
 class App(models.Model):
-    user = models.ForeignKey(User, related_name='app', null=True, blank=True, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        User, related_name='app', null=True, blank=True, on_delete=models.CASCADE
+    )
     git_clone_url = models.CharField('github', max_length=100, blank=True)
     git_branch = models.CharField('branch', max_length=100, blank=True, default='main')
-    name = models.CharField('name', max_length=100, unique=True, validators=[RegexValidator(regex='^[a-z0-9-]+$')])
+    name = models.CharField(
+        'name',
+        max_length=100,
+        unique=True,
+        validators=[RegexValidator(regex='^[a-z0-9-]+$')],
+    )
     port = models.IntegerField('port', unique=True)
     wsgi = models.CharField('wsgi', max_length=100, blank=True)
-    python_version = models.CharField('python', max_length=100, blank=True, choices=get_python_version_choices)
+    python_version = models.CharField(
+        'python', max_length=100, blank=True, choices=get_python_version_choices
+    )
     juntagrico_version = models.CharField('juntagrico', max_length=50, blank=True)
     managed = models.BooleanField('Managed', default=True)
     version = models.PositiveIntegerField('version', default=2)
-    staging_of = models.ForeignKey('App', null=True, blank=True, on_delete=models.CASCADE, related_name='stagings')
+    staging_of = models.ForeignKey(
+        'App', null=True, blank=True, on_delete=models.CASCADE, related_name='stagings'
+    )
     run_until = models.DateTimeField('run until', null=True, blank=True, default=None)
     isolated_network = models.BooleanField(
-        'network isolation', default=False,
+        'network isolation',
+        default=False,
         help_text='Run the app in its own Docker network instead of the host network. '
-                  'Takes effect at the next restart (manage.py restart), see README "App network isolation".'
+        'Takes effect at the next restart (manage.py restart), see README "App network isolation".',
     )
 
     def __str__(self):
@@ -106,7 +120,11 @@ class App(models.Model):
     def running(self):
         """Return True if the Docker container is running, False otherwise."""
         try:
-            return docker.from_env().containers.get(self.name).status in ('running', 'created', 'restarting')
+            return docker.from_env().containers.get(self.name).status in (
+                'running',
+                'created',
+                'restarting',
+            )
         except NotFound:
             return False
 
@@ -124,19 +142,61 @@ class App(models.Model):
 
 class AppEnv(models.Model):
     app = models.OneToOneField(App, related_name='env', on_delete=models.CASCADE)
-    juntagrico_admin_email = models.EmailField('JUNTAGRICO_ADMIN_EMAIL', max_length=100, blank=True, help_text='Hier werden die Error Report hingeschickt')
-    juntagrico_database_host = models.CharField('JUNTAGRICO_DATABASE_HOST', max_length=100, blank=True)
-    juntagrico_database_name = models.CharField('JUNTAGRICO_DATABASE_NAME', max_length=100, blank=True)
-    juntagrico_database_password = models.CharField('JUNTAGRICO_DATABASE_PASSWORD', max_length=100, blank=True)
-    juntagrico_database_port = models.CharField('JUNTAGRICO_DATABASE_PORT', max_length=100, blank=True)
-    juntagrico_database_user = models.CharField('JUNTAGRICO_DATABASE_USER', max_length=100, blank=True)
-    juntagrico_email_host = models.CharField('JUNTAGRICO_EMAIL_HOST', max_length=100, blank=True, help_text='Postausgansserver Url')
-    juntagrico_email_password = models.CharField('JUNTAGRICO_EMAIL_PASSWORD', max_length=100, blank=True, help_text='Password des Email Kontos')
-    juntagrico_email_port = models.CharField('JUNTAGRICO_EMAIL_PORT', max_length=100, default='25', blank=True, help_text='Postausgansserver Port')
-    juntagrico_email_user = models.CharField('JUNTAGRICO_EMAIL_USER', max_length=100, blank=True, help_text='Benutzername des Email Kontos')
+    juntagrico_admin_email = models.EmailField(
+        'JUNTAGRICO_ADMIN_EMAIL',
+        max_length=100,
+        blank=True,
+        help_text='Hier werden die Error Report hingeschickt',
+    )
+    juntagrico_database_host = models.CharField(
+        'JUNTAGRICO_DATABASE_HOST', max_length=100, blank=True
+    )
+    juntagrico_database_name = models.CharField(
+        'JUNTAGRICO_DATABASE_NAME', max_length=100, blank=True
+    )
+    juntagrico_database_password = models.CharField(
+        'JUNTAGRICO_DATABASE_PASSWORD', max_length=100, blank=True
+    )
+    juntagrico_database_port = models.CharField(
+        'JUNTAGRICO_DATABASE_PORT', max_length=100, blank=True
+    )
+    juntagrico_database_user = models.CharField(
+        'JUNTAGRICO_DATABASE_USER', max_length=100, blank=True
+    )
+    juntagrico_email_host = models.CharField(
+        'JUNTAGRICO_EMAIL_HOST',
+        max_length=100,
+        blank=True,
+        help_text='Postausgansserver Url',
+    )
+    juntagrico_email_password = models.CharField(
+        'JUNTAGRICO_EMAIL_PASSWORD',
+        max_length=100,
+        blank=True,
+        help_text='Password des Email Kontos',
+    )
+    juntagrico_email_port = models.CharField(
+        'JUNTAGRICO_EMAIL_PORT',
+        max_length=100,
+        default='25',
+        blank=True,
+        help_text='Postausgansserver Port',
+    )
+    juntagrico_email_user = models.CharField(
+        'JUNTAGRICO_EMAIL_USER',
+        max_length=100,
+        blank=True,
+        help_text='Benutzername des Email Kontos',
+    )
     juntagrico_email_tls = models.BooleanField('JUNTAGRICO_EMAIL_TLS', default=False)
     juntagrico_email_ssl = models.BooleanField('JUNTAGRICO_EMAIL_SSL', default=False)
-    juntagrico_secret_key = models.CharField('JUNTAGRICO_SECRET_KEY', null=True, max_length=100, help_text='Geheimer Schlüssel (nur im Notfall ändern)', default=generate_secret_key)
+    juntagrico_secret_key = models.CharField(
+        'JUNTAGRICO_SECRET_KEY',
+        null=True,
+        max_length=100,
+        help_text='Geheimer Schlüssel (nur im Notfall ändern)',
+        default=generate_secret_key,
+    )
 
     def __str__(self):
         return self.app.name
@@ -146,7 +206,9 @@ class AppEnv(models.Model):
         yield 'JUNTAGRICO_DATABASE_ENGINE=django.db.backends.postgresql'
         yield 'JUNTAGRICO_STATIC_ROOT=/code/static/'
         yield 'JUNTAGRICO_MEDIA_ROOT=/code/media/'
-        yield 'JUNTAGRICO_DOMAINS=' + ','.join(self.app.domains.values_list('name', flat=True))
+        yield 'JUNTAGRICO_DOMAINS=' + ','.join(
+            self.app.domains.values_list('name', flat=True)
+        )
         if self.app.staging_of:
             yield 'JUNTAGRICO_STAGING=1'
         for field in self._meta.get_fields():
@@ -158,6 +220,7 @@ class AppEnv(models.Model):
 
 class AppEnvVar(models.Model):
     """Individual key-value environment variable entry for an AppEnv."""
+
     env = models.ForeignKey(AppEnv, related_name='env_vars', on_delete=models.CASCADE)
     key = models.CharField(max_length=200)
     value = models.TextField(blank=True, default='')
@@ -176,7 +239,9 @@ class AppEnvVar(models.Model):
 class AppCronjob(models.Model):
     app = models.ForeignKey(App, related_name='cronjobs', on_delete=models.CASCADE)
     cronjob_id = models.CharField(max_length=100)
-    minute = models.PositiveIntegerField(null=True, blank=True, help_text='Minute (0-59)')
+    minute = models.PositiveIntegerField(
+        null=True, blank=True, help_text='Minute (0-59)'
+    )
     hour = models.PositiveIntegerField(null=True, blank=True, help_text='Hour (0-23)')
 
     class Meta:
@@ -188,14 +253,18 @@ class AppCronjob(models.Model):
 
 class Domain(models.Model):
     app = models.ForeignKey(App, related_name='domains', on_delete=models.CASCADE)
-    name = models.CharField('name', max_length=100, unique=True, validators=[validate_domain_name])
+    name = models.CharField(
+        'name', max_length=100, unique=True, validators=[validate_domain_name]
+    )
 
     def clean(self):
         # nginx and certbot treat domain names case-insensitively and ignore a trailing dot
         self.name = self.name.lower().rstrip('.')
         for platform_domain in settings.ALLOWED_HOSTS:
             platform_domain = '.'.join(platform_domain.rsplit('.', 2)[-2:])
-            if self.name == platform_domain or self.name.endswith('.' + platform_domain):
+            if self.name == platform_domain or self.name.endswith(
+                '.' + platform_domain
+            ):
                 # platform subdomains are reserved: an app may only use its own
                 if not self.app_id or self.name != f'{self.app.name}.{platform_domain}':
                     raise ValidationError({'name': 'ungültige Domain'})

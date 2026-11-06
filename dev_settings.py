@@ -25,7 +25,9 @@ SECRET_KEY = 'JS_KEY'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost',]
+ALLOWED_HOSTS = [
+    'localhost',
+]
 
 
 # Application definition
@@ -84,7 +86,7 @@ WSGI_APPLICATION = 'adminconsole.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME':  'yourdatabasename.db',
+        'NAME': 'yourdatabasename.db',
     }
 }
 
@@ -134,7 +136,7 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "static_content"),
+    os.path.join(BASE_DIR, 'static_content'),
 ]
 
 
@@ -152,7 +154,9 @@ GITHUB_CLIENT_SECRET = os.environ.get('GITHUB_CLIENT_SECRET')
 
 DEFAULT_PYTHON_VERSION = '3.12'
 
-COOKIECUTTER_URL = os.environ.get('COOKIECUTTER_URL', 'https://github.com/juntagrico/juntagrico-template.git')
+COOKIECUTTER_URL = os.environ.get(
+    'COOKIECUTTER_URL', 'https://github.com/juntagrico/juntagrico-template.git'
+)
 COOKIECUTTER_COMMIT = os.environ.get('COOKIECUTTER_COMMIT', '0' * 40)
 
 APPS_NETWORK = {

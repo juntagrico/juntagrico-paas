@@ -58,7 +58,9 @@ def set_version(request, app_id):
     old_version = app.version
     app.version = version
     app.save()
-    messages.success(request, f'Infrastruktur-Version geändert von V{old_version} nach V{version}.')
+    messages.success(
+        request, f'Infrastruktur-Version geändert von V{old_version} nach V{version}.'
+    )
 
     return _spawn_redeploy(app, f'Version wechseln (V{old_version} → V{version})')
 
@@ -74,10 +76,14 @@ def redeploy(request, app_id, upgrade=False):
         extra_args = ['--upgrade'] if upgrade else []
         return _spawn_redeploy(app, 'Upgrade' if upgrade else 'Redeploy', extra_args)
 
-    return render(request, 'generic/submit.html', {
-        'page_title': f'Redeploy {app.name}',
-        'button_text': 'Redeploy starten',
-    })
+    return render(
+        request,
+        'generic/submit.html',
+        {
+            'page_title': f'Redeploy {app.name}',
+            'button_text': 'Redeploy starten',
+        },
+    )
 
 
 def redeploy_with_form(request, app):
@@ -99,10 +105,14 @@ def redeploy_with_form(request, app):
     else:
         form = RedeployForm(app=app)
 
-    return render(request, 'app/redeploy_form.html', {
-        'form': form,
-        'app': app,
-    })
+    return render(
+        request,
+        'app/redeploy_form.html',
+        {
+            'form': form,
+            'app': app,
+        },
+    )
 
 
 @owner_of_app
@@ -128,12 +138,12 @@ def show_progress(request, app_id, pid):
             if match:
                 current_title = line
                 continue
-            
+
             match = docker_build_done.match(line)
             if match:
                 current_section += 1
                 continue
-            
+
             if line.startswith('# '):
                 current_section += 1
                 current_section_progress = 0
@@ -181,6 +191,12 @@ def set_python_version(request, app_id):
     else:
         form = PythonVersionForm(instance=app)
 
-    return render(request, 'app/python_version_form.html', {
-        'form': form, 'success': success, 'app': app,
-    })
+    return render(
+        request,
+        'app/python_version_form.html',
+        {
+            'form': form,
+            'success': success,
+            'app': app,
+        },
+    )

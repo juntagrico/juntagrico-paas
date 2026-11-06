@@ -7,7 +7,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('adminconsole', '0003_auto_20180205_2140'),
     ]
@@ -33,76 +32,120 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='app',
             name='name',
-            field=models.CharField(max_length=100, unique=True, validators=[django.core.validators.RegexValidator(regex='^[-a-z0-9_]+$')], verbose_name='name'),
+            field=models.CharField(
+                max_length=100,
+                unique=True,
+                validators=[
+                    django.core.validators.RegexValidator(regex='^[-a-z0-9_]+$')
+                ],
+                verbose_name='name',
+            ),
         ),
         migrations.AlterField(
             model_name='app',
             name='user',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='app', to=settings.AUTH_USER_MODEL),
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name='app',
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AlterField(
             model_name='appenv',
             name='app',
-            field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='env', to='adminconsole.App'),
+            field=models.OneToOneField(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name='env',
+                to='adminconsole.App',
+            ),
         ),
         migrations.AlterField(
             model_name='appenv',
             name='google_api_key',
-            field=models.CharField(blank=True, max_length=100, verbose_name='GOOGLE_API_KEY'),
+            field=models.CharField(
+                blank=True, max_length=100, verbose_name='GOOGLE_API_KEY'
+            ),
         ),
         migrations.AlterField(
             model_name='appenv',
             name='juntagrico_admin_email',
-            field=models.EmailField(blank=True, max_length=100, verbose_name='JUNTAGRICO_ADMIN_EMAIL'),
+            field=models.EmailField(
+                blank=True, max_length=100, verbose_name='JUNTAGRICO_ADMIN_EMAIL'
+            ),
         ),
         migrations.AlterField(
             model_name='appenv',
             name='juntagrico_database_host',
-            field=models.CharField(blank=True, max_length=100, verbose_name='JUNTAGRICO_DATABASE_HOST'),
+            field=models.CharField(
+                blank=True, max_length=100, verbose_name='JUNTAGRICO_DATABASE_HOST'
+            ),
         ),
         migrations.AlterField(
             model_name='appenv',
             name='juntagrico_database_name',
-            field=models.CharField(blank=True, max_length=100, verbose_name='JUNTAGRICO_DATABASE_NAME'),
+            field=models.CharField(
+                blank=True, max_length=100, verbose_name='JUNTAGRICO_DATABASE_NAME'
+            ),
         ),
         migrations.AlterField(
             model_name='appenv',
             name='juntagrico_database_password',
-            field=models.CharField(blank=True, max_length=100, verbose_name='JUNTAGRICO_DATABASE_PASSWORD'),
+            field=models.CharField(
+                blank=True, max_length=100, verbose_name='JUNTAGRICO_DATABASE_PASSWORD'
+            ),
         ),
         migrations.AlterField(
             model_name='appenv',
             name='juntagrico_database_port',
-            field=models.CharField(blank=True, max_length=100, verbose_name='JUNTAGRICO_DATABASE_PORT'),
+            field=models.CharField(
+                blank=True, max_length=100, verbose_name='JUNTAGRICO_DATABASE_PORT'
+            ),
         ),
         migrations.AlterField(
             model_name='appenv',
             name='juntagrico_database_user',
-            field=models.CharField(blank=True, max_length=100, verbose_name='JUNTAGRICO_DATABASE_USER'),
+            field=models.CharField(
+                blank=True, max_length=100, verbose_name='JUNTAGRICO_DATABASE_USER'
+            ),
         ),
         migrations.AlterField(
             model_name='appenv',
             name='juntagrico_email_host',
-            field=models.CharField(blank=True, max_length=100, verbose_name='JUNTAGRICO_EMAIL_HOST'),
+            field=models.CharField(
+                blank=True, max_length=100, verbose_name='JUNTAGRICO_EMAIL_HOST'
+            ),
         ),
         migrations.AlterField(
             model_name='appenv',
             name='juntagrico_email_password',
-            field=models.CharField(blank=True, max_length=100, verbose_name='JUNTAGRICO_EMAIL_PASSWORD'),
+            field=models.CharField(
+                blank=True, max_length=100, verbose_name='JUNTAGRICO_EMAIL_PASSWORD'
+            ),
         ),
         migrations.AlterField(
             model_name='appenv',
             name='juntagrico_email_port',
-            field=models.CharField(blank=True, default='25', max_length=100, verbose_name='JUNTAGRICO_EMAIL_PORT'),
+            field=models.CharField(
+                blank=True,
+                default='25',
+                max_length=100,
+                verbose_name='JUNTAGRICO_EMAIL_PORT',
+            ),
         ),
         migrations.AlterField(
             model_name='appenv',
             name='juntagrico_email_user',
-            field=models.CharField(blank=True, max_length=100, verbose_name='JUNTAGRICO_EMAIL_USER'),
+            field=models.CharField(
+                blank=True, max_length=100, verbose_name='JUNTAGRICO_EMAIL_USER'
+            ),
         ),
         migrations.AlterField(
             model_name='appenv',
             name='juntagrico_host_email',
-            field=models.EmailField(blank=True, max_length=100, verbose_name='JUNTAGRICO_HOST_EMAIL'),
+            field=models.EmailField(
+                blank=True, max_length=100, verbose_name='JUNTAGRICO_HOST_EMAIL'
+            ),
         ),
     ]

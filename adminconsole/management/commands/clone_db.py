@@ -11,7 +11,9 @@ from adminconsole.util.create_app import create_database
 class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('app_name', nargs=1)
-        parser.add_argument('--no-restart', action='store_true', help="Don't restart container")
+        parser.add_argument(
+            '--no-restart', action='store_true', help="Don't restart container"
+        )
 
     # entry point used by manage.py
     def handle(self, *args, **options):
@@ -32,15 +34,35 @@ class Command(BaseCommand):
         print('# Clone Database', flush=True)
         target_user = app.env.juntagrico_database_user
         load = subprocess.Popen(
-            ['psql', '-h', 'localhost', '-U', target_user, '--no-password', app.env.juntagrico_database_name],
-            stdin=subprocess.PIPE, stderr=subprocess.STDOUT,
-            env={'PGPASSWORD': app.env.juntagrico_database_password}
+            [
+                'psql',
+                '-h',
+                'localhost',
+                '-U',
+                target_user,
+                '--no-password',
+                app.env.juntagrico_database_name,
+            ],
+            stdin=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            env={'PGPASSWORD': app.env.juntagrico_database_password},
         )
         source_user = app.staging_of.env.juntagrico_database_user
         dump = subprocess.Popen(
-            ['pg_dump', '-h', 'localhost', '-U', source_user, '--no-password', '--no-comments', '--no-owner', '--no-privileges',
-             app.staging_of.env.juntagrico_database_name],
-            stdout=load.stdin, env={'PGPASSWORD': app.staging_of.env.juntagrico_database_password}
+            [
+                'pg_dump',
+                '-h',
+                'localhost',
+                '-U',
+                source_user,
+                '--no-password',
+                '--no-comments',
+                '--no-owner',
+                '--no-privileges',
+                app.staging_of.env.juntagrico_database_name,
+            ],
+            stdout=load.stdin,
+            env={'PGPASSWORD': app.staging_of.env.juntagrico_database_password},
         )
         dump.communicate()
         load.communicate(b'\\q')

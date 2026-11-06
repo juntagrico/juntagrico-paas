@@ -27,7 +27,6 @@ def reverse_migrate_branch(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('adminconsole', '0017_app_isolated_network'),
     ]
@@ -36,7 +35,9 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='app',
             name='git_branch',
-            field=models.CharField(blank=True, default='main', max_length=100, verbose_name='branch'),
+            field=models.CharField(
+                blank=True, default='main', max_length=100, verbose_name='branch'
+            ),
         ),
         migrations.RunPython(migrate_branch, reverse_migrate_branch),
     ]

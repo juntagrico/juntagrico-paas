@@ -22,7 +22,12 @@ from adminconsole.util import pid_finished
 from adminconsole.util.docker import get_container_statuses
 from adminconsole.util.git import git_switch, git_current_branch
 from adminconsole.util.log_summary import build_summary, build_header_summary
-from adminconsole.views.generic import confirm_post, confirm_password, security_log, client_address
+from adminconsole.views.generic import (
+    confirm_post,
+    confirm_password,
+    security_log,
+    client_address,
+)
 
 
 @login_required
@@ -31,7 +36,9 @@ def home(request):
     if superuser:
         available_apps = App.objects.filter(staging_of__isnull=True).order_by('name')
     else:
-        available_apps = request.user.app.filter(staging_of__isnull=True).order_by('name')
+        available_apps = request.user.app.filter(staging_of__isnull=True).order_by(
+            'name'
+        )
     number_of_apps = available_apps.count()
     if number_of_apps == 1 and not superuser:
         return redirect('overview', app_id=available_apps[0].id)
@@ -49,12 +56,16 @@ def home(request):
         first_letter = app.name[0].upper() if app.name else '#'
         grouped_apps[first_letter].append(app)
 
-    return render(request, 'home.html', {
-        'grouped_apps': dict(sorted(grouped_apps.items())),
-        'number_of_apps': number_of_apps,
-        'can_add_app': number_of_apps < 1 or superuser,
-        'container_statuses': container_statuses,
-    })
+    return render(
+        request,
+        'home.html',
+        {
+            'grouped_apps': dict(sorted(grouped_apps.items())),
+            'number_of_apps': number_of_apps,
+            'can_add_app': number_of_apps < 1 or superuser,
+            'container_statuses': container_statuses,
+        },
+    )
 
 
 @owner_of_app
@@ -86,9 +97,7 @@ def overview(request, app_id):
 
 @login_required
 def pidcheck(request, pid):
-    return JsonResponse({
-        'finished': pid_finished(pid)
-    })
+    return JsonResponse({'finished': pid_finished(pid)})
 
 
 @owner_of_app
@@ -121,11 +130,14 @@ def show_result(request, app_id):
 
     # Build summaries for each section
     for section_name, section in sections.items():
-        section['summary'] = build_summary(section['text'], section['result'], section_name)
-        section['header_summary'] = build_header_summary(section['text'], section['result'], section_name)
+        section['summary'] = build_summary(
+            section['text'], section['result'], section_name
+        )
+        section['header_summary'] = build_header_summary(
+            section['text'], section['result'], section_name
+        )
 
-    return render(request, 'app/show_result.html',
-                  {'app': app, 'sections': sections})
+    return render(request, 'app/show_result.html', {'app': app, 'sections': sections})
 
 
 @owner_of_app
@@ -150,15 +162,23 @@ def env(request, app_id):
                 with open(app.log_file, 'wb') as out:
                     proc = subprocess.Popen(
                         [settings.PYTHON_BIN, '-m', 'manage', 'restart', app.name],
-                        stdout=out, stderr=out
+                        stdout=out,
+                        stderr=out,
                     )
-                return render(request, 'app/wait_next.html', {
-                    'step': 'Einstellungen anwenden',
-                    'pid': proc.pid,
-                    'next': reverse('overview', args=[app.id])
-                })
+                return render(
+                    request,
+                    'app/wait_next.html',
+                    {
+                        'step': 'Einstellungen anwenden',
+                        'pid': proc.pid,
+                        'next': reverse('overview', args=[app.id]),
+                    },
+                )
             else:
-                messages.info(request, 'Einstellungen gespeichert. Die Instanz ist inaktiv; die Änderungen werden beim nächsten Start wirksam.')
+                messages.info(
+                    request,
+                    'Einstellungen gespeichert. Die Instanz ist inaktiv; die Änderungen werden beim nächsten Start wirksam.',
+                )
                 return redirect('overview', app.id)
     else:
         form = EnvForm(instance=app_env)
@@ -169,7 +189,11 @@ def env(request, app_id):
     if form.has_error('__all__', 'smtp_error'):
         smtp_error = form.errors['__all__'][0]
 
-    return render(request, 'app/env.html', {'form': form, 'formset': formset, 'app': app, 'smtp_error': smtp_error})
+    return render(
+        request,
+        'app/env.html',
+        {'form': form, 'formset': formset, 'app': app, 'smtp_error': smtp_error},
+    )
 
 
 def _is_sensitive_key(key):
@@ -180,7 +204,7 @@ def _is_sensitive_key(key):
 
 def _mask_value(value, secret_values=None):
     """Return a masked representation of a value, recursively handling nested structures.
-    
+
     Args:
         value: The value to mask.
         secret_values: A set of string values that should be masked if found as substrings.
@@ -213,18 +237,24 @@ def show_env(request, app_id):
     app = get_object_or_404(App, pk=app_id)
 
     # Collect values from secret AppEnvVars so we can mask settings that match them
-    secret_values = set(app.env.env_vars.filter(secret=True).exclude(value='').values_list('value', flat=True))
+    secret_values = set(
+        app.env.env_vars.filter(secret=True)
+        .exclude(value='')
+        .values_list('value', flat=True)
+    )
     secret_values |= {
         app.env.juntagrico_secret_key,
         app.env.juntagrico_database_password,
-        app.env.juntagrico_email_password
+        app.env.juntagrico_email_password,
     }
     secret_values.discard('')
 
     # Run diffsettings inside the container to get the actual Django settings
     try:
         container = app.container
-        result = container.exec_run(['python', '-m', 'manage', 'diffsettings'], stderr=False)
+        result = container.exec_run(
+            ['python', '-m', 'manage', 'diffsettings'], stderr=False
+        )
         output = result.output.decode('utf-8')
     except DockerException as e:
         messages.error(request, f'Container nicht erreichbar: {e}')
@@ -259,10 +289,14 @@ def show_env(request, app_id):
                 'value': value,
             })
 
-    return render(request, 'app/show_env.html', {
-        'settings': settings_entries,
-        'app': app,
-    })
+    return render(
+        request,
+        'app/show_env.html',
+        {
+            'settings': settings_entries,
+            'app': app,
+        },
+    )
 
 
 @owner_of_app
@@ -277,9 +311,11 @@ def change_branch(request, app_id):
             success = not error
 
     form = BranchForm(initial={'branch': git_current_branch(app)})
-    return render(request, 'app/branch_form.html', {
-        'form': form, 'success': success, 'error': error, 'app': app
-    })
+    return render(
+        request,
+        'app/branch_form.html',
+        {'form': form, 'success': success, 'error': error, 'app': app},
+    )
 
 
 @owner_of_app
@@ -293,7 +329,7 @@ def generate_depot_list(request, app_id):
     container.exec_run(cmd)
     render_dict = {
         'step': 'Depotliste generieren',
-        'next': reverse('overview', args=[app.id])
+        'next': reverse('overview', args=[app.id]),
     }
     return render(request, 'app/done_next.html', render_dict)
 
@@ -335,13 +371,28 @@ def mailtexts(request, app_id):
 def dumpdata(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     name = app.name
-    security_log.info('%s exports JSON of %s from %s', request.user, name, client_address(request))
+    security_log.info(
+        '%s exports JSON of %s from %s', request.user, name, client_address(request)
+    )
     client = docker.from_env()
     container = client.containers.get(name)
-    cmd = ['python', '-m', 'manage', 'dumpdata', '--natural-foreign', '--natural-primary', '-e', 'sessions']
+    cmd = [
+        'python',
+        '-m',
+        'manage',
+        'dumpdata',
+        '--natural-foreign',
+        '--natural-primary',
+        '-e',
+        'sessions',
+    ]
     result = container.exec_run(cmd, stderr=False)
-    response = HttpResponse(result.output.decode('utf-8'), content_type="application/json")
-    response['Content-Disposition'] = f'attachment; filename={name}-{timezone.now().strftime("%y_%m_%d_%H_%M")}.json'
+    response = HttpResponse(
+        result.output.decode('utf-8'), content_type='application/json'
+    )
+    response['Content-Disposition'] = (
+        f'attachment; filename={name}-{timezone.now().strftime("%y_%m_%d_%H_%M")}.json'
+    )
     return response
 
 
@@ -349,16 +400,21 @@ def dumpdata(request, app_id):
 @confirm_password('Daten exportieren (SQL)', 'Exportieren')
 def pgdump(request, app_id):
     app = get_object_or_404(App, pk=app_id)
-    security_log.info('%s exports SQL of %s from %s', request.user, app.name, client_address(request))
+    security_log.info(
+        '%s exports SQL of %s from %s', request.user, app.name, client_address(request)
+    )
     db_user = settings.DATABASES['default']['USER']
     db_pw = settings.DATABASES['default']['PASSWORD']
 
     dump = subprocess.run(
         ['pg_dump', '-U', db_user, '--no-password', app.env.juntagrico_database_name],
-        stdout=subprocess.PIPE, env={'PGPASSWORD': db_pw}
+        stdout=subprocess.PIPE,
+        env={'PGPASSWORD': db_pw},
     )
-    response = HttpResponse(dump.stdout.decode('utf-8'), content_type="application/sql")
-    response['Content-Disposition'] = f'attachment; filename={app.name}-{timezone.now().strftime("%y_%m_%d_%H_%M")}.sql'
+    response = HttpResponse(dump.stdout.decode('utf-8'), content_type='application/sql')
+    response['Content-Disposition'] = (
+        f'attachment; filename={app.name}-{timezone.now().strftime("%y_%m_%d_%H_%M")}.sql'
+    )
     return response
 
 
@@ -372,14 +428,14 @@ LOG_LINE_RE = re.compile(
     r'(?:\[(?P<pid>\d+)\]\s+)?'
     r'(?:\[(?P<level>INFO|WARNING|ERROR|CRITICAL|DEBUG)\]\s+)?'
     r'(?P<message>.*)',
-    re.IGNORECASE
+    re.IGNORECASE,
 )
 
 DJANGO_LOG_RE = re.compile(
     r'^\[(?P<timestamp>[^\]]+)\]\s+'
     r'(?P<level>INFO|WARNING|ERROR|CRITICAL|DEBUG)\s+'
     r'(?P<message>.*)',
-    re.IGNORECASE
+    re.IGNORECASE,
 )
 
 # Timestamp-only lines (ISO 8601 with microseconds and timezone offset)
@@ -393,9 +449,18 @@ TIMESTAMP_ONLY_RE = re.compile(
 DATETIME_RE = re.compile(r'(\d{4})-(\d{2})-(\d{2})\s+(\d{2}:\d{2}:\d{2})')
 
 MONTH_ABBR = {
-    '01': 'Jan', '02': 'Feb', '03': 'Mär', '04': 'Apr',
-    '05': 'Mai', '06': 'Jun', '07': 'Jul', '08': 'Aug',
-    '09': 'Sep', '10': 'Okt', '11': 'Nov', '12': 'Dez'
+    '01': 'Jan',
+    '02': 'Feb',
+    '03': 'Mär',
+    '04': 'Apr',
+    '05': 'Mai',
+    '06': 'Jun',
+    '07': 'Jul',
+    '08': 'Aug',
+    '09': 'Sep',
+    '10': 'Okt',
+    '11': 'Nov',
+    '12': 'Dez',
 }
 
 
@@ -501,11 +566,15 @@ def logs(request, app_id):
     for entry in entries:
         entry['timestamp_display'] = format_timestamp(entry['timestamp'])
 
-    return render(request, 'app/logs.html', {
-        'app': app,
-        'log_entries': entries,
-        'levels': levels,
-    })
+    return render(
+        request,
+        'app/logs.html',
+        {
+            'app': app,
+            'log_entries': entries,
+            'levels': levels,
+        },
+    )
 
 
 @owner_of_app
@@ -525,7 +594,10 @@ def versions(request, app_id):
     # a single JSON object.
     try:
         result = container.exec_run(
-            ['python', '-c', '''
+            [
+                'python',
+                '-c',
+                """
 import importlib.metadata, json, sys
 
 data = {"python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}", "packages": []}
@@ -535,7 +607,8 @@ for d in importlib.metadata.distributions():
         data["packages"].append([name, d.version])
 
 print(json.dumps(data))
-'''],
+""",
+            ],
             stderr=False,
         )
         output = result.output.decode('utf-8').strip()

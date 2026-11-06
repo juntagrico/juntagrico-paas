@@ -12,10 +12,17 @@ class Command(BaseCommand):
 
     """ v2 app command
     """
+
     def add_arguments(self, parser):
         parser.add_argument('app_name', nargs=1)
-        parser.add_argument('--upgrade', action='store_true', help="Force upgrade of requirements.txt")
-        parser.add_argument('--copy-data', action='store_true', help="Copy data from production to staging")
+        parser.add_argument(
+            '--upgrade', action='store_true', help='Force upgrade of requirements.txt'
+        )
+        parser.add_argument(
+            '--copy-data',
+            action='store_true',
+            help='Copy data from production to staging',
+        )
 
     # entry point used by manage.py
     def handle(self, *args, **options):
@@ -29,7 +36,9 @@ class Command(BaseCommand):
                 # using the same nonce as in the last build will ensure that the right cache is used.
                 try:
                     with open(app.code_dir / 'requirements.txt', 'r') as f:
-                        upgrade_nonce = f.readlines()[-1].split(self.FORCE_REBUILD_SEP)[1]
+                        upgrade_nonce = f.readlines()[-1].split(self.FORCE_REBUILD_SEP)[
+                            1
+                        ]
                 except FileNotFoundError:
                     pass
                 except IndexError:

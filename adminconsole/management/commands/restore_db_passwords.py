@@ -6,22 +6,22 @@ from adminconsole.models import AppEnv
 
 class Command(BaseCommand):
     help = (
-        "Generate SQL to reset AppEnv PostgreSQL role passwords\n\n"
-        "Usage: python manage.py generate_role_password_sql | "
+        'Generate SQL to reset AppEnv PostgreSQL role passwords\n\n'
+        'Usage: python manage.py generate_role_password_sql | '
         'psql -v ON_ERROR_STOP=1\n\n'
-        "The default Django database connection reads AppEnv. "
-        "SQL is streamed directly to psql; "
-        "passwords are not printed to the terminal."
+        'The default Django database connection reads AppEnv. '
+        'SQL is streamed directly to psql; '
+        'passwords are not printed to the terminal.'
     )
 
     def handle(self, *args, **options):
-        if connection.vendor != "postgresql":
-            raise CommandError("The default Django database must be PostgreSQL.")
+        if connection.vendor != 'postgresql':
+            raise CommandError('The default Django database must be PostgreSQL.')
 
         with connection.cursor() as cursor:
             for role, password in (
-                AppEnv.objects.using("default")
-                .values_list("juntagrico_database_user", "juntagrico_database_password")
+                AppEnv.objects.using('default')
+                .values_list('juntagrico_database_user', 'juntagrico_database_password')
                 .iterator()
             ):
                 if not role or password is None:

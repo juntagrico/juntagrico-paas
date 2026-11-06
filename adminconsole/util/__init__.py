@@ -5,7 +5,9 @@ import psutil
 
 
 def generate_password():
-    return ''.join(secrets.choice(string.ascii_uppercase + string.digits) for x in range(20))
+    return ''.join(
+        secrets.choice(string.ascii_uppercase + string.digits) for x in range(20)
+    )
 
 
 def generate_secret_key():
@@ -24,6 +26,9 @@ def pid_finished(pid):
         process = psutil.Process(int(pid))
         if process.status() == psutil.STATUS_ZOMBIE:
             return True
-        return process.username() != psutil.Process().username() or 'manage' not in process.cmdline()
+        return (
+            process.username() != psutil.Process().username()
+            or 'manage' not in process.cmdline()
+        )
     except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
         return True

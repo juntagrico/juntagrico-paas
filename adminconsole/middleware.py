@@ -30,7 +30,12 @@ class RequireOTPMiddleware:
 
     def __call__(self, request):
         user = request.user
-        if user.is_authenticated and user_has_device(user) and not user.is_verified() and not self.is_allowed(request):
+        if (
+            user.is_authenticated
+            and user_has_device(user)
+            and not user.is_verified()
+            and not self.is_allowed(request)
+        ):
             logout(request)
             return redirect_to_login(request.get_full_path())
         return self.get_response(request)

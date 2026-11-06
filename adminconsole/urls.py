@@ -1,5 +1,5 @@
-"""adminconsole URL Configuration
-"""
+"""adminconsole URL Configuration"""
+
 from django.contrib import admin
 from django.urls import path, include
 from two_factor.urls import urlpatterns as two_factor_urls
@@ -16,7 +16,11 @@ urlpatterns = [
     path('overview/<int:app_id>/', views.overview, name='overview'),
     path('app/<int:app_id>/start/', app.start, name='app-start'),
     path('app/<int:app_id>/stop/', app.stop, name='app-stop'),
-    path('app/<int:app_id>/admin-password/', app.reset_admin_password, name='app-admin-password'),
+    path(
+        'app/<int:app_id>/admin-password/',
+        app.reset_admin_password,
+        name='app-admin-password',
+    ),
     path('mailtexts/<int:app_id>/', views.mailtexts),
     path('show/<int:app_id>/result/', views.show_result, name='show-result'),
     path('logs/<int:app_id>/', views.logs, name='logs'),
@@ -33,7 +37,6 @@ urlpatterns = [
     path('branch/change/<int:app_id>/', views.change_branch, name='change-branch'),
     path('dumpdata/<int:app_id>/', views.dumpdata, name='dumpdata'),
     path('pgdump/<int:app_id>/', views.pgdump, name='pgdump'),
-
     # create application urls in the right order how they flow
     path('ca/af', create.app_form, name='create-app'),
     path('github/request', git.github_request, name='github-access'),
@@ -49,23 +52,34 @@ urlpatterns = [
     path('ca/cronjob/<int:app_id>/', create.init_cronjob, name='ca-init-cronjob'),
     path('ca/build/<int:app_id>/', create.build, name='ca-build'),
     path('ca/createadmin/<int:app_id>/', create.create_admin, name='ca-create-admin'),
-
     # staging app
     path('staging/create/<int:app_id>/', staging.create, name='staging-create'),
-    path('staging/git/clone/<int:app_id>/', staging.clone_repo, name='staging-git-clone'),
+    path(
+        'staging/git/clone/<int:app_id>/', staging.clone_repo, name='staging-git-clone'
+    ),
     path('staging/db/init/<int:app_id>/', staging.init_db, name='staging-init-db'),
-    path('staging/domain/init/<int:app_id>/', staging.init_domain, name='staging-init-domain'),
+    path(
+        'staging/domain/init/<int:app_id>/',
+        staging.init_domain,
+        name='staging-init-domain',
+    ),
     path('staging/db/clone/<int:app_id>/', staging.clone_db, name='staging-clone-db'),
     path('staging/renew/<int:app_id>/', staging.renew, name='staging-renew'),
-
     # v2 apps
     path('v2/redeploy/<int:app_id>/', v2.redeploy, name='redeploy-v2'),
     path('v2/upgrade/<int:app_id>/', v2.redeploy, {'upgrade': True}, name='upgrade-v2'),
     path('v2/progress/<int:app_id>/<int:pid>/', v2.show_progress, name='progress'),
-    path('v2/python/version/set/<int:app_id>/', v2.set_python_version, name='set-python-version'),
+    path(
+        'v2/python/version/set/<int:app_id>/',
+        v2.set_python_version,
+        name='set-python-version',
+    ),
     path('v2/version/set/<int:app_id>/', v2.set_version, name='set-version'),
-
     # tools
-    path('tools/update_permissions/<int:app_id>/', tools.update_permissions, name='update-permissions'),
+    path(
+        'tools/update_permissions/<int:app_id>/',
+        tools.update_permissions,
+        name='update-permissions',
+    ),
     path('tools/reload_versions', tools.reload_versions, name='reload-versions'),
 ]

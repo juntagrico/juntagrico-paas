@@ -12,13 +12,17 @@ from adminconsole.util.create_app import create_docker_file
 
 
 class Command(BaseCommand):
-    """ v2 app command
-    """
+    """v2 app command"""
+
     def add_arguments(self, parser):
         parser.add_argument('app_name', nargs=1)
         parser.add_argument('python_version', nargs='?')
-        parser.add_argument('--restart', action='store_true', help="Restart instance after rebuilding")
-        parser.add_argument('--nocache', action='store_true', help="Build without using cache")
+        parser.add_argument(
+            '--restart', action='store_true', help='Restart instance after rebuilding'
+        )
+        parser.add_argument(
+            '--nocache', action='store_true', help='Build without using cache'
+        )
 
     # entry point used by manage.py
     def handle(self, *args, **options):
@@ -40,7 +44,10 @@ class Command(BaseCommand):
 
             cmd = (
                 ['docker', 'buildx', 'build', '-f', '-']
-                + ['--no-cache-filter', 'fetcher']  # always pull latest changes from branch
+                + [
+                    '--no-cache-filter',
+                    'fetcher',
+                ]  # always pull latest changes from branch
                 + ['--tag', app.image_tag]
             )
 
@@ -56,9 +63,10 @@ class Command(BaseCommand):
 
             result = subprocess.run(
                 cmd,
-                input=get_template(f'infra/v{app.version}/Dockerfile').render(
-                    {'app': app, 'default_python_version': settings.DEFAULT_PYTHON_VERSION}
-                ),
+                input=get_template(f'infra/v{app.version}/Dockerfile').render({
+                    'app': app,
+                    'default_python_version': settings.DEFAULT_PYTHON_VERSION,
+                }),
                 text=True,
                 check=False,
             )
@@ -80,8 +88,8 @@ class Command(BaseCommand):
                         'mode': 'rw',
                     },
                     app.dir / 'media': {
-                        "bind": "/code/media",
-                        "mode": "rw",
+                        'bind': '/code/media',
+                        'mode': 'rw',
                     },
                 },
                 remove=True,
@@ -95,7 +103,7 @@ class Command(BaseCommand):
 
         else:
             create_docker_file(app)
-            
+
             response = client.api.build(
                 path=str(app.dir),
                 tag=app.image_tag,
@@ -113,7 +121,7 @@ class Command(BaseCommand):
                     code = 1
                 if stream:
                     print(stream, end='', flush=True)
-    
+
             print(f'Return {code}', flush=True)
             if code == 1:
                 return None

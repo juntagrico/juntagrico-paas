@@ -18,17 +18,29 @@ def find_port():
 
 def make_dirs(directory, output=None):
     result = True
-    proc = subprocess.run(['mkdir', '-p', directory], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    proc = subprocess.run(
+        ['mkdir', '-p', directory], stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+    )
     result &= proc.returncode == 0
     if output is not None:
         output.append(proc.stdout.decode())
 
-    proc = subprocess.run(['mkdir', '-p', 'static'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=directory)
+    proc = subprocess.run(
+        ['mkdir', '-p', 'static'],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        cwd=directory,
+    )
     result &= proc.returncode == 0
     if output is not None:
         output.append(proc.stdout.decode())
 
-    proc = subprocess.run(['mkdir', '-p', 'media'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=directory)
+    proc = subprocess.run(
+        ['mkdir', '-p', 'media'],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        cwd=directory,
+    )
     result &= proc.returncode == 0
     if output is not None:
         output.append(proc.stdout.decode())
@@ -45,17 +57,21 @@ def create_database(app_env, db_name, user_name, replace=False):
     db, user = connection.ops.quote_name(db_name), connection.ops.quote_name(user_name)
     with connection.cursor() as cursor:
         if replace:
-            cursor.execute(f"SET ROLE {user}")
-            cursor.execute(f"DROP DATABASE IF EXISTS {db}")
-            cursor.execute("RESET ROLE")
-            cursor.execute(f"DROP USER IF EXISTS {user}")
+            cursor.execute(f'SET ROLE {user}')
+            cursor.execute(f'DROP DATABASE IF EXISTS {db}')
+            cursor.execute('RESET ROLE')
+            cursor.execute(f'DROP USER IF EXISTS {user}')
         cursor.execute(f"CREATE USER {user} WITH PASSWORD '{password}'")
         cursor.execute(f"ALTER ROLE {user} SET client_encoding TO 'utf8'")
-        cursor.execute(f"ALTER ROLE {user} SET default_transaction_isolation TO 'read committed'")
+        cursor.execute(
+            f"ALTER ROLE {user} SET default_transaction_isolation TO 'read committed'"
+        )
         cursor.execute(f"ALTER ROLE {user} SET timezone TO 'Europe/Zurich'")
-        cursor.execute(f"CREATE DATABASE {db} OWNER {user} "
-                       f"TEMPLATE template0 ENCODING 'UTF8' "
-                       f"LC_COLLATE 'en_US.UTF-8' LC_CTYPE 'en_US.UTF-8'")
+        cursor.execute(
+            f'CREATE DATABASE {db} OWNER {user} '
+            f"TEMPLATE template0 ENCODING 'UTF8' "
+            f"LC_COLLATE 'en_US.UTF-8' LC_CTYPE 'en_US.UTF-8'"
+        )
     app_env.juntagrico_database_host = 'localhost'
     app_env.juntagrico_database_name = db_name
     app_env.juntagrico_database_password = password
@@ -65,7 +81,10 @@ def create_database(app_env, db_name, user_name, replace=False):
 
 
 def create_docker_file(app):
-    with open(app.dir / 'Dockerfile', "w") as docker_file:
-        docker_file.write(get_template(f'infra/v{app.version}/Dockerfile').render(
-            {'app': app, 'default_python_version': settings.DEFAULT_PYTHON_VERSION}
-        ))
+    with open(app.dir / 'Dockerfile', 'w') as docker_file:
+        docker_file.write(
+            get_template(f'infra/v{app.version}/Dockerfile').render({
+                'app': app,
+                'default_python_version': settings.DEFAULT_PYTHON_VERSION,
+            })
+        )

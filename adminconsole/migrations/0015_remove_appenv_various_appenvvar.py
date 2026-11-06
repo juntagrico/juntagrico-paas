@@ -16,11 +16,12 @@ def migrate_various_to_env_vars(apps, schema_editor):
             if not line or '=' not in line:
                 continue
             key, _, value = line.partition('=')
-            AppEnvVar.objects.update_or_create(env=env, key=key.strip(), defaults={'value': value})
+            AppEnvVar.objects.update_or_create(
+                env=env, key=key.strip(), defaults={'value': value}
+            )
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('adminconsole', '0014_alter_app_python_version_appcronjob'),
     ]
@@ -29,11 +30,26 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='AppEnvVar',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('key', models.CharField(max_length=200)),
                 ('value', models.TextField(blank=True, default='')),
                 ('secret', models.BooleanField(default=False)),
-                ('env', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='env_vars', to='adminconsole.appenv')),
+                (
+                    'env',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='env_vars',
+                        to='adminconsole.appenv',
+                    ),
+                ),
             ],
             options={
                 'ordering': ['key'],

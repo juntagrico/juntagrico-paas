@@ -55,8 +55,15 @@ def reset_admin_password(request, app_id):
         messages.error(request, str(e))
         return redirect('overview', app.id)
     if result.exit_code != 0:
-        messages.error(request, f'Das Passwort konnte nicht gesetzt werden. Gibt es den Benutzer «{ADMIN_USERNAME}»?')
+        messages.error(
+            request,
+            f'Das Passwort konnte nicht gesetzt werden. Gibt es den Benutzer «{ADMIN_USERNAME}»?',
+        )
         return redirect('overview', app.id)
 
     # shown once and never stored, also not in messages, which may end up in a cookie
-    return render(request, 'app/admin_password.html', {'app': app, 'username': ADMIN_USERNAME, 'password': password})
+    return render(
+        request,
+        'app/admin_password.html',
+        {'app': app, 'username': ADMIN_USERNAME, 'password': password},
+    )

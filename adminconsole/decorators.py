@@ -27,7 +27,12 @@ def owner_of_domain(view):
     def wrapper(request, *args, **kwargs):
         if request.user.is_authenticated:
             user = request.user
-            if user.is_superuser or Domain.objects.filter(id=kwargs['domain_id'], app__user=user).exists():
+            if (
+                user.is_superuser
+                or Domain.objects.filter(
+                    id=kwargs['domain_id'], app__user=user
+                ).exists()
+            ):
                 return view(request, *args, **kwargs)
             else:
                 return redirect('home')

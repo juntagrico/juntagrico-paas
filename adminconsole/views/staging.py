@@ -34,10 +34,14 @@ def create(request, app_id):
         )
         return redirect('staging-git-clone', app_id=staging_app.id)
 
-    return render(request, 'generic/submit.html', {
-        'page_title': 'Staging einrichten',
-        'button_text': f'Staging für {prod_app.name} einrichten',
-    })
+    return render(
+        request,
+        'generic/submit.html',
+        {
+            'page_title': 'Staging einrichten',
+            'button_text': f'Staging für {prod_app.name} einrichten',
+        },
+    )
 
 
 @owner_of_app
@@ -53,16 +57,24 @@ def clone_repo(request, app_id):
         if success:
             success &= git_clone(app, output=errors)
 
-        return render(request, 'generic/done_next_submit.html', {
-            'errors': '' if success else errors,
-            'step': 'Repo Klonen',
-            'next': reverse('staging-init-db', args=[app_id]),
-        })
+        return render(
+            request,
+            'generic/done_next_submit.html',
+            {
+                'errors': '' if success else errors,
+                'step': 'Repo Klonen',
+                'next': reverse('staging-init-db', args=[app_id]),
+            },
+        )
 
-    return render(request, 'generic/submit.html', {
-        'page_title': 'Staging Repo Klonen',
-        'button_text': 'Repo klonen',
-    })
+    return render(
+        request,
+        'generic/submit.html',
+        {
+            'page_title': 'Staging Repo Klonen',
+            'button_text': 'Repo klonen',
+        },
+    )
 
 
 @owner_of_app
@@ -72,19 +84,36 @@ def init_db(request, app_id):
     if request.method == 'POST':
         with open(app.log_file, 'wb') as out:
             proc = subprocess.Popen(
-                [settings.PYTHON_BIN, '-m', 'manage', 'clone_db', '--no-restart', app.name], stdout=out, stderr=out
+                [
+                    settings.PYTHON_BIN,
+                    '-m',
+                    'manage',
+                    'clone_db',
+                    '--no-restart',
+                    app.name,
+                ],
+                stdout=out,
+                stderr=out,
             )
 
-        return render(request, 'generic/wait_next_submit.html', {
-            'step': 'Datenbank initiieren und kopieren',
-            'pid': proc.pid,
-            'next': reverse('staging-init-domain', args=[app_id])
-        })
+        return render(
+            request,
+            'generic/wait_next_submit.html',
+            {
+                'step': 'Datenbank initiieren und kopieren',
+                'pid': proc.pid,
+                'next': reverse('staging-init-domain', args=[app_id]),
+            },
+        )
 
-    return render(request, 'generic/submit.html', {
-        'page_title': 'Staging Datenbank erstellen',
-        'button_text': 'Datenbank erstellen',
-    })
+    return render(
+        request,
+        'generic/submit.html',
+        {
+            'page_title': 'Staging Datenbank erstellen',
+            'button_text': 'Datenbank erstellen',
+        },
+    )
 
 
 @owner_of_app
@@ -96,19 +125,28 @@ def init_domain(request, app_id):
         with open(app.log_file, 'wb') as out:
             proc = subprocess.Popen(
                 [settings.PYTHON_BIN, '-m', 'manage', 'add_domain', domain.name],
-                stdout=out, stderr=out
+                stdout=out,
+                stderr=out,
             )
 
-        return render(request, 'generic/wait_next_submit.html', {
-            'step': 'Domain einrichten',
-            'pid': proc.pid,
-            'next': reverse('redeploy-v2', args=[app_id])
-        })
+        return render(
+            request,
+            'generic/wait_next_submit.html',
+            {
+                'step': 'Domain einrichten',
+                'pid': proc.pid,
+                'next': reverse('redeploy-v2', args=[app_id]),
+            },
+        )
 
-    return render(request, 'generic/submit.html', {
-        'page_title': 'Domain einrichten',
-        'button_text': 'Domain einrichten',
-    })
+    return render(
+        request,
+        'generic/submit.html',
+        {
+            'page_title': 'Domain einrichten',
+            'button_text': 'Domain einrichten',
+        },
+    )
 
 
 @require_POST
@@ -118,14 +156,20 @@ def clone_db(request, app_id):
 
     with open(app.log_file, 'wb') as out:
         proc = subprocess.Popen(
-            [settings.PYTHON_BIN, '-m', 'manage', 'clone_db', app.name], stdout=out, stderr=out
+            [settings.PYTHON_BIN, '-m', 'manage', 'clone_db', app.name],
+            stdout=out,
+            stderr=out,
         )
 
-    return render(request, 'app/wait_next.html', {
-        'step': 'Datenbank neu erstellen und kopieren',
-        'pid': proc.pid,
-        'next': reverse('show-result', args=[app.id])
-    })
+    return render(
+        request,
+        'app/wait_next.html',
+        {
+            'step': 'Datenbank neu erstellen und kopieren',
+            'pid': proc.pid,
+            'next': reverse('show-result', args=[app.id]),
+        },
+    )
 
 
 @require_POST

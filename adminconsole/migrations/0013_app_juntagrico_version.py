@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('adminconsole', '0012_alter_app_python_version_alter_app_version_domain'),
     ]
@@ -13,6 +12,8 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='app',
             name='juntagrico_version',
-            field=models.CharField(blank=True, max_length=50, verbose_name='juntagrico'),
+            field=models.CharField(
+                blank=True, max_length=50, verbose_name='juntagrico'
+            ),
         ),
     ]
