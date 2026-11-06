@@ -1,5 +1,5 @@
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.test import TestCase, tag
 from django.urls import reverse
 from django_otp import DEVICE_ID_SESSION_KEY
 from django_otp.plugins.otp_totp.models import TOTPDevice
@@ -29,6 +29,7 @@ class TwoFactorTests(TestCase):
         response = self.client.get(reverse('overview', args=[1]))
         self.assertRedirects(response, reverse('two_factor:login') + '?next=/overview/1/', fetch_redirect_response=False)
 
+    @tag('docker')
     def test_user_without_device_has_access(self):
         """Users without a 2FA device can access the console with password-only login."""
         self.client.force_login(self.user)
@@ -44,6 +45,7 @@ class TwoFactorTests(TestCase):
         self.assertRedirects(response, reverse('two_factor:login') + '?next=/profile', fetch_redirect_response=False)
         self.assertNotIn('_auth_user_id', self.client.session)
 
+    @tag('docker')
     def test_verified_user_has_access(self):
         self.login_verified()
         self.assertEqual(self.client.get(reverse('home')).status_code, 200)

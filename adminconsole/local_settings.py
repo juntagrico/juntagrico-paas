@@ -25,7 +25,7 @@ SECRET_KEY = os.environ.get('JS_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [ 'localhost', ]
+ALLOWED_HOSTS = ['localhost', ]
 TEST_LOCALHOST = True
 
 
@@ -87,7 +87,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME':  os.environ.get('JS_DATABASE_NAME'),
         'USER': os.environ.get('JS_DATABASE_USER'),
-        'PASSWORD':os.environ.get('JS_DATABASE_PASSWORD'),
+        'PASSWORD': os.environ.get('JS_DATABASE_PASSWORD'),
         'HOST': os.environ.get('JS_DATABASE_HOST'),
         'PORT': '',
     }

@@ -143,11 +143,22 @@ TEST_LOCALHOST = True
 EMAIL_HOST = os.environ.get('JUNTAGRICO_EMAIL_HOST')
 EMAIL_HOST_USER = os.environ.get('JUNTAGRICO_EMAIL_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('JUNTAGRICO_EMAIL_PASSWORD')
-EMAIL_PORT = int(os.environ.get('JUNTAGRICO_EMAIL_PORT', '25' ))
-EMAIL_USE_TLS = os.environ.get('JUNTAGRICO_EMAIL_TLS', 'False')=='True'
-EMAIL_USE_SSL = os.environ.get('JUNTAGRICO_EMAIL_SSL', 'False')=='True'
+EMAIL_PORT = int(os.environ.get('JUNTAGRICO_EMAIL_PORT', '25'))
+EMAIL_USE_TLS = os.environ.get('JUNTAGRICO_EMAIL_TLS', 'False') == 'True'
+EMAIL_USE_SSL = os.environ.get('JUNTAGRICO_EMAIL_SSL', 'False') == 'True'
 
 GITHUB_CLIENT_ID = os.environ.get('GITHUB_CLIENT_ID')
 GITHUB_CLIENT_SECRET = os.environ.get('GITHUB_CLIENT_SECRET')
 
 DEFAULT_PYTHON_VERSION = '3.12'
+
+COOKIECUTTER_URL = os.environ.get('COOKIECUTTER_URL', 'https://github.com/juntagrico/juntagrico-template.git')
+COOKIECUTTER_COMMIT = os.environ.get('COOKIECUTTER_COMMIT', '0' * 40)
+
+APPS_NETWORK = {
+    'name': 'juntagrico-apps',
+    'subnet': '172.30.0.0/22',
+    'gateway': '172.30.0.1',
+    'bridge': 'br-juntagrico',
+}
+APPS_MEMORY_LIMIT = '600m'

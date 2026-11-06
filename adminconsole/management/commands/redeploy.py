@@ -17,7 +17,6 @@ class Command(BaseCommand):
         parser.add_argument('--upgrade', action='store_true', help="Force upgrade of requirements.txt")
         parser.add_argument('--copy-data', action='store_true', help="Copy data from production to staging")
 
-
     # entry point used by manage.py
     def handle(self, *args, **options):
         name = options['app_name'][0]

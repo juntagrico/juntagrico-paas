@@ -483,7 +483,7 @@ class CronjobForm(forms.Form):
             selected_ids.add(cj_def['id'])
 
         # Grouped cronjobs: radio buttons use name="group_{group_name}" with value=cj.id
-        for group_name, cj_list in self.groups.items():
+        for group_name, _cj_list in self.groups.items():
             field_name = f'group_{group_name}'
             selected_id = self.data.get(field_name)
             if selected_id:

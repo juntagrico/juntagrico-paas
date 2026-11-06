@@ -1,7 +1,7 @@
 import subprocess
 
 from django.conf import settings
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
 from adminconsole.decorators import owner_of_app
