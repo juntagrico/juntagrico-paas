@@ -1,4 +1,4 @@
-import subprocess
+import subprocess  # nosec: B404
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -20,7 +20,7 @@ def manage(request, app_id):
             domain = form.save()
             with open(app.log_file, 'wb') as out:
                 out.write('# Domain hinzufügen\n'.encode())
-                proc = subprocess.Popen(
+                proc = subprocess.Popen(  # nosec: B603
                     [settings.PYTHON_BIN, '-m', 'manage', 'add_domain', domain.name],
                     stdout=out,
                     stderr=out,
@@ -63,7 +63,7 @@ def renew(request, domain_id):
     domain = get_object_or_404(Domain, pk=domain_id)
     with open(domain.app.log_file, 'wb') as out:
         out.write('# Domain erneuern\n'.encode())
-        proc = subprocess.Popen(
+        proc = subprocess.Popen(  # nosec: B603
             [settings.PYTHON_BIN, '-m', 'manage', 'add_domain', domain.name],
             stdout=out,
             stderr=out,

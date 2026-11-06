@@ -1,4 +1,4 @@
-import subprocess
+import subprocess  # nosec: B404
 
 from django.core.management.base import BaseCommand
 from django.template.loader import get_template
@@ -23,7 +23,7 @@ class Command(BaseCommand):
                 )
 
             # activate site
-            proc = subprocess.run(
+            proc = subprocess.run(  # nosec: B603, B607
                 [
                     'ln',
                     '-sf',
@@ -34,7 +34,7 @@ class Command(BaseCommand):
             )
             print(str(proc.stdout))
             # install ssl, the wrapper is the only command the user may run with sudo
-            proc = subprocess.run(
+            proc = subprocess.run(  # nosec: B603, B607
                 ['sudo', '/usr/local/sbin/juntagrico-certbot', domain.name],
                 stdout=subprocess.PIPE,
             )

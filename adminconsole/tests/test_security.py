@@ -6,7 +6,7 @@ import smtplib
 import socket
 import ssl
 import string
-import subprocess
+import subprocess  # nosec: B404
 import sys
 import tempfile
 from io import BytesIO
@@ -28,11 +28,11 @@ from adminconsole.util.git import git_clone, github_auth_env, remove_credentials
 from adminconsole.util.network import NetworkMismatch
 
 
-TOKEN = 'gho_TestToken123'
+TOKEN = 'gho_TestToken123'  # nosec: B105
 
 
 def git(*args, cwd):
-    return subprocess.run(
+    return subprocess.run(  # nosec B603, B607
         ['git', *args], capture_output=True, text=True, cwd=cwd, check=True
     ).stdout.strip()
 
@@ -79,7 +79,7 @@ class GitCredentialTests(TestCase):
             ('http://github.com/juntagrico/foo.git', None),
         ]:
             with self.subTest(url=url):
-                proc = subprocess.run(
+                proc = subprocess.run(  # nosec: B603, B607
                     ['git', 'config', '--get-urlmatch', 'http.extraHeader', url],
                     capture_output=True,
                     text=True,
@@ -103,7 +103,7 @@ class GitCredentialTests(TestCase):
         }
         with mock.patch.dict('os.environ', isolated):
             # without the token environment, git asks the helper
-            proc = subprocess.run(
+            proc = subprocess.run(  # nosec: B603, B607
                 ['git', 'credential', 'fill'],
                 input=request,
                 capture_output=True,
@@ -112,7 +112,7 @@ class GitCredentialTests(TestCase):
             )
             self.assertIn('password=StoredSecret', proc.stdout)
             # with it, no helper is asked
-            proc = subprocess.run(
+            proc = subprocess.run(  # nosec: B603, B607
                 ['git', 'credential', 'fill'],
                 input=request,
                 capture_output=True,
@@ -252,7 +252,7 @@ class CertbotWrapperTests(TestCase):
         )
 
     def run_wrapper(self, *args):
-        return subprocess.run(
+        return subprocess.run(  # nosec: B603, B607
             ['sh', self.wrapper.as_posix(), *args], capture_output=True, text=True
         )
 
@@ -354,7 +354,7 @@ def github_response(payload):
 @modify_settings(
     MIDDLEWARE={'remove': ['adminconsole.middleware.RequireOTPMiddleware']}
 )
-@override_settings(GITHUB_CLIENT_ID='client-id', GITHUB_CLIENT_SECRET='client-secret')
+@override_settings(GITHUB_CLIENT_ID='client-id', GITHUB_CLIENT_SECRET='client-secret')  # nosec: B106
 class GitHubOAuthTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user('owner')
@@ -495,9 +495,9 @@ class SecretGenerationTests(TestCase):
 @override_settings(PYTHON_BIN='python')
 class AdminPasswordTests(TestCase):
     def setUp(self):
-        self.owner = User.objects.create_superuser('owner', password='pw')
+        self.owner = User.objects.create_superuser('owner', password='pw')  # nosec: B106
         self.app = App.objects.create(name='foo', port=8010, user=self.owner)
-        AppEnv.objects.create(app=self.app, juntagrico_database_password='DBPASSWORD')
+        AppEnv.objects.create(app=self.app, juntagrico_database_password='DBPASSWORD')  # nosec: B106
         self.client.force_login(self.owner)
         patcher = mock.patch('docker.from_env')
         self.container = patcher.start().return_value.containers.get.return_value
@@ -583,9 +583,9 @@ class AdminPasswordTests(TestCase):
 
     def test_set_password_script(self):
         # run the script that is executed in the app container against this test database
-        admin = User.objects.create_user('admin', password='old')
+        admin = User.objects.create_user('admin', password='old')  # nosec: B106
         with mock.patch.dict(os.environ, {PASSWORD_ENV: 'NEWPASSWORD'}):
-            exec(SET_PASSWORD_SCRIPT, {})
+            exec(SET_PASSWORD_SCRIPT, {})  # nosec: B102
         admin.refresh_from_db()
         self.assertTrue(admin.check_password('NEWPASSWORD'))
         self.assertFalse(admin.check_password('old'))
@@ -659,7 +659,7 @@ class SmtpCheckTests(TestCase):
             ('172.17.0.1',),
             ('169.254.169.254',),
             ('100.64.0.1',),
-            ('0.0.0.0',),
+            ('0.0.0.0',),  # nosec: B104
             ('::1',),
             ('fe80::1%eth0',),
             ('fd00::1',),
@@ -737,7 +737,7 @@ class SmtpCheckTests(TestCase):
         self.assertFalse(self.get_connection.called)
 
 
-MAIL_PASSWORD = 'MailSecret123'
+MAIL_PASSWORD = 'MailSecret123'  # nosec: B105
 SECRET_KEY = 'S' * 50
 
 
@@ -791,18 +791,19 @@ class EnvSecretTests(TestCase):
 
     def test_new_values(self):
         self.save(
-            juntagrico_email_password='NewMailPassword', juntagrico_secret_key='K' * 50
+            juntagrico_email_password='NewMailPassword',  # nosec: B106
+            juntagrico_secret_key='K' * 50,
         )
         self.assertEqual(self.env.juntagrico_email_password, 'NewMailPassword')
         self.assertEqual(self.env.juntagrico_secret_key, 'K' * 50)
 
     def test_clear_password(self):
-        self.save(clear_email_password='on')
+        self.save(clear_email_password='on')  # nosec: B106
         self.assertEqual(self.env.juntagrico_email_password, '')
         self.assertEqual(self.env.juntagrico_secret_key, SECRET_KEY)
 
     def test_generate_secret_key(self):
-        self.save(new_secret_key='on')
+        self.save(new_secret_key='on')  # nosec: B106
         self.assertNotEqual(self.env.juntagrico_secret_key, SECRET_KEY)
         self.assertEqual(len(self.env.juntagrico_secret_key), 50)
         self.assertEqual(self.env.juntagrico_email_password, MAIL_PASSWORD)
@@ -1012,7 +1013,7 @@ class ExportConfirmationTests(TestCase):
     EXPORTS = ['/dumpdata/{}/', '/pgdump/{}/']
 
     def setUp(self):
-        self.owner = User.objects.create_user('owner', password='secret-pw')
+        self.owner = User.objects.create_user('owner', password='secret-pw')  # nosec: B106
         self.app = App.objects.create(name='foo', port=8010, user=self.owner)
         AppEnv.objects.create(app=self.app, juntagrico_database_name='foo')
         self.client.force_login(self.owner)
@@ -1091,7 +1092,7 @@ class ExportConfirmationTests(TestCase):
         client = Client(enforce_csrf_checks=True)
         client.force_login(self.owner)
         other = Client()
-        other.force_login(User.objects.create_user('other', password='other-pw'))
+        other.force_login(User.objects.create_user('other', password='other-pw'))  # nosec: B106
         for url in self.EXPORTS:
             with self.subTest(url=url):
                 self.assertEqual(
@@ -1114,7 +1115,7 @@ class PidCheckTests(TestCase):
         from adminconsole.util import pid_finished
 
         # a process like the ones the console starts (python -m manage ...)
-        job = subprocess.Popen([
+        job = subprocess.Popen([  # nosec: B603, B607
             sys.executable,
             '-c',
             'import time; time.sleep(30)',
@@ -1122,7 +1123,7 @@ class PidCheckTests(TestCase):
             'manage',
         ])
         self.addCleanup(job.kill)
-        other = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30)'])
+        other = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30)'])  # nosec: B603, B607
         self.addCleanup(other.kill)
         self.assertFalse(
             pid_finished(job.pid), 'running console job reported as finished'
@@ -1148,7 +1149,7 @@ class PidCheckTests(TestCase):
 
 # create_database quotes the names; the statements take no parameters.
 class CreateDatabaseTests(TestCase):
-    def statements(self, name, password='ABC123', replace=False):
+    def statements(self, name, password='ABC123', replace=False):  # nosec: B107
         from adminconsole.util.create_app import create_database
 
         app = App.objects.create(name=name, port=8010 + App.objects.count())

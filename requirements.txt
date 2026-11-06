@@ -1,5 +1,5 @@
 cookiecutter~=2.6.0
-Django~=5.2.13
+Django~=5.2.19
 django-two-factor-auth~=1.18.1
 docker~=7.1.0
 gunicorn==23.0.0

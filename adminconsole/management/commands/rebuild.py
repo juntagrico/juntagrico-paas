@@ -1,4 +1,4 @@
-import subprocess
+import subprocess  # nosec: B404
 
 import docker
 from django.conf import settings
@@ -61,7 +61,7 @@ class Command(BaseCommand):
             cmd.append('--load')
             cmd.append(str(app.dir))
 
-            result = subprocess.run(
+            result = subprocess.run(  # nosec: B603
                 cmd,
                 input=get_template(f'infra/v{app.version}/Dockerfile').render({
                     'app': app,

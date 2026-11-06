@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd /var/django/adminconsole
+cd /var/django/adminconsole || exit
 docker exec demo python -m manage flush --noinput
 ./tasks/redeploy-v2.sh demo
 docker exec -e DJANGO_SUPERUSER_PASSWORD=admin demo python -m manage createadmin --noinput --email admin@admin.admin --username admin

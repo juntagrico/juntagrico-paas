@@ -1,7 +1,7 @@
 import ast
 import json
 import re
-import subprocess
+import subprocess  # nosec: B404
 from collections import OrderedDict, defaultdict
 
 import docker
@@ -160,7 +160,7 @@ def env(request, app_id):
                 pass
             if container_exists:
                 with open(app.log_file, 'wb') as out:
-                    proc = subprocess.Popen(
+                    proc = subprocess.Popen(  # nosec: B603
                         [settings.PYTHON_BIN, '-m', 'manage', 'restart', app.name],
                         stdout=out,
                         stderr=out,
@@ -406,7 +406,7 @@ def pgdump(request, app_id):
     db_user = settings.DATABASES['default']['USER']
     db_pw = settings.DATABASES['default']['PASSWORD']
 
-    dump = subprocess.run(
+    dump = subprocess.run(  # nosec: B603, B607
         ['pg_dump', '-U', db_user, '--no-password', app.env.juntagrico_database_name],
         stdout=subprocess.PIPE,
         env={'PGPASSWORD': db_pw},

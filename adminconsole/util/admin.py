@@ -1,6 +1,6 @@
 ADMIN_USERNAME = 'admin'
 # passes the password to commands, so it does not appear in command lines or the process list
-PASSWORD_ENV = 'ADMINCONSOLE_ADMIN_PASSWORD'
+PASSWORD_ENV = 'ADMINCONSOLE_ADMIN_PASSWORD'  # nosec: B105
 
 SET_PASSWORD_SCRIPT = f"""
 import os

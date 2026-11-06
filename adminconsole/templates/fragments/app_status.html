@@ -2,7 +2,7 @@
 {# Context: app (App instance), container_statuses (dict mapping names to booleans) #}
 {% load extras %}
 {% with container_statuses|get_item:app.name as status %}
-    {{ status|running_badge }}
+    {% include 'fragments/running_badge.html' %}
     {% if status %}
         {% if app.juntagrico_version %}<span class="badge {{ app.juntagrico_version|juntagrico_version_badge }}">j{{ app.juntagrico_version }}</span>{% endif %}
         {% if app.version == 3 %}<span class="badge bg-info text-dark">v3</span>{% endif %}

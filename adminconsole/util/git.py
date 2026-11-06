@@ -1,7 +1,7 @@
 import base64
 import os
 import re
-import subprocess
+import subprocess  # nosec: B404
 from urllib.parse import urlsplit, urlunsplit
 
 from adminconsole.config import Config
@@ -39,7 +39,7 @@ def remove_credentials(url):
 def git_clone(app, key=None, output=None):
     if not Config.test_localhost():
         branch = ['-b', app.git_branch] if app.git_branch else []
-        proc = subprocess.run(
+        proc = subprocess.run(  # nosec: B603, B607
             ['git', 'clone', *branch, '--depth=1', app.git_clone_url, 'code'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -53,7 +53,7 @@ def git_clone(app, key=None, output=None):
 
 
 def run_git(args, cdir, **kwargs):
-    return subprocess.run(['git', *args], cwd=cdir, **kwargs)
+    return subprocess.run(['git', *args], cwd=cdir, **kwargs)  # nosec: B603, B607
 
 
 def git_pull(app):
@@ -82,12 +82,12 @@ def git_pull(app):
         )
         return reset.returncode
 
-    proc1 = subprocess.run(
+    proc1 = subprocess.run(  # nosec: B603, B607
         ['git', 'fetch', '--depth=1'], stderr=subprocess.STDOUT, cwd=cdir
     )
     if proc1.returncode != 0:
         return proc1.returncode
-    proc2 = subprocess.run(
+    proc2 = subprocess.run(  # nosec: B603, B607
         ['git', 'reset', '--hard', '@{u}'], stderr=subprocess.STDOUT, cwd=cdir
     )
     return proc2.returncode
@@ -99,7 +99,7 @@ def validate_branch(app, branch):
     """
     branch = re.sub('[?*[@#$;&~^: ]', '', branch)
 
-    proc = subprocess.run(
+    proc = subprocess.run(  # nosec: B603, B607
         ['git', 'check-ref-format', '--branch', branch],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
@@ -108,7 +108,7 @@ def validate_branch(app, branch):
         return proc.stdout.decode(errors='replace')
 
     if app.version >= 3:
-        proc = subprocess.run(
+        proc = subprocess.run(  # nosec: B603, B607
             [
                 'git',
                 'ls-remote',
@@ -135,7 +135,7 @@ def git_switch(app, branch):
         app.set_branch(branch)  # save current branch in db
         return ''
 
-    proc = subprocess.run(
+    proc = subprocess.run(  # nosec: B603, B607
         ['git', 'remote', 'set-branches', 'origin', branch],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
@@ -144,7 +144,7 @@ def git_switch(app, branch):
     if proc.returncode != 0:
         return 'git remote: ' + proc.stdout.decode()
 
-    proc = subprocess.run(
+    proc = subprocess.run(  # nosec: B603, B607
         ['git', 'fetch', '--depth=1', 'origin', branch],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
@@ -155,7 +155,7 @@ def git_switch(app, branch):
         # try to restore old branch
         old_branch = git_current_branch(app)
         if old_branch != branch:
-            subprocess.run(
+            subprocess.run(  # nosec: B603, B607
                 ['git', 'remote', 'set-branches', 'origin', old_branch],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
@@ -163,7 +163,7 @@ def git_switch(app, branch):
             )
         return error
 
-    proc = subprocess.run(
+    proc = subprocess.run(  # nosec: B603, B607
         ['git', 'checkout', '-B', branch],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
@@ -172,7 +172,7 @@ def git_switch(app, branch):
     if proc.returncode != 0:
         return 'git checkout:' + proc.stdout.decode()
 
-    proc = subprocess.run(
+    proc = subprocess.run(  # nosec: B603, B607
         ['git', 'branch', '-u', 'origin/' + branch, branch],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
@@ -191,7 +191,7 @@ def git_status(app, errors=None):
         if errors is not None:
             errors.append('folder not found: ' + str(cdir))
         return False
-    proc = subprocess.run(
+    proc = subprocess.run(  # nosec: B603, B607
         ['git', 'status'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cdir
     )
     if errors is not None:
@@ -202,7 +202,7 @@ def git_status(app, errors=None):
 def git_current_branch(app):
     if app.version >= 3:
         return app.git_branch or 'main'
-    proc = subprocess.Popen(
+    proc = subprocess.Popen(  # nosec: B603, B607
         ['git', 'branch', '--show-current'], stdout=subprocess.PIPE, cwd=app.code_dir
     )
     return proc.stdout.read().decode().strip()

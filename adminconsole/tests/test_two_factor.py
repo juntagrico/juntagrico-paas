@@ -6,7 +6,7 @@ from django_otp.plugins.otp_totp.models import TOTPDevice
 
 
 class TwoFactorTests(TestCase):
-    password = 'correct-horse-battery'
+    password = 'correct-horse-battery'  # nosec: B105
 
     def setUp(self):
         self.user = User.objects.create_superuser(

@@ -1,4 +1,4 @@
-import subprocess
+import subprocess  # nosec: B404
 
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
@@ -27,13 +27,13 @@ class Command(BaseCommand):
             app_env.pk = None
             app_env.app = app
             app_env.juntagrico_email_user = ''
-            app_env.juntagrico_email_password = ''
+            app_env.juntagrico_email_password = ''  # nosec: B105
         create_database(app.env, app.name, app.name, replace=True)
 
         # copy tables from prod app
         print('# Clone Database', flush=True)
         target_user = app.env.juntagrico_database_user
-        load = subprocess.Popen(
+        load = subprocess.Popen(  # nosec: B603, B607
             [
                 'psql',
                 '-h',
@@ -48,7 +48,7 @@ class Command(BaseCommand):
             env={'PGPASSWORD': app.env.juntagrico_database_password},
         )
         source_user = app.staging_of.env.juntagrico_database_user
-        dump = subprocess.Popen(
+        dump = subprocess.Popen(  # nosec: B603, B607
             [
                 'pg_dump',
                 '-h',

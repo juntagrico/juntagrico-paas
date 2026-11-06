@@ -1,4 +1,4 @@
-import subprocess
+import subprocess  # nosec: B404
 
 from django.conf import settings
 from django.db import connection
@@ -18,14 +18,14 @@ def find_port():
 
 def make_dirs(directory, output=None):
     result = True
-    proc = subprocess.run(
+    proc = subprocess.run(  # nosec: B603, B607
         ['mkdir', '-p', directory], stdout=subprocess.PIPE, stderr=subprocess.STDOUT
     )
     result &= proc.returncode == 0
     if output is not None:
         output.append(proc.stdout.decode())
 
-    proc = subprocess.run(
+    proc = subprocess.run(  # nosec: B603, B607
         ['mkdir', '-p', 'static'],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
@@ -35,7 +35,7 @@ def make_dirs(directory, output=None):
     if output is not None:
         output.append(proc.stdout.decode())
 
-    proc = subprocess.run(
+    proc = subprocess.run(  # nosec: B603, B607
         ['mkdir', '-p', 'media'],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,

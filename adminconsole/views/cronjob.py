@@ -1,4 +1,4 @@
-import subprocess
+import subprocess  # nosec: B404
 
 from django.conf import settings
 from django.shortcuts import get_object_or_404, render
@@ -18,7 +18,7 @@ def manage(request, app_id):
             form.save()
             with open(app.log_file, 'wb') as out:
                 out.write(b'# Cronjobs erstellen\n')
-                proc = subprocess.Popen(
+                proc = subprocess.Popen(  # nosec: B603
                     [settings.PYTHON_BIN, '-m', 'manage', 'install_cronjob', app.name],
                     stdout=out,
                     stderr=out,

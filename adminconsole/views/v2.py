@@ -1,5 +1,5 @@
 import re
-import subprocess
+import subprocess  # nosec: B404
 
 from django.conf import settings
 from django.contrib import messages
@@ -25,7 +25,7 @@ def _spawn_redeploy(app, step_title, extra_args=None, copy_data=False):
     command.append(app.name)
 
     with open(app.log_file, 'wb') as out:
-        proc = subprocess.Popen(command, stdout=out, stderr=out)
+        proc = subprocess.Popen(command, stdout=out, stderr=out)  # nosec: B603
 
     app_id = app.id
     progress_url = reverse('progress', args=[app_id, proc.pid])

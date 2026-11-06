@@ -1,7 +1,6 @@
 import re
 
 from django import template
-from django.utils.safestring import mark_safe
 
 register = template.Library()
 
@@ -30,15 +29,6 @@ def juntagrico_version_badge(version_str):
 @register.filter
 def get_item(dictionary, key):
     return dictionary.get(key)
-
-
-@register.filter
-def running_badge(running):
-    """Return a colored circle span for a boolean running status."""
-    if running:
-        return mark_safe('<span class="status-circle status-circle-active"></span>')
-    else:
-        return mark_safe('<span class="status-circle status-circle-inactive"></span>')
 
 
 @register.filter

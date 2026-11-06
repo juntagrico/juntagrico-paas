@@ -1,0 +1,7 @@
+{# Render a colored circle span for a boolean running status #}
+{# Context: running (boolean) #}
+{% if running %}
+    <span class="status-circle status-circle-active"></span>
+{% else %}
+    <span class="status-circle status-circle-inactive"></span>
+{% endif %}

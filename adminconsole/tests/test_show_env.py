@@ -188,7 +188,7 @@ class TestMaskValue(unittest.TestCase):
 class ShowEnvTests(TestCase):
     """Test the show_env view with mocked Docker container."""
 
-    password = 'test-password'
+    password = 'test-password'  # nosec: B105
 
     def setUp(self):
         self.user = User.objects.create_superuser(
@@ -196,7 +196,8 @@ class ShowEnvTests(TestCase):
         )
         self.app = App.objects.create(name='testapp', port=8001, user=self.user)
         self.env = AppEnv.objects.create(
-            app=self.app, juntagrico_secret_key='my-secret-key'
+            app=self.app,
+            juntagrico_secret_key='my-secret-key',  # nosec: B106
         )
 
     def add_device(self):
@@ -305,7 +306,7 @@ class ShowEnvTests(TestCase):
 
     def test_show_env_masks_env_secret_key(self):
         """The juntagrico_secret_key from AppEnv is masked in settings values."""
-        self.env.juntagrico_secret_key = 'env_secret_key_value'
+        self.env.juntagrico_secret_key = 'env_secret_key_value'  # nosec: B105
         self.env.save()
         output = b"SECRET_KEY = 'env_secret_key_value'\nDEBUG = True\n"
         mock_container = self._mock_container(output)

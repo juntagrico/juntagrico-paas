@@ -1,5 +1,5 @@
 import os
-import subprocess
+import subprocess  # nosec: B404
 
 from cookiecutter.main import cookiecutter
 from django.conf import settings
@@ -122,7 +122,7 @@ def init_domain(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     domain = app.domains.get_or_create(name=f'{app.name}{settings.APPS_DOMAIN}')[0]
     with open(app.log_file, 'wb') as out:
-        proc = subprocess.Popen(
+        proc = subprocess.Popen(  # nosec: B603
             [settings.PYTHON_BIN, '-m', 'manage', 'add_domain', domain.name],
             stdout=out,
             stderr=out,
@@ -164,7 +164,7 @@ def init_cronjob(request, app_id):
             )
 
     with open(app.log_file, 'wb') as out:
-        proc = subprocess.Popen(
+        proc = subprocess.Popen(  # nosec: B603
             [settings.PYTHON_BIN, '-m', 'manage', 'install_cronjob', app.name],
             stdout=out,
             stderr=out,
@@ -187,7 +187,7 @@ def build(request, app_id):
     app = get_object_or_404(App, pk=app_id)
 
     with open(app.log_file, 'wb') as out:
-        proc = subprocess.Popen(
+        proc = subprocess.Popen(  # nosec: B603
             [settings.PYTHON_BIN, '-m', 'manage', 'redeploy', app.name],
             stdout=out,
             stderr=out,
@@ -214,7 +214,7 @@ def create_admin(request, app_id):
     password = generate_password()
 
     with open(app.log_file, 'wb') as out:
-        proc = subprocess.Popen(
+        proc = subprocess.Popen(  # nosec: B603
             [settings.PYTHON_BIN, '-m', 'manage', 'create_admin', app.name],
             stdout=out,
             stderr=out,

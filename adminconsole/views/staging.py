@@ -1,4 +1,4 @@
-import subprocess
+import subprocess  # nosec: B404
 
 from django.conf import settings
 from django.contrib import messages
@@ -83,7 +83,7 @@ def init_db(request, app_id):
 
     if request.method == 'POST':
         with open(app.log_file, 'wb') as out:
-            proc = subprocess.Popen(
+            proc = subprocess.Popen(  # nosec: B603
                 [
                     settings.PYTHON_BIN,
                     '-m',
@@ -123,7 +123,7 @@ def init_domain(request, app_id):
     if request.method == 'POST':
         domain = app.domains.get_or_create(name=f'{app.name}{settings.APPS_DOMAIN}')[0]
         with open(app.log_file, 'wb') as out:
-            proc = subprocess.Popen(
+            proc = subprocess.Popen(  # nosec: B603
                 [settings.PYTHON_BIN, '-m', 'manage', 'add_domain', domain.name],
                 stdout=out,
                 stderr=out,
@@ -155,7 +155,7 @@ def clone_db(request, app_id):
     app = get_object_or_404(App, pk=app_id)
 
     with open(app.log_file, 'wb') as out:
-        proc = subprocess.Popen(
+        proc = subprocess.Popen(  # nosec: B603
             [settings.PYTHON_BIN, '-m', 'manage', 'clone_db', app.name],
             stdout=out,
             stderr=out,

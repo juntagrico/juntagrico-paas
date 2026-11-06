@@ -1,6 +1,6 @@
 import json
 import secrets
-import subprocess
+import subprocess  # nosec: B404
 from urllib import request as r, parse
 
 from django.conf import settings
@@ -47,7 +47,7 @@ def fetch_github_token(code):
         headers={'Accept': 'application/json'},
     )
     try:
-        with r.urlopen(req, timeout=10) as resp:
+        with r.urlopen(req, timeout=10) as resp:  # nosec: B310
             payload = json.load(resp)
     except (OSError, ValueError):  # network errors, timeouts, invalid json
         return None
@@ -145,14 +145,14 @@ def git_push(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     directory = app.code_dir
     output = []
-    proc = subprocess.run(
+    proc = subprocess.run(  # nosec: B603, B607
         ['git', 'add', '.', '--all'],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         cwd=directory,
     )
     output.append(str(proc.stdout))
-    proc = subprocess.run(
+    proc = subprocess.run(  # nosec: B603, B607
         ['git', 'commit', '-a', '-m', '"adminconsole"'],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
@@ -165,7 +165,7 @@ def git_push(request, app_id):
         if hasattr(request.user, 'githubkey')
         else None
     )
-    proc = subprocess.run(
+    proc = subprocess.run(  # nosec: B603, B607
         ['git', 'push'],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,

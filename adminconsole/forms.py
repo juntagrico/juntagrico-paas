@@ -278,7 +278,7 @@ class EnvForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         if cleaned_data.get('clear_email_password'):
-            cleaned_data['juntagrico_email_password'] = ''
+            cleaned_data['juntagrico_email_password'] = ''  # nosec: B105
         elif not cleaned_data.get('juntagrico_email_password'):
             cleaned_data['juntagrico_email_password'] = (
                 self.instance.juntagrico_email_password
