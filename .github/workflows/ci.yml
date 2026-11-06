@@ -22,7 +22,7 @@ jobs:
     - name: Ruff check
       uses: astral-sh/ruff-action@146cd51f235777a9bc491eead18e0d5a4b05406a # v3
       with:
-        args: --preview
+        args: check --preview
 
   tests:
     name: Tests (PostgreSQL)

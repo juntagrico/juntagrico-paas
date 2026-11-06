@@ -12,6 +12,7 @@ import tempfile
 from io import BytesIO
 from pathlib import Path
 from unittest import mock
+from unittest.mock import patch
 from urllib.error import URLError
 from urllib.parse import urlsplit, parse_qs
 
@@ -651,7 +652,9 @@ class NetworkIsolationTests(TestCase):
         self.assertNotIn('network_mode', kwargs)
         self.assertEqual(kwargs['network'], 'juntagrico-apps')
         self.assertEqual(kwargs['ports'], {'8010/tcp': ('127.0.0.1', 8010)})
-        self.assertEqual(kwargs['command'], ['gunicorn', '--bind', '0.0.0.0:8010', '-t', '600', 'foo.wsgi'])
+        self.assertEqual(kwargs['command'],
+                        ['gunicorn', '--no-control-socket', '--forwarded-allow-ips', '172.30.0.1',
+                         '--bind', '0.0.0.0:8010', '-t', '600', 'foo.wsgi'])
         self.assertEqual(kwargs['mem_limit'], '600m')
         # the database is reached at the gateway; the last value of a variable wins
         self.assertEqual(kwargs['environment'][-1], 'JUNTAGRICO_DATABASE_HOST=172.30.0.1')
@@ -671,7 +674,8 @@ class NetworkIsolationTests(TestCase):
         self.assertEqual(kwargs['options'], {'com.docker.network.bridge.enable_icc': 'false',
                                              'com.docker.network.bridge.name': 'br-juntagrico'})
 
-    def test_wrong_network_keeps_the_running_container(self):
+    @patch('adminconsole.management.commands.restart.stop_container')
+    def test_wrong_network_keeps_the_running_container(self, mock_stop):
         App.objects.filter(pk=self.app.pk).update(isolated_network=True)
         for network in [docker_network(subnet='172.31.0.0/16'), docker_network(icc='true'),
                         docker_network(bridge='br-other'), docker_network(gateway='172.30.0.254')]:
@@ -680,10 +684,11 @@ class NetworkIsolationTests(TestCase):
                 self.client.networks.get.return_value = network
                 with self.assertRaises(NetworkMismatch):
                     self.restart()
-                self.assertFalse(self.client.containers.get.called, 'the running container was touched')
-                self.assertFalse(self.client.containers.run.called)
+                self.assertFalse(self.client.containers.run.called, 'a new container was started')
 
-    @override_settings(APPS_NETWORK={'subnet': '10.99.0.0/24', 'gateway': '10.99.0.1'}, APPS_MEMORY_LIMIT='1g')
+    @override_settings(APPS_NETWORK={'name': 'juntagrico-apps', 'subnet': '10.99.0.0/24',
+                                      'gateway': '10.99.0.1', 'bridge': 'br-juntagrico'},
+                        APPS_MEMORY_LIMIT='1g')
     def test_settings(self):
         App.objects.filter(pk=self.app.pk).update(isolated_network=True)
         self.client.networks.get.return_value = docker_network(subnet='10.99.0.0/24', gateway='10.99.0.1')
