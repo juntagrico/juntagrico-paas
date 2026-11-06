@@ -1,6 +1,8 @@
 services:
   db:
+    container_name: juntagrico-paas-db
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-adminconsole}
       POSTGRES_USER: ${POSTGRES_USER:-juntagrico}
@@ -12,17 +14,31 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
 
   app:
-    build: .
+    container_name: juntagrico-paas-app
+    build:
+      args:
+        WORK_DIR: ${WORK_DIR:-/home/django/projects}
+    restart: unless-stopped
     env_file: .env
     environment:
+      PYTHONUNBUFFERED: 1
+      JUNTAGRICO_WORK_DIR: ${WORK_DIR:-/home/django/projects}
       JS_DATABASE_HOST: db
       JS_DATABASE_NAME: ${POSTGRES_DB:-adminconsole}
       JS_DATABASE_USER: ${POSTGRES_USER:-juntagrico}
       JS_DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      GUNICORN_WORKERS: ${GUNICORN_WORKERS:-3}
+      DOCKERIZED: 1
     volumes:
       - static_data:/app/static
+      - nginx-app-conf:/etc/nginx/sites
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       db:
@@ -35,17 +51,32 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
 
   nginx:
+    container_name: juntagrico-paas-nginx
     image: nginx:alpine
+    restart: unless-stopped
     ports:
       - "80:80"
     volumes:
       - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/proxy_params:/etc/nginx/proxy_params:ro
+      - nginx-app-conf:/etc/nginx/sites:ro
       - static_data:/app/static:ro
     depends_on:
       - app
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
 
 volumes:
   postgres_data:
   static_data:
+  nginx-app-conf:

@@ -25,6 +25,7 @@ def make_dirs(directory, output=None):
     if output is not None:
         output.append(proc.stdout.decode())
 
+    # TODO: don't create these dirs here but on-demand during redeploy.
     proc = subprocess.run(  # nosec: B603, B607
         ['mkdir', '-p', 'static'],
         stdout=subprocess.PIPE,
@@ -81,7 +82,7 @@ def create_database(app_env, db_name, user_name, replace=False):
 
 
 def create_docker_file(app):
-    with open(app.dir / 'Dockerfile', 'w') as docker_file:
+    with open(app.work_dir / 'Dockerfile', 'w') as docker_file:
         docker_file.write(
             get_template(f'infra/v{app.version}/Dockerfile').render({
                 'app': app,

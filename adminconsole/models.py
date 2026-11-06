@@ -94,15 +94,31 @@ class App(models.Model):
 
     @property
     def dir(self):
-        return Path('/var/django/projects') / self.name
+        return Path(settings.APP_DIR) / self.name
+
+    @property
+    def work_dir(self):
+        return Path(settings.WORK_DIR) / self.name
 
     @property
     def code_dir(self):
-        return self.dir / 'code'
+        return self.work_dir / 'code'
+
+    @property
+    def static_dir(self):
+        if settings.DOCKERIZED:
+            return f'{self.name}-static'
+        return self.dir / 'static'
+
+    @property
+    def media_dir(self):
+        if settings.DOCKERIZED:
+            return f'{self.name}-media'
+        return self.dir / 'media'
 
     @property
     def log_file(self):
-        return str(self.dir) + '.txt'
+        return str(self.work_dir) + '.txt'
 
     @property
     def wsgi_path(self):

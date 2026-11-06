@@ -110,4 +110,4 @@ EXPOSE {{ app.port }}
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD HOST=$(echo "$JUNTAGRICO_DOMAINS" | cut -d, -f1); wget --no-verbose --tries=1 --spider --header="Host: $HOST" http://127.0.0.1:{{ app.port }}/ || exit 1
 
-CMD ["gunicorn", "--no-control-socket", "--bind","127.0.0.1:{{ app.port }}", "-t", "600", "{{ app.wsgi_path }}"]
+CMD ["gunicorn", "--no-control-socket", "--bind","0.0.0.0:{{ app.port }}", "-t", "600", "{{ app.wsgi_path }}"]

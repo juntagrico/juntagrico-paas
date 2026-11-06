@@ -43,7 +43,7 @@ class Command(BaseCommand):
                 build_args['git_ref'] = app.git_branch
 
             cmd = (
-                ['docker', 'buildx', 'build', '-f', '-']
+                ['docker', 'buildx', 'build']
                 + [
                     '--no-cache-filter',
                     'fetcher',
@@ -59,7 +59,7 @@ class Command(BaseCommand):
 
             # Make the built image available to the local Docker daemon.
             cmd.append('--load')
-            cmd.append(str(app.dir))
+            cmd.append('-')
 
             result = subprocess.run(  # nosec: B603
                 cmd,
@@ -87,7 +87,7 @@ class Command(BaseCommand):
                         'bind': '/code/internal_files/',
                         'mode': 'rw',
                     },
-                    app.dir / 'media': {
+                    app.media_dir: {
                         'bind': '/code/media',
                         'mode': 'rw',
                     },
@@ -105,7 +105,7 @@ class Command(BaseCommand):
             create_docker_file(app)
 
             response = client.api.build(
-                path=str(app.dir),
+                path=str(app.work_dir),
                 tag=app.image_tag,
                 buildargs=build_args,
                 nocache=options.get('nocache', False),

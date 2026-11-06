@@ -26,4 +26,4 @@ fi
 
 # Start gunicorn
 echo "Starting gunicorn..."
-exec gunicorn --access-logfile - --workers 1 --bind 0.0.0.0:8000 --timeout 60000 adminconsole.wsgi:application
+exec gunicorn --access-logfile - --error-logfile - --workers ${GUNICORN_WORKERS:-3} --bind 0.0.0.0:8000 --timeout 60000 adminconsole.wsgi:application

@@ -26,8 +26,7 @@ SECRET_KEY = os.environ.get('JS_KEY')
 DEBUG = False
 
 ALLOWED_HOSTS = os.environ.get(
-    'DJANGO_ALLOWED_HOSTS',
-    'admin.juntagrico.app,admin.juntagrico.science'
+    'DJANGO_ALLOWED_HOSTS', 'admin.juntagrico.app,admin.juntagrico.science'
 ).split(',')
 
 # The console is only served via HTTPS. nginx passes the scheme in X-Forwarded-Proto, which gunicorn trusts on its
@@ -192,7 +191,10 @@ DEFAULT_FROM_EMAIL = os.environ.get('JUNTAGRICO_EMAIL_USER')
 GITHUB_CLIENT_ID = os.environ.get('GITHUB_CLIENT_ID')
 GITHUB_CLIENT_SECRET = os.environ.get('GITHUB_CLIENT_SECRET')
 
-PYTHON_BIN = '.venv/bin/python'
+DOCKERIZED = os.environ.get('DOCKERIZED', '0') in ('1', 'True', 'true')
+PYTHON_BIN = os.environ.get('JUNTAGRICO_PYTHON_BIN', '.venv/bin/python')
+APP_DIR = os.environ.get('JUNTAGRICO_APP_DIR', '/var/django/projects')
+WORK_DIR = os.environ.get('JUNTAGRICO_WORK_DIR', '/var/django/projects')
 APPS_DOMAIN = '.juntagrico.app'
 
 COOKIECUTTER_URL = (
