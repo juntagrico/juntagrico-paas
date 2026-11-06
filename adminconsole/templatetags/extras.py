@@ -59,3 +59,11 @@ def is_sequence(value):
     return isinstance(value, (list, tuple))
 
 
+@register.filter
+def dict_items(value):
+    """Return dict.items() explicitly to avoid conflicts with a dict key named 'items'."""
+    if isinstance(value, dict):
+        return value.items()
+    return []
+
+

@@ -3,7 +3,7 @@
     <code class="text-muted">****</code>
 {% elif value|is_dict %}
     <div class="card card-body border-left bg-light" style="border-left-width: 3px; border-left-color: #6c757d; font-size: 0.9em; margin-left: 1rem; margin-bottom: 0.5rem;">
-        {% for k, v in value.items %}
+        {% for k, v in value|dict_items %}
             <div class="row mb-1">
                 <div class="col-auto" style="min-width: 120px;">
                     <code class="text-dark">{{ k }}</code>

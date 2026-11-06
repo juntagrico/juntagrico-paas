@@ -395,6 +395,33 @@ class ShowEnvTests(TestCase):
         settings = {s['key']: s['value'] for s in response.context['settings']}
         self.assertEqual(settings['MY_LIST'], ['visible', '****', 'also_visible'])
 
+    def test_show_env_dict_with_items_key(self):
+        """A dict setting with an 'items' key should render without ValueError.
+
+        Django templates resolve value.items as a dict key lookup when 'items' is a key,
+        not as the .items() method. The dict_items filter avoids this ambiguity.
+        """
+        output = b"OPTIONS = {'items': ['a', 'b'], 'key': 'val'}\n"
+        mock_container = self._mock_container(output)
+
+        self.login_verified()
+        with patch.object(App, 'container', new_callable=lambda: property(lambda self: mock_container)):
+            response = self.client.get(f'/env/show/{self.app.id}/')
+        self.assertEqual(response.status_code, 200)
+        settings = {s['key']: s['value'] for s in response.context['settings']}
+        self.assertEqual(settings['OPTIONS']['items'], ['a', 'b'])
+        self.assertEqual(settings['OPTIONS']['key'], 'val')
+
+    def test_show_env_nested_dict_with_items_key(self):
+        """Nested dicts with 'items' keys should render correctly."""
+        output = b"AUTH_PASSWORD_VALIDATORS = [{'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'}, {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', 'items': 'should_not_break'}]\n"
+        mock_container = self._mock_container(output)
+
+        self.login_verified()
+        with patch.object(App, 'container', new_callable=lambda: property(lambda self: mock_container)):
+            response = self.client.get(f'/env/show/{self.app.id}/')
+        self.assertEqual(response.status_code, 200)
+
 
 if __name__ == '__main__':
     unittest.main()
