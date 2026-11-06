@@ -98,7 +98,7 @@ class GitCredentialTests(TestCase):
         # clone a real local repository, passing a token
         source = self.base / 'source'
         source.mkdir()
-        git('init', '-q', cwd=source)
+        git('init', '-q', '-b', 'main', cwd=source)
         git('-c', 'user.name=t', '-c', 'user.email=t@example.org', 'commit', '-q', '--allow-empty', '-m', 'init',
             cwd=source)
         app = App.objects.create(name='foo', port=8010, git_clone_url=source.as_uri())
