@@ -436,13 +436,13 @@ def build_summary(text, result, section_name=''):
     if 'docker rebuild' in section_lower or 'docker build' in section_lower:
         summary = _summarize_docker_build(text, result)
 
-    if 'django migrate' in section_lower:
+    elif 'django migrate' in section_lower:
         summary = _summarize_django_migrate(text, result)
 
-    if 'django collectstatic' in section_lower or 'collectstatic' in section_lower:
+    elif 'django collectstatic' in section_lower or 'collectstatic' in section_lower:
         summary = _summarize_django_collectstatic(text, result)
 
-    if (
+    elif (
         'clone database' in section_lower
         or 'clone_db' in section_lower
         or 'psql' in section_lower
@@ -450,26 +450,27 @@ def build_summary(text, result, section_name=''):
         summary = _summarize_psql(text, result)
 
     # Auto-detect format from content when section name is not specific enough
-    first_lines = text[:500]
-    if (
-        BUILDKIT_BUILDING_RE.search(first_lines)
-        or LEGACY_STEP_RE.search(first_lines)
-        or HASH_STEP_RE.search(first_lines)
-    ):
-        summary = _summarize_docker_build(text, result)
-    elif (
-        DJANGO_MIGRATE_APPLYING_RE.search(first_lines)
-        or DJANGO_MIGRATE_CREATING_RE.search(first_lines)
-        or DJANGO_MIGRATE_HEADER_RE.search(first_lines)
-        or DJANGO_MIGRATE_APPLY_ALL_RE.search(first_lines)
-    ):
-        summary = _summarize_django_migrate(text, result)
-    elif COLLECTSTATIC_COPIED_RE.search(first_lines):
-        summary = _summarize_django_collectstatic(text, result)
-    elif PSQL_CREATE_TABLE_RE.search(first_lines):
-        summary = _summarize_psql(text, result)
     else:
-        summary = _summarize_generic(text, result)
+        first_lines = text[:500]
+        if (
+            BUILDKIT_BUILDING_RE.search(first_lines)
+            or LEGACY_STEP_RE.search(first_lines)
+            or HASH_STEP_RE.search(first_lines)
+        ):
+            summary = _summarize_docker_build(text, result)
+        elif (
+            DJANGO_MIGRATE_APPLYING_RE.search(first_lines)
+            or DJANGO_MIGRATE_CREATING_RE.search(first_lines)
+            or DJANGO_MIGRATE_HEADER_RE.search(first_lines)
+            or DJANGO_MIGRATE_APPLY_ALL_RE.search(first_lines)
+        ):
+            summary = _summarize_django_migrate(text, result)
+        elif COLLECTSTATIC_COPIED_RE.search(first_lines):
+            summary = _summarize_django_collectstatic(text, result)
+        elif PSQL_CREATE_TABLE_RE.search(first_lines):
+            summary = _summarize_psql(text, result)
+        else:
+            summary = _summarize_generic(text, result)
 
     # If the summary is identical to the full content, there's no point in showing it
     if summary.strip() == stripped:

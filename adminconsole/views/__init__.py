@@ -472,7 +472,7 @@ def format_timestamp(raw):
         return ''
     match = DATETIME_RE.search(raw)
     if match:
-        year, month, day, time = match.groups()
+        _, month, day, time = match.groups()
         month_str = MONTH_ABBR.get(month, month)
         # Strip trailing zeros from day for compactness
         day_int = int(day)

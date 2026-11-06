@@ -192,7 +192,7 @@ class AppEnv(models.Model):
     juntagrico_email_ssl = models.BooleanField('JUNTAGRICO_EMAIL_SSL', default=False)
     juntagrico_secret_key = models.CharField(
         'JUNTAGRICO_SECRET_KEY',
-        null=True,
+        blank=True,
         max_length=100,
         help_text='Geheimer Schlüssel (nur im Notfall ändern)',
         default=generate_secret_key,

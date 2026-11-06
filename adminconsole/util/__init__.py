@@ -6,7 +6,7 @@ import psutil
 
 def generate_password():
     return ''.join(
-        secrets.choice(string.ascii_uppercase + string.digits) for x in range(20)
+        secrets.choice(string.ascii_uppercase + string.digits) for _ in range(20)
     )
 
 
@@ -14,7 +14,7 @@ def generate_secret_key():
     choice = string.ascii_letters
     choice = choice + string.digits
     choice = choice + string.punctuation
-    return ''.join(secrets.choice(choice) for x in range(50))
+    return ''.join(secrets.choice(choice) for _ in range(50))
 
 
 def pid_finished(pid):
@@ -30,5 +30,5 @@ def pid_finished(pid):
             process.username() != psutil.Process().username()
             or 'manage' not in process.cmdline()
         )
-    except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+    except (psutil.NoSuchProcess, psutil.AccessDenied):
         return True

@@ -4,7 +4,7 @@ import re
 import subprocess  # nosec: B404
 from urllib.parse import urlsplit, urlunsplit
 
-from adminconsole.config import Config
+from adminconsole.config import test_localhost
 
 
 def github_auth_env(key):
@@ -37,7 +37,7 @@ def remove_credentials(url):
 
 
 def git_clone(app, key=None, output=None):
-    if not Config.test_localhost():
+    if not test_localhost():
         branch = ['-b', app.git_branch] if app.git_branch else []
         proc = subprocess.run(  # nosec: B603, B607
             ['git', 'clone', *branch, '--depth=1', app.git_clone_url, 'code'],

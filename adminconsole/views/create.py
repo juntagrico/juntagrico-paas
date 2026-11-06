@@ -9,7 +9,7 @@ from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from django.views.decorators.cache import never_cache
 
-from adminconsole.config import Config
+from adminconsole.config import test_localhost
 from adminconsole.decorators import owner_of_app
 from adminconsole.models import App, AppEnv, AppCronjob
 from adminconsole.forms import ProjectForm, EnvForm, AppForm, OverwriteAppForm
@@ -84,7 +84,7 @@ def cookiecutter_form(request, app_id):
                 output_dir=app.dir,
                 overwrite_if_exists=True,
             )
-            if Config.test_localhost():
+            if test_localhost():
                 return redirect('ca-init-db', app_id=app_id)
             return redirect('ca-git-push', app_id=app_id)
     else:
