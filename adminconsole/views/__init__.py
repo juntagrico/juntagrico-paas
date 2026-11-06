@@ -2,6 +2,7 @@ import ast
 import json
 import re
 import subprocess
+import time
 from collections import OrderedDict, defaultdict
 
 import docker
@@ -234,9 +235,13 @@ def _mask_value(value, secret_values=None):
 @owner_of_app
 def show_env(request, app_id):
     """Display current Django settings by running diffsettings in the container, hiding sensitive values."""
+    timings = {}
+    t0 = time.perf_counter()
+
     app = get_object_or_404(App, pk=app_id)
 
     # Collect values from secret AppEnvVars so we can mask settings that match them
+    t_db = time.perf_counter()
     secret_values = set(
         app.env.env_vars.filter(secret=True)
         .exclude(value='')
@@ -248,17 +253,25 @@ def show_env(request, app_id):
         app.env.juntagrico_email_password,
     }
     secret_values.discard('')
+    timings['DB query (secret values)'] = (time.perf_counter() - t_db) * 1000
 
     # Run diffsettings inside the container to get the actual Django settings
+    t_docker = time.perf_counter()
     try:
         container = app.container
+        t_container = time.perf_counter()
         result = container.exec_run(
             ['python', '-m', 'manage', 'diffsettings'], stderr=False
         )
+        t_exec = time.perf_counter()
         output = result.output.decode('utf-8')
     except DockerException as e:
         messages.error(request, f'Container nicht erreichbar: {e}')
         output = ''
+        t_container = time.perf_counter()
+        t_exec = t_container
+    timings['Docker client + container'] = (t_container - t_docker) * 1000
+    timings['container.exec_run (diffsettings)'] = (t_exec - t_container) * 1000
 
     # Parse the diffsettings output
     # Format: "SETTING_NAME = value" or "SETTING_NAME = value ###"
@@ -266,6 +279,7 @@ def show_env(request, app_id):
     settings_entries = []
     if output.strip():
         # First pass: build a raw dict of {key: value}
+        t_parse = time.perf_counter()
         raw_settings = {}
         for line in output.strip().splitlines():
             line = line.strip()
@@ -281,13 +295,21 @@ def show_env(request, app_id):
                     raw_settings[key] = ast.literal_eval(value_str)
                 except (ValueError, SyntaxError, TypeError):
                     raw_settings[key] = value_str
+        timings['Parsing diffsettings output'] = (time.perf_counter() - t_parse) * 1000
+        timings['Settings count'] = len(raw_settings)
+
         # Second pass: mask sensitive keys and secret values recursively
+        t_mask = time.perf_counter()
         masked_settings = _mask_value(raw_settings, secret_values)
+        timings['Masking sensitive values'] = (time.perf_counter() - t_mask) * 1000
+
         for key, value in masked_settings.items():
             settings_entries.append({
                 'key': key,
                 'value': value,
             })
+
+    timings['Total server time'] = (time.perf_counter() - t0) * 1000
 
     return render(
         request,
@@ -295,6 +317,7 @@ def show_env(request, app_id):
         {
             'settings': settings_entries,
             'app': app,
+            'timings': timings,
         },
     )
 
