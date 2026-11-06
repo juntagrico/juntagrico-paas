@@ -212,14 +212,14 @@ def show_env(request, app_id):
     """Display current Django settings by running diffsettings in the container, hiding sensitive values."""
     app = get_object_or_404(App, pk=app_id)
 
-    # Patterns that mark a setting key as sensitive
-    sensitive_key_patterns = {'SECRET', 'PASSWORD'}
-
     # Collect values from secret AppEnvVars so we can mask settings that match them
     secret_values = set(app.env.env_vars.filter(secret=True).exclude(value='').values_list('value', flat=True))
-    secret_values.add(app.env.juntagrico_secret_key)
-    secret_values.add(app.env.juntagrico_database_password)
-    secret_values.add(app.env.juntagrico_email_password)
+    secret_values |= {
+        app.env.juntagrico_secret_key,
+        app.env.juntagrico_database_password,
+        app.env.juntagrico_email_password
+    }
+    secret_values.discard('')
 
     # Run diffsettings inside the container to get the actual Django settings
     try:
@@ -235,46 +235,29 @@ def show_env(request, app_id):
     # The ### marker means the setting is not in Django defaults
     settings_entries = []
     if output.strip():
+        # First pass: build a raw dict of {key: value}
+        raw_settings = {}
         for line in output.strip().splitlines():
             line = line.strip()
             if not line or line.startswith('---') or line.startswith('+++'):
-                # Skip diff separators in unified format
                 continue
-            # Remove the ### marker if present (indicates setting not in Django defaults)
-            is_custom = '###' in line
             line = line.replace('###', '').strip()
-            # Parse "SETTING_NAME = value"
             if '=' in line:
                 key, _, value_str = line.partition('=')
                 key = key.strip()
                 value_str = value_str.strip()
-                is_sensitive = any(pattern in key.upper() for pattern in sensitive_key_patterns)
-                # Also mask if the value contains a secret AppEnvVar value as a substring
-                if not is_sensitive:
-                    for secret in secret_values:
-                        if secret in value_str:
-                            is_sensitive = True
-                            break
-                # Try to parse the value as a Python literal (dict, list, tuple, etc.)
-                parsed_value = None
-                value_type = 'string'
-                if not is_sensitive:
-                    try:
-                        parsed = ast.literal_eval(value_str)
-                        if isinstance(parsed, (dict, list, tuple)):
-                            # Recursively mask sensitive keys and secret values within nested structures
-                            parsed_value = _mask_value(parsed, secret_values)
-                            value_type = type(parsed).__name__
-                    except (ValueError, SyntaxError, TypeError):
-                        pass
-                settings_entries.append({
-                    'key': key,
-                    'value': value_str if not is_sensitive else '****',
-                    'parsed_value': parsed_value,
-                    'value_type': value_type,
-                    'hidden': is_sensitive,
-                    'custom': is_custom,
-                })
+                # Try to parse as a Python literal; fall back to the raw string
+                try:
+                    raw_settings[key] = ast.literal_eval(value_str)
+                except (ValueError, SyntaxError, TypeError):
+                    raw_settings[key] = value_str
+        # Second pass: mask sensitive keys and secret values recursively
+        masked_settings = _mask_value(raw_settings, secret_values)
+        for key, value in masked_settings.items():
+            settings_entries.append({
+                'key': key,
+                'value': value,
+            })
 
     return render(request, 'app/show_env.html', {
         'settings': settings_entries,

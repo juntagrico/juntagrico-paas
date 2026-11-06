@@ -1,0 +1,23 @@
+{% load extras %}
+{% if value == '****' %}
+    <code class="text-muted">****</code>
+{% elif value|is_dict %}
+    <div class="card card-body border-left bg-light" style="border-left-width: 3px; border-left-color: #6c757d; font-size: 0.9em; margin-left: 1rem; margin-bottom: 0.5rem;">
+        {% for k, v in value.items %}
+            <div class="row mb-1">
+                <div class="col-auto" style="min-width: 120px;">
+                    <code class="text-dark">{{ k }}</code>
+                </div>
+                <div class="col">{% include 'extras/render_value.html' with value=v %}</div>
+            </div>
+        {% endfor %}
+    </div>
+{% elif value|is_sequence %}
+    <ul class="mb-0 pl-3" style="font-size: 0.9em;">
+        {% for item in value %}
+            <li>{% include 'extras/render_value.html' with value=item %}</li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <code class="text-dark">{{ value }}</code>
+{% endif %}

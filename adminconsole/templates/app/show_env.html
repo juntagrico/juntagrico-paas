@@ -1,5 +1,4 @@
 {% extends "app_base.html" %}
-{% load extras %}
 
 {% block page_subtitle %}<h4>Einstellungen anzeigen</h4>{% endblock %}
 
@@ -21,13 +20,7 @@
                 <div class="px-3 py-2{% if forloop.counter|divisibleby:2 %} bg-light{% endif %}">
                     <div style="font-weight: 600;"><code class="text-dark">{{ setting.key }}</code></div>
                     <div class="mt-1">
-                        {% if setting.hidden %}
-                            <code class="text-muted">****</code>
-                        {% elif setting.parsed_value is not None %}
-                            {% render_value setting.parsed_value %}
-                        {% else %}
-                            <code class="text-dark">{{ setting.value }}</code>
-                        {% endif %}
+                        {% include 'extras/render_value.html' with value=setting.value %}
                     </div>
                 </div>
             {% empty %}
