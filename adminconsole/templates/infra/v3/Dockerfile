@@ -48,8 +48,21 @@ WORKDIR /code
 
 # Make sure newest versions are installed
 RUN echo "Break Docker Cache: {% now "Y-m-d H:i:s.u" %}"
+# Remove pip, setuptools, wheel, and unused stdlib modules before copying to the
+# app stage. This avoids doing cleanup in the final image and keeps it lean.
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv pip install --system --link-mode=copy -r requirements.txt \
+    && rm -rf /usr/local/lib/python*/site-packages/pip* \
+            /usr/local/lib/python*/site-packages/setuptools* \
+            /usr/local/lib/python*/site-packages/wheel* \
+            /usr/local/lib/python*/ensurepip \
+            /usr/local/lib/python*/venv \
+            /usr/local/lib/python*/idlelib \
+            /usr/local/lib/python*/tkinter \
+            /usr/local/lib/python*/turtle.py \
+            /usr/local/lib/python*/turtledemo \
+            /usr/local/lib/python*/lib2to3 \
+            /usr/local/lib/python*/test \
     && chown -R root:root /usr/local/lib \
     && chmod -R a-w /usr/local/lib
 
@@ -60,33 +73,26 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 ENV PYTHONNOUSERSITE 1
 
+# We use python:alpine as the base to guarantee the correct Alpine/musl version,
+# but copy Python and installed libs from the builder so the base image's Python
+# layer is overwritten. The base image layer is shared via Docker's content-
+# addressable storage, so it doesn't waste disk space — it just ensures the
+# musl libc version matches what Python's shared extensions expect.
+# COPY merges content rather than replacing it, so we remove the base image's
+# Python installation first to ensure only the builder's files remain.
+RUN rm -rf /usr/local/lib/python* /usr/local/lib/dist-packages /usr/local/bin/python* /usr/local/bin/pip* /usr/local/bin/idle* /usr/local/bin/pydoc*
+COPY --from=builder /usr/local/lib /usr/local/lib
+COPY --from=builder /usr/local/bin/python* /usr/local/bin/
+COPY --from=builder /usr/local/bin/gunicorn* /usr/local/bin/
+RUN chmod -R a-w /usr/local/bin
+
 # Create normal user
 ARG appuser=appuser
 ARG appuid=10001
 RUN addgroup -g "${appuid}" -S "${appuser}" \
     && adduser -u "${appuid}" -G "${appuser}" -s /sbin/nologin -S "${appuser}"
 
-# Copy only relevant libs from builder
-COPY --from=builder /usr/local/lib /usr/local/lib
-COPY --from=builder /usr/local/bin/gunicorn* /usr/local/bin/
 COPY --from=fetcher /export /code
-
-# Remove pip and friends at the filesystem level (pip ships in the python
-# alpine image; deleting ensurepip alone leaves pip itself behind, and leaving
-# ensurepip means it can be recreated). Also strip unused stdlib modules.
-RUN rm -rf /usr/local/lib/python*/site-packages/pip* \
-            /usr/local/lib/python*/site-packages/setuptools* \
-            /usr/local/lib/python*/site-packages/wheel* \
-            /usr/local/bin/pip* \
-            /usr/local/lib/python*/ensurepip \
-            /usr/local/lib/python*/venv \
-            /usr/local/lib/python*/idlelib \
-            /usr/local/lib/python*/tkinter \
-            /usr/local/lib/python*/turtle.py \
-            /usr/local/lib/python*/turtledemo \
-            /usr/local/lib/python*/lib2to3 \
-            /usr/local/lib/python*/test \
-    && chmod -R a-w /usr/local/lib /usr/local/bin
 
 RUN mkdir -p /code/internal_files && chown -R "$appuser" /code/internal_files
 
