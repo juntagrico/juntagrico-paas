@@ -1,28 +1,8 @@
 {% extends "app_base.html" %}
-{% load extras %}
 
 {% block page_subtitle %}<h4>Einstellungen anzeigen</h4>{% endblock %}
 
 {% block inner_content %}
-    {% if timings %}
-    <div class="alert alert-warning">
-        <h6 class="mb-2">⏱ Profiling (Server-seitig)</h6>
-        <table class="table table-sm table-sm mb-0" style="font-size: 0.85em;">
-            {% for key, value in timings.items %}
-            <tr>
-                <td style="white-space: nowrap;"><code>{{ key }}</code></td>
-                <td style="text-align: right; white-space: nowrap;">
-                    {% if value >= 1000 %}
-                        {{ value|floatformat:0 }} ms ({{ value|div:1000|floatformat:1 }} s)
-                    {% else %}
-                        {{ value|floatformat:1 }} ms
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </table>
-    </div>
-    {% endif %}
     <div class="alert alert-info">
         <p>
             Dies ist eine Read-Only-Ansicht der aktuellen Einstellungen.
