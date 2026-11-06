@@ -86,7 +86,6 @@ RUN rm -rf /usr/local/lib/python*/site-packages/pip* \
             /usr/local/lib/python*/turtledemo \
             /usr/local/lib/python*/lib2to3 \
             /usr/local/lib/python*/test \
-    && (find /usr/local/lib/python* -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || true) \
     && chmod -R a-w /usr/local/lib /usr/local/bin
 
 RUN mkdir -p /code/internal_files && chown -R "$appuser" /code/internal_files
