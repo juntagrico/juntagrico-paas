@@ -24,11 +24,22 @@ class Command(BaseCommand):
         parser.add_argument(
             '--nocache', action='store_true', help='Build without using cache'
         )
+        parser.add_argument(
+            '--target',
+            type=str,
+            help='Build stage target (requires app version 3; only builds an image tagged with the stage name, never restarts)',
+        )
 
     # entry point used by manage.py
     def handle(self, *args, **options):
         app = App.objects.get(name=options['app_name'][0])
         python_version = options['python_version'] or app.python_version
+        target = str(options.get('target'))
+
+        if target and app.version < 3:
+            print('Error: --target requires app version 3 or higher.')
+            print('Return 1', flush=True)
+            return None
 
         client = docker.from_env()
 
@@ -36,10 +47,11 @@ class Command(BaseCommand):
         if python_version:
             build_args['pythonversion'] = python_version
 
-        if not ensure_dirs(app):
-            print('Error: failed create dirs.')
-            print('Return 42', flush=True)
-            return None
+        if not target:
+            if not ensure_dirs(app):
+                print('Error: failed create dirs.')
+                print('Return 42', flush=True)
+                return None
 
         if app.version >= 3:
             build_args['appuser'] = app.name
@@ -48,7 +60,11 @@ class Command(BaseCommand):
             if app.git_branch:
                 build_args['git_ref'] = app.git_branch
 
-            cmd = ['docker', 'buildx', 'build'] + ['--tag', app.image_tag]
+            image_tag = f'{app.image_tag}-{target}' if target else app.image_tag
+            cmd = ['docker', 'buildx', 'build'] + ['--tag', image_tag]
+
+            if target:
+                cmd.extend(['--target', target])
 
             if options.get('nocache', False):
                 cmd.append('--no-cache')
@@ -103,11 +119,12 @@ class Command(BaseCommand):
             if code == 1:
                 return None
 
-        if err_code := ensure_dir_permissions(app):
-            print('Error: failed set up dirs.')
-            print(f'Return {err_code}', flush=True)
-            return None
+        if not target:
+            if err_code := ensure_dir_permissions(app):
+                print('Error: failed set up dirs.')
+                print(f'Return {err_code}', flush=True)
+                return None
 
-        if options.get('restart'):
-            return call_command('restart', app.name)
+            if options.get('restart'):
+                return call_command('restart', app.name)
         return 0
