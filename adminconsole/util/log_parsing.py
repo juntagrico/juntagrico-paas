@@ -8,9 +8,10 @@ TIMESTAMP_ONLY_RE = re.compile(
 )
 
 # Docker log timestamp prefix: 2026-11-07T12:47:37.895945+01:00 <message>
+# Docker may also use 'Z' for UTC: 2026-11-07T15:03:23.887196000Z <message>
 # When timestamps=True, each log line starts with this prefix followed by a space
 DOCKER_TIMESTAMP_RE = re.compile(
-    r'^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?[+-]\d{2}:\d{2})\s'
+    r'^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:[+-]\d{2}:\d{2}|Z))\s'
 )
 
 # Application-level timestamp prefixes to strip from messages
