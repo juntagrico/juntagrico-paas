@@ -43,6 +43,7 @@ create local user with required permissions
 useradd -m -g www-data -s /bin/bash juntagrico
 usermod -aG docker juntagrico
 install -d -o juntagrico -g www-data /var/django/projects
+install -d -o juntagrico /var/django/domains
 ```
 
 allow the user to request certificates. The script must be a copy owned by root, never a symlink into the repository
@@ -129,11 +130,6 @@ systemctl status gunicorn
 Using nginx
 
 `apt install nginx`
-
-Set permissions
-```
-chown juntagrico /etc/nginx/sites-*
-```
 
 copy the config file and open it to change `server_name` to your domain.
 ```
