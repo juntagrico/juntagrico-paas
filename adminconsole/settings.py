@@ -193,7 +193,13 @@ GITHUB_CLIENT_SECRET = os.environ.get('GITHUB_CLIENT_SECRET')
 
 DOCKERIZED = os.environ.get('DOCKERIZED', '0') in ('1', 'True', 'true')
 PYTHON_BIN = os.environ.get('JUNTAGRICO_PYTHON_BIN', '.venv/bin/python')
-APP_DIR = os.environ.get('JUNTAGRICO_APP_DIR', '/var/django/projects')
+
+# Location of the projects directory
+PROJECTS_DIR = os.environ.get('JUNTAGRICO_PROJECTS_DIR', '/var/django/projects')
+# Volume with project directories, requires adminconsole to run in docker.
+APP_VOLUME = os.environ.get('JUNTAGRICO_APP_VOLUME') or None
+
+
 WORK_DIR = os.environ.get('JUNTAGRICO_WORK_DIR', '/var/django/projects')
 APPS_DOMAIN = '.juntagrico.app'
 

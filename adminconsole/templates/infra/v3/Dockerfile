@@ -94,6 +94,7 @@ RUN addgroup -g "${appuid}" -S "${appuser}" \
 
 COPY --from=fetcher /export /code
 
+# set permissions so new volume mounted here later inherits it on creation
 RUN mkdir -p /code/internal_files && chown -R "$appuser" /code/internal_files
 
 WORKDIR /code

@@ -1,7 +1,6 @@
 from django.core.management.base import BaseCommand
 
 from adminconsole.models import App
-from adminconsole.util.create_app import make_dirs
 from adminconsole.util.git import git_clone
 
 
@@ -13,9 +12,7 @@ class Command(BaseCommand):
         app = App.objects.get(name=options['app_name'][0])
 
         errors = []
-        success = make_dirs(app.dir, errors)
-        if success:
-            success &= git_clone(app, output=errors)
+        git_clone(app, output=errors)
 
         for error in errors:
             print(error)

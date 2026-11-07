@@ -13,7 +13,6 @@ from django.contrib.auth.decorators import login_required
 
 from adminconsole.decorators import owner_of_app
 from adminconsole.models import GitHubKey, App
-from adminconsole.util.create_app import make_dirs
 from adminconsole.util.git import git_clone, github_auth_env
 from adminconsole.views.generic import confirm_post
 
@@ -124,9 +123,7 @@ def clone_repo(request, app_id):
         key = request.user.githubkey.key
 
     errors = []
-    success = make_dirs(app.dir, errors)
-    if success:
-        success &= git_clone(app, key, errors)
+    success = git_clone(app, key, errors)
 
     return render(
         request,

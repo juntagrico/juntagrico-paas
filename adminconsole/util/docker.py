@@ -1,10 +1,11 @@
-import os
 from concurrent.futures import ThreadPoolExecutor
 
 import docker
+from django.conf import settings
 
 from docker.errors import NotFound, ContainerError
 from docker.models.containers import ExecResult
+from docker.types import Mount
 
 from adminconsole.util.network import (
     apps_memory_limit,
@@ -18,7 +19,8 @@ def get_container_env_and_network(app, client):
     Return (environment, network_kwargs) for a container matching the app's network configuration.
     For isolated networks, the environment includes JUNTAGRICO_DATABASE_HOST pointing to the gateway,
     and network_kwargs connects to the apps bridge network.
-    For non-isolated apps, network_kwargs uses host mode.
+    For non-isolated apps, the DOCKER_NETWORK_MODE setting controls the network:
+    if set to 'host', uses host network mode; otherwise connects to the specified network name.
     """
     environment = list(app.env.get_lines())
     if app.isolated_network:
@@ -26,27 +28,34 @@ def get_container_env_and_network(app, client):
         gateway = apps_network()['gateway']
         environment.append(f'JUNTAGRICO_DATABASE_HOST={gateway}')
         network_kwargs = {'network': network.name}
-    else:
+    elif settings.DOCKER_NETWORK_MODE == 'host':
         network_kwargs = {'network_mode': 'host'}
+    else:
+        # Connect to the specified network (e.g., the Docker Compose network name)
+        network_kwargs = {'network': settings.DOCKER_NETWORK_MODE}
     return environment, network_kwargs
 
 
-def _run_in_temp_container(app, name, command, volumes=None, user=None):
+def _run_in_temp_container(app, name, command, mounts=None, user=None):
     """
     Run a command in a temporary container with the latest environment.
     Returns (exit_code, output_bytes, error_bytes).
     """
     client = docker.from_env()
-    if volumes is None:
-        volumes = {}
+    # Remove any stale container with the same name from a previous failed/interrupted run
+    stop_container(name)
+    if mounts is None:
+        mounts = []
     if app.version < 3:
-        volumes.setdefault(app.dir / 'code', {'bind': '/code/', 'mode': 'ro'})
+        mounts = mounts + [
+            Mount(target='/code/', source=str(app.dir / 'code'), read_only=True)
+        ]
     environment, network_kwargs = get_container_env_and_network(app, client)
     kwargs = {
         'image': app.image_tag,
         'environment': environment,
         'name': name,
-        'volumes': volumes,
+        'mounts': mounts,
         'command': command,
         'remove': True,
         'stdout': True,
@@ -64,9 +73,10 @@ def _run_in_temp_container(app, name, command, volumes=None, user=None):
 
 def _run_migration_in_temp_container(app, name):
     """Run Django migrations in a temporary container with the latest environment."""
-    volumes = {}
     exit_code, output, stderr = _run_in_temp_container(
-        app, name + '-migrate', 'python -m manage migrate --noinput', volumes=volumes
+        app,
+        name + '-migrate',
+        'python -m manage migrate --noinput',
     )
     if output:
         print(output.decode('utf-8', errors='replace'), end='', flush=True)
@@ -105,13 +115,6 @@ def run_parallel_steps(app, name):
             print(err.decode('utf-8', errors='replace'), end='', flush=True)
         print(f'Return {code}', flush=True)
 
-    # Prepare collectstatic arguments
-    static_dir = app.dir / 'static'
-    static_dir.mkdir(parents=True, exist_ok=True)
-    static_stat = os.stat(static_dir)
-    collectstatic_volumes = {static_dir: {'bind': '/code/static/', 'mode': 'rw'}}
-    collectstatic_user = f'{static_stat.st_uid}:{static_stat.st_gid}'
-
     # Submit all work as Futures — they start immediately
     with ThreadPoolExecutor(max_workers=3) as executor:
         migrate_future = executor.submit(
@@ -119,15 +122,13 @@ def run_parallel_steps(app, name):
             app,
             name + '-migrate',
             'python -m manage migrate --noinput',
-            volumes={},
         )
         collectstatic_future = executor.submit(
             _run_in_temp_container,
             app,
             name + '-collectstatic',
             'python -m manage collectstatic --noinput -c',
-            volumes=collectstatic_volumes,
-            user=collectstatic_user,
+            mounts=[app.static_files_mount(read_only=False)],
         )
         restart_future = executor.submit(_do_restart, app, name)
 
@@ -224,6 +225,35 @@ def get_container_statuses(app_names):
     return statuses
 
 
+def ensure_dir_permissions(app):
+    # fix dir permissions to match docker user (also in volumes)
+    # to check the permissions in the volumes we need to start a docker container in any case.
+    try:
+        client = docker.from_env()
+        name = app.name + '-fix-perms'
+        # Remove any stale container from a previous failed/interrupted run
+        stop_container(name)
+        client.containers.run(
+            name=name,
+            image=app.image_tag,
+            user='0:0',
+            command=['chown', '-R', app.uid]
+            + [app.INTERNAL_ROOT, app.MEDIA_ROOT, app.STATIC_ROOT],
+            mounts=[
+                app.internal_mount(),
+                app.media_mount(),
+                app.static_files_mount(read_only=False),
+            ],
+            remove=True,
+            stdout=True,
+            stderr=True,
+        )
+        return 0
+    except ContainerError as exc:
+        print(exc.stderr, flush=True)
+        return exc.exit_status
+
+
 def create_container(app):
     """Create and start a Docker container for the given app."""
     client = docker.from_env()
@@ -246,13 +276,11 @@ def create_container(app):
     if app.staging_of:
         labels.append('staging')
 
-    volumes = {
-        base_dir / 'static': {'bind': '/code/static/', 'mode': 'ro'},
-        base_dir / 'media': {'bind': '/code/media/', 'mode': 'rw'},
-        f'{name}-internal': {'bind': '/code/internal_files/', 'mode': 'rw'},
-    }
+    mounts = [app.static_files_mount(), app.media_mount(), app.internal_mount()]
     if app.version < 3:
-        volumes[base_dir / 'code'] = {'bind': '/code/', 'mode': 'rw'}
+        mounts.append(
+            Mount(target='/code/', source=str(base_dir / 'code'), read_only=False)
+        )
 
     return client.containers.run(
         image=app.image_tag,
@@ -262,5 +290,5 @@ def create_container(app):
         labels=labels,
         **network_options,
         restart_policy={'Name': 'always'},
-        volumes=volumes,
+        mounts=mounts,
     )

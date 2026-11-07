@@ -8,7 +8,6 @@ from django.views.decorators.http import require_POST
 
 from adminconsole.decorators import owner_of_app
 from adminconsole.models import App
-from adminconsole.util.create_app import make_dirs
 from adminconsole.util.git import git_clone, git_status
 
 
@@ -53,9 +52,7 @@ def clone_repo(request, app_id):
 
     if request.method == 'POST':
         errors = []
-        success = make_dirs(app.dir, errors)
-        if success:
-            success &= git_clone(app, output=errors)
+        success = git_clone(app, output=errors)
 
         return render(
             request,
