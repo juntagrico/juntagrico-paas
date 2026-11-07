@@ -12,5 +12,5 @@ server {
         proxy_pass http://unix:/run/adminconsole/gunicorn.sock;
     }
 
-    include /etc/nginx/snippets/juntagrico-*.conf;
+    include /etc/nginx/snippets/juntagrico-common.conf;
 }

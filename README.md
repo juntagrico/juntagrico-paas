@@ -143,9 +143,14 @@ nano /etc/nginx/sites-available/admin.juntagrico.app
 
 copy the global juntagrico config:
 ```
-cp setup/nginx/juntagrico-global.conf /etc/nginx/snippets/
-cp setup/nginx/juntagrico-security-maps.conf /etc/nginx/conf.d/
+cp setup/nginx/juntagrico-http.conf /etc/nginx/conf.d/
+cp setup/nginx/juntagrico-common.conf /etc/nginx/snippets/
+cp setup/nginx/juntagrico-domain.conf /etc/nginx/snippets/
 ```
+
+The `juntagrico-common.conf` snippet contains shared security headers and probe-blocking rules used by both the admin site and app domains.
+The `juntagrico-domain.conf` snippet contains app-specific server configuration: maintenance mode, static/media locations, and proxy pass. It includes `juntagrico-common.conf` for the shared parts.
+Per-domain variables (`$juntagrico_app_name`, `$juntagrico_app_port`) are set via `set` directives in each domain's nginx config, which is generated automatically from the `domain.txt` template when a domain is added through the admin interface.
 
 enable the site
 ```

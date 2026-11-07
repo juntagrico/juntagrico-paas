@@ -2,41 +2,9 @@ server {
     server_name {{domain}};
     listen 80;
 
-    # Maintenance Mode
-    if (-f /var/www/MAINTENANCE_MODE) {
-        return 503;
-    }
-    error_page 503 @maintenance;
-    location @maintenance {
-        root /var/www;
-        rewrite ^(.*)$ /maintenance.html break;
-    }
-    # end Maintenance Mode
+    set $juntagrico_app_name {{name}};
+    set $juntagrico_app_port {{port}};
+    set $juntagrico_app_host 0.0.0.0;
 
-    location ~* ^/(?:favicon(?:-[^/]+)?\.(?:ico|png|svg)|apple-touch-icon(?:-[^/]+)?\.png|robots\.txt|site\.webmanifest|manifest\.json|browserconfig\.xml)$ {
-        access_log off;
-        log_not_found off;
-    }
-
-    location /static/ {
-        root /var/django/projects/{{name}};
-    }
-
-    location /media/ {
-        root /var/django/projects/{{name}};
-    }
-
-    location ~* password_reset {
-        limit_req zone=password_reset burst=3 nodelay;
-
-        include proxy_params;
-        proxy_pass http://0.0.0.0:{{port}};
-    }
-
-    location / {
-        include proxy_params;
-        proxy_pass http://0.0.0.0:{{port}};
-    }
-
-    include /etc/nginx/snippets/juntagrico-*.conf;
+    include /etc/nginx/snippets/juntagrico-domain.conf;
 }
