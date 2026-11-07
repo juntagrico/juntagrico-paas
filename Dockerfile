@@ -1,72 +1,55 @@
-#This docker file can be used to test the application
-#It also serves as instalation guide in order to setup a paas on an ubuntu server
-FROM ubuntu:18.04
-ENV JS_DATABASE_NAME=adminconsole
-ENV JS_DATABASE_USER=adminconsole
-ENV JS_DATABASE_PASSWORD=password
-ENV JS_DATABASE_HOST=localhost
-ENV JS_KEY=jssecret
-#docker specifiv envs
-ENV DEBIAN_FRONTEND=noninteractive
-ENV DJANGO_SETTINGS_MODULE=adminconsole.local_settings
-USER root
-RUN apt-get update -y &&\
-#    apt-get upgrade -y &&\ #not used in docker but you should do it during an installation on an normal ubuntu system
-    apt-get install -y apt-utils python3-pip python3-dev libpq-dev postgresql postgresql-contrib nginx git wget curl systemd
-RUN apt-get update -qq && apt-get install -qqy \
-    apt-transport-https \
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    DJANGO_SETTINGS_MODULE=adminconsole.settings
+
+# Install system dependencies: libpq5 (psycopg runtime), git, and Docker CLI
+# We use docker-ce-cli from Docker's official repo instead of docker.io, which is
+# unreliable on slim images. docker-buildx is the separate plugin for `docker buildx`.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    git \
     ca-certificates \
     curl \
-    lxc \
-    iptables
-# Install Docker from Docker Inc. repositories.
-RUN curl -sSL https://get.docker.com/ | sh
+    && install -m 0755 -d /etc/apt/keyrings \
+    && curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc \
+    && chmod a+r /etc/apt/keyrings/docker.asc \
+    && echo \
+        "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
+        $(. /etc/os-release && echo "$VERSION_CODENAME") stable" > /etc/apt/sources.list.d/docker.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends docker-ce-cli docker-buildx-plugin \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install --upgrade pip
-RUN pip3 install virtualenv
-WORKDIR /root/
-RUN wget https://dl.eff.org/certbot-auto &&\
-    chmod a+x ./certbot-auto
-WORKDIR /tmp/
-USER postgres
-RUN /etc/init.d/postgresql start &&\
-    psql --command "CREATE DATABASE adminconsole;"&&\
-    psql --command "CREATE USER adminconsole WITH PASSWORD 'password';"&&\
-    psql --command "ALTER ROLE adminconsole SET client_encoding TO 'utf8';"&&\
-    psql --command "ALTER ROLE adminconsole SET default_transaction_isolation TO 'read committed';"&&\
-    psql --command "ALTER ROLE adminconsole SET timezone TO 'CET';"&&\
-    psql --command "GRANT ALL PRIVILEGES ON DATABASE adminconsole TO adminconsole;"&&\
-    psql --command "alter user adminconsole createdb;"&&\
-    psql --command "alter user adminconsole createrole;"
-USER root
-WORKDIR /var/
-RUN mkdir django
-WORKDIR django
-RUN mkdir adminconsole
-RUN mkdir projects
-WORKDIR adminconsole
-ADD . .
-# on a normal ubuntu just source the virtual environment and dont do it that complicated, it is a docker thing again
-RUN virtualenv venv &&\
-    pwd &&\
-    venv/bin/pip install --upgrade -r requirements.txt
-RUN /etc/init.d/postgresql start &&\
-    venv/bin/python -m manage migrate&&\
-    venv/bin/python -m manage shell -c 'from django.contrib.auth.models import User; User.objects.create_superuser("admin", "admin@admin.com", "admin")'
-COPY docker_resources/env.env /var/django/adminconsole/venv/
-COPY docker_resources/gunicorn.service /etc/systemd/system/
-#does not work inside docker
-#RUN systemctl start gunicorn &&\
-#    systemctl enable gunicorn
-COPY docker_resources/default /etc/nginx/sites-available/default
-RUN rm -rf /etc/nginx/sites-enabled/default && ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
-EXPOSE 80
-CMD /etc/init.d/postgresql start &&\
- #that would be the production command
- #systemctl restart gunicorn &&
- #systemctl restart nginx
- #that just how it is done in docker &&\
- /etc/init.d/nginx start &&\
- venv/bin/python -m manage migrate &&\
- venv/bin/python -m manage collectstatic -c &&\
- /var/django/adminconsole/venv/bin/gunicorn --access-logfile - --workers 1 --bind unix:/var/django/adminconsole/adminconsole.sock adminconsole.wsgi:application
+# The django user needs access to the mounted Docker socket, which is owned by
+# root:docker on the host. We ensure the docker group exists with the host's GID
+# so the socket is accessible. Default to 982 (Debian/Ubuntu default).
+# Override with DOCKER_GID build arg if your host uses a different GID:
+#   docker build --build-arg DOCKER_GID=$(getent group docker | cut -d: -f3) .
+ARG DOCKER_GID=982
+RUN groupadd -g "${DOCKER_GID}" docker || groupmod -o -g "${DOCKER_GID}" docker && \
+    useradd --create-home -G docker django
+
+WORKDIR /app
+
+RUN mkdir static && chown django:django static
+RUN mkdir -p /etc/nginx/sites && chown django:django /etc/nginx/sites
+
+COPY requirements.txt .
+RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
+
+COPY --chown=django:django . .
+
+# Must happen before USER django so chmod works (root-only)
+COPY docker/entrypoint.sh /docker/entrypoint.sh
+RUN chmod +x /docker/entrypoint.sh
+
+ARG PROJECTS_DIR=/var/django/projects
+RUN mkdir -p ${PROJECTS_DIR} && chown django:django ${PROJECTS_DIR}
+
+USER django
+
+EXPOSE 8000
+
+ENTRYPOINT ["/docker/entrypoint.sh"]

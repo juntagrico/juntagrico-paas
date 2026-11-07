@@ -1,5 +1,7 @@
 import subprocess  # nosec: B404
+from pathlib import Path
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.template.loader import get_template
 
@@ -13,7 +15,8 @@ class Command(BaseCommand):
     # entry point used by manage.py
     def handle(self, *args, **options):
         for domain in Domain.objects.filter(name__in=options['domains']):
-            with open('/etc/nginx/sites-available/' + domain.name, 'w') as domain_file:
+            config_path = Path(settings.NGINX_SITES_DIR) / domain.name
+            with open(config_path, 'w') as domain_file:
                 domain_file.write(
                     get_template('infra/domain.txt').render({
                         'name': domain.app.name,
@@ -22,22 +25,13 @@ class Command(BaseCommand):
                     })
                 )
 
-            # activate site
-            proc = subprocess.run(  # nosec: B603, B607
-                [
-                    'ln',
-                    '-sf',
-                    '/etc/nginx/sites-available/' + domain.name,
-                    '/etc/nginx/sites-enabled',
-                ],
-                stdout=subprocess.PIPE,
-            )
-            print(str(proc.stdout))
-            # install ssl, the wrapper is the only command the user may run with sudo
-            proc = subprocess.run(  # nosec: B603, B607
-                ['sudo', '/usr/local/sbin/juntagrico-certbot', domain.name],
-                stdout=subprocess.PIPE,
-            )
-            print(str(proc.stdout))
-
-            print('Return', proc.returncode)
+            # Install SSL certificate (skipped in Docker — HTTPS is handled externally)
+            if not settings.DOCKERIZED:
+                proc = subprocess.run(  # nosec: B603
+                    ['sudo', '/usr/local/sbin/juntagrico-certbot', domain.name],
+                    stdout=subprocess.PIPE,
+                )
+                print(str(proc.stdout))
+                print('Return', proc.returncode)
+            else:
+                print('Return 0')

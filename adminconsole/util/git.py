@@ -40,10 +40,9 @@ def git_clone(app, key=None, output=None):
     if not test_localhost():
         branch = ['-b', app.git_branch] if app.git_branch else []
         proc = subprocess.run(  # nosec: B603, B607
-            ['git', 'clone', *branch, '--depth=1', app.git_clone_url, 'code'],
+            ['git', 'clone', *branch, '--depth=1', app.git_clone_url, app.code_dir],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            cwd=app.dir,
             env=github_auth_env(key) if key else None,
         )
         if output is not None:

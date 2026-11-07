@@ -25,7 +25,9 @@ SECRET_KEY = os.environ.get('JS_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['admin.juntagrico.app', 'admin.juntagrico.science']
+ALLOWED_HOSTS = os.environ.get(
+    'DJANGO_ALLOWED_HOSTS', 'admin.juntagrico.app,admin.juntagrico.science'
+).split(',')
 
 # The console is only served via HTTPS. nginx passes the scheme in X-Forwarded-Proto, which gunicorn trusts on its
 # unix socket, so Django recognises HTTPS requests without SECURE_PROXY_SSL_HEADER.
@@ -189,8 +191,29 @@ DEFAULT_FROM_EMAIL = os.environ.get('JUNTAGRICO_EMAIL_USER')
 GITHUB_CLIENT_ID = os.environ.get('GITHUB_CLIENT_ID')
 GITHUB_CLIENT_SECRET = os.environ.get('GITHUB_CLIENT_SECRET')
 
-PYTHON_BIN = '.venv/bin/python'
+DOCKERIZED = os.environ.get('DOCKERIZED', '0') in ('1', 'True', 'true')
+PYTHON_BIN = os.environ.get('JUNTAGRICO_PYTHON_BIN', '.venv/bin/python')
+
+# Location of the projects directory
+PROJECTS_DIR = os.environ.get('JUNTAGRICO_PROJECTS_DIR', '/var/django/projects')
+# Volume with project directories, requires adminconsole to run in docker.
+APP_VOLUME = os.environ.get('JUNTAGRICO_APP_VOLUME') or None
+
+
+WORK_DIR = os.environ.get('JUNTAGRICO_WORK_DIR', '/var/django/projects')
 APPS_DOMAIN = '.juntagrico.app'
+
+# Directory where nginx site configs are written (included by nginx config)
+NGINX_SITES_DIR = os.environ.get('NGINX_SITES_DIR', '/etc/nginx/sites-available')
+
+# Database host for child apps (e.g., 'db' in Docker, 'localhost' on bare metal)
+JUNTAGRICO_DATABASE_HOST = os.environ.get('JUNTAGRICO_DATABASE_HOST', 'localhost')
+
+# Port for child app databases
+JUNTAGRICO_DATABASE_PORT = os.environ.get('JUNTAGRICO_DATABASE_PORT', '5432')
+
+# Docker network mode for non-isolated apps: 'host' for host network, or a network name to connect to
+DOCKER_NETWORK_MODE = os.environ.get('DOCKER_NETWORK_MODE', 'host')
 
 COOKIECUTTER_URL = (
     'https://github.com/juntagrico/juntagrico-science-django-cookiecutter'

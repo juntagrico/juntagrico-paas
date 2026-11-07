@@ -11,6 +11,7 @@ from django.core.validators import RegexValidator, validate_domain_name
 from django.urls import reverse
 from django.utils import timezone
 from docker.errors import NotFound
+from docker.types import Mount
 
 from adminconsole.util import generate_secret_key
 
@@ -59,6 +60,13 @@ class GitHubKey(models.Model):
 
 
 class App(models.Model):
+    STATIC_DIR = 'static'
+    MEDIA_DIR = 'media'
+    # paths inside container
+    INTERNAL_ROOT = '/code/internal_files/'
+    STATIC_ROOT = '/code/static/'
+    MEDIA_ROOT = '/code/media/'
+
     user = models.ForeignKey(
         User, related_name='app', null=True, blank=True, on_delete=models.CASCADE
     )
@@ -94,15 +102,54 @@ class App(models.Model):
 
     @property
     def dir(self):
-        return Path('/var/django/projects') / self.name
+        return Path(settings.PROJECTS_DIR) / self.name
+
+    @property
+    def work_dir(self):
+        return Path(settings.WORK_DIR) / self.name
+
+    @property
+    def uid(self):
+        # user id for app user
+        return str(10000 + self.port)
 
     @property
     def code_dir(self):
-        return self.dir / 'code'
+        return self.work_dir / 'code'
+
+    @property
+    def static_dir(self):
+        return self.dir / 'static'
+
+    def get_mount(self, path, target, read_only=False):
+        common = dict(target=target, read_only=read_only)
+        if settings.APP_VOLUME is not None:
+            # mount static files from volume
+            return Mount(
+                source=settings.APP_VOLUME,
+                type='volume',
+                subpath=self.name + '/' + path,
+                **common,
+            )
+        return Mount(source=str(self.dir / path), type='bind', **common)
+
+    def static_files_mount(self, read_only=True):
+        return self.get_mount(self.STATIC_DIR, self.STATIC_ROOT, read_only=read_only)
+
+    def media_mount(self):
+        return self.get_mount(self.MEDIA_DIR, self.MEDIA_ROOT)
+
+    def internal_mount(self):
+        # internal is always a volume
+        return Mount(
+            target=self.INTERNAL_ROOT,
+            source=f'{self.name}-internal',
+            read_only=False,
+        )
 
     @property
     def log_file(self):
-        return str(self.dir) + '.txt'
+        return str(self.work_dir) + '.txt'
 
     @property
     def wsgi_path(self):
@@ -204,8 +251,8 @@ class AppEnv(models.Model):
     def get_lines(self):
         yield 'JUNTAGRICO_DEBUG=False'
         yield 'JUNTAGRICO_DATABASE_ENGINE=django.db.backends.postgresql'
-        yield 'JUNTAGRICO_STATIC_ROOT=/code/static/'
-        yield 'JUNTAGRICO_MEDIA_ROOT=/code/media/'
+        yield 'JUNTAGRICO_STATIC_ROOT=' + self.app.STATIC_ROOT
+        yield 'JUNTAGRICO_MEDIA_ROOT=' + self.app.MEDIA_ROOT
         yield 'JUNTAGRICO_DOMAINS=' + ','.join(
             self.app.domains.values_list('name', flat=True)
         )

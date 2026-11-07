@@ -1,5 +1,3 @@
-import subprocess  # nosec: B404
-
 from django.conf import settings
 from django.db import connection
 from django.template.loader import get_template
@@ -16,35 +14,15 @@ def find_port():
     return port
 
 
-def make_dirs(directory, output=None):
-    result = True
-    proc = subprocess.run(  # nosec: B603, B607
-        ['mkdir', '-p', directory], stdout=subprocess.PIPE, stderr=subprocess.STDOUT
-    )
-    result &= proc.returncode == 0
-    if output is not None:
-        output.append(proc.stdout.decode())
-
-    proc = subprocess.run(  # nosec: B603, B607
-        ['mkdir', '-p', 'static'],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        cwd=directory,
-    )
-    result &= proc.returncode == 0
-    if output is not None:
-        output.append(proc.stdout.decode())
-
-    proc = subprocess.run(  # nosec: B603, B607
-        ['mkdir', '-p', 'media'],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        cwd=directory,
-    )
-    result &= proc.returncode == 0
-    if output is not None:
-        output.append(proc.stdout.decode())
-    return result
+def ensure_dirs(app):
+    # make sure the target directories exist (outside the container)
+    try:
+        app.dir.mkdir(parents=True, exist_ok=True)
+        (app.dir / app.STATIC_DIR).mkdir(parents=True, exist_ok=True)
+        (app.dir / app.MEDIA_DIR).mkdir(parents=True, exist_ok=True)
+        return True
+    except PermissionError:
+        return False
 
 
 def create_database(app_env, db_name, user_name, replace=False):
@@ -72,16 +50,17 @@ def create_database(app_env, db_name, user_name, replace=False):
             f"TEMPLATE template0 ENCODING 'UTF8' "
             f"LC_COLLATE 'en_US.UTF-8' LC_CTYPE 'en_US.UTF-8'"
         )
-    app_env.juntagrico_database_host = 'localhost'
+    # TODO: don't save in DB use the setting directly.
+    app_env.juntagrico_database_host = settings.JUNTAGRICO_DATABASE_HOST
     app_env.juntagrico_database_name = db_name
     app_env.juntagrico_database_password = password
-    app_env.juntagrico_database_port = '5432'
+    app_env.juntagrico_database_port = settings.JUNTAGRICO_DATABASE_PORT
     app_env.juntagrico_database_user = user_name
     app_env.save()
 
 
 def create_docker_file(app):
-    with open(app.dir / 'Dockerfile', 'w') as docker_file:
+    with open(app.work_dir / 'Dockerfile', 'w') as docker_file:
         docker_file.write(
             get_template(f'infra/v{app.version}/Dockerfile').render({
                 'app': app,

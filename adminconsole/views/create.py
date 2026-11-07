@@ -81,7 +81,7 @@ def cookiecutter_form(request, app_id):
                 accept_hooks=False,
                 no_input=True,
                 extra_context=data,
-                output_dir=app.dir,
+                output_dir=app.work_dir,
                 overwrite_if_exists=True,
             )
             if test_localhost():
