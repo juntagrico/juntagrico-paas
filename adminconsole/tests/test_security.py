@@ -50,6 +50,9 @@ class GitCredentialTests(TestCase):
             mock.patch.object(
                 App, 'dir', new=property(lambda app: self.base / app.name)
             ),
+            mock.patch.object(
+                App, 'work_dir', new=property(lambda app: self.base / app.name)
+            ),
             # git must not find a repository outside of the test directory
             mock.patch.dict('os.environ', {'GIT_CEILING_DIRECTORIES': str(self.base)}),
         ]:
@@ -141,7 +144,7 @@ class GitCredentialTests(TestCase):
             cwd=source,
         )
         app = App.objects.create(name='foo', port=8010, git_clone_url=source.as_uri())
-        app.dir.mkdir()
+        app.work_dir.mkdir()
 
         with mock.patch(
             'adminconsole.util.git.subprocess.run', wraps=subprocess.run
@@ -149,7 +152,7 @@ class GitCredentialTests(TestCase):
             self.assertTrue(git_clone(app, TOKEN))
 
         args, kwargs = run.call_args
-        self.assertNotIn(TOKEN, ' '.join(args[0]))
+        self.assertNotIn(TOKEN, ' '.join(str(a) for a in args[0]))
         self.assertEqual(kwargs['env'], github_auth_env(TOKEN))
         self.assertEqual(
             git('remote', 'get-url', 'origin', cwd=app.code_dir), source.as_uri()
@@ -169,18 +172,9 @@ class GitCredentialTests(TestCase):
             run.return_value = mock.MagicMock(returncode=0, stdout=b'')
             git_clone(app)
         args, kwargs = run.call_args
-        self.assertEqual(
-            args[0],
-            [
-                'git',
-                'clone',
-                '-b',
-                'main',
-                '--depth=1',
-                'https://github.com/a/b.git@main',
-                'code',
-            ],
-        )
+        self.assertEqual(args[0][:5], ['git', 'clone', '-b', 'main', '--depth=1'])
+        self.assertEqual(args[0][5], 'https://github.com/a/b.git@main')
+        self.assertEqual(Path(args[0][6]), app.code_dir)
         self.assertIsNone(kwargs['env'])
 
     def test_push_passes_token_only_to_git_push(self):
