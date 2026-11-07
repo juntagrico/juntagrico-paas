@@ -162,7 +162,7 @@ def show_progress(request, app_id, pid):
     if start == 0:
         if app.version >= 3:
             base_steps = 5.1  # Docker Rebuild + Migrate + Collectstatic + Start + Collect Version
-            docker_build_steps = 23  # v3 counts each docker build step
+            docker_build_steps = 26  # v3 counts each docker build step
             clone_db_extra = 1 if (request.GET.get('copy_data') == '1') else 0
             expected = docker_build_steps + base_steps + clone_db_extra
         else:

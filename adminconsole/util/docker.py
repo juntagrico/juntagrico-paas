@@ -43,7 +43,12 @@ def _run_in_temp_container(app, name, command, mounts=None, user=None):
         mounts = []
     if app.version < 3:
         mounts = mounts + [
-            Mount(target='/code/', source=str(app.dir / 'code'), read_only=True)
+            Mount(
+                target='/code/',
+                source=str(app.dir / 'code'),
+                type='bind',
+                read_only=True,
+            )
         ]
     environment, network_kwargs = get_container_env_and_network(app, client)
     kwargs = {
@@ -274,7 +279,12 @@ def create_container(app):
     mounts = [app.static_files_mount(), app.media_mount(), app.internal_mount()]
     if app.version < 3:
         mounts.append(
-            Mount(target='/code/', source=str(base_dir / 'code'), read_only=False)
+            Mount(
+                target='/code/',
+                source=str(base_dir / 'code'),
+                type='bind',
+                read_only=False,
+            )
         )
 
     return client.containers.run(
