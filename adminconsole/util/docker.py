@@ -66,22 +66,20 @@ def _run_in_temp_container(app, name, command, mounts=None, user=None):
     kwargs.update(network_kwargs)
     try:
         output = client.containers.run(**kwargs)
-        return 0, output, b''
+        return 0, output
     except ContainerError as exc:
-        return exc.exit_status, exc.stdout or b'', exc.stderr or b''
+        return exc.exit_status, exc.stderr or b''
 
 
 def _run_migration_in_temp_container(app, name):
     """Run Django migrations in a temporary container with the latest environment."""
-    exit_code, output, stderr = _run_in_temp_container(
+    exit_code, output = _run_in_temp_container(
         app,
         name + '-migrate',
         'python -m manage migrate --noinput',
     )
     if output:
         print(output.decode('utf-8', errors='replace'), end='', flush=True)
-    if stderr:
-        print(stderr.decode('utf-8', errors='replace'), end='', flush=True)
     print(f'Return {exit_code}', flush=True)
     return exit_code
 
@@ -107,12 +105,10 @@ def run_parallel_steps(app, name):
     Returns a list of exit codes for each step.
     """
 
-    def _print_output(code, out, err):
+    def _print_output(code, out):
         """Print buffered stdout/stderr and return code."""
         if out:
             print(out.decode('utf-8', errors='replace'), end='', flush=True)
-        if err:
-            print(err.decode('utf-8', errors='replace'), end='', flush=True)
         print(f'Return {code}', flush=True)
 
     # Submit all work as Futures — they start immediately
@@ -134,20 +130,20 @@ def run_parallel_steps(app, name):
 
         # Print migration block: header immediately, output when ready
         print('# Django Migrate', flush=True)
-        code, out, err = migrate_future.result()
-        _print_output(code, out, err)
+        code, out = migrate_future.result()
+        _print_output(code, out)
         migrate_exit = code
 
         # Print collectstatic block: header immediately, output when ready
         print('# Django Collectstatic', flush=True)
-        code, out, err = collectstatic_future.result()
-        _print_output(code, out, err)
+        code, out = collectstatic_future.result()
+        _print_output(code, out)
         collectstatic_exit = code
 
         # Print restart block: header immediately, output when ready
         print('# Docker Start', flush=True)
-        code, out, err = restart_future.result()
-        _print_output(code, out, err)
+        code, out = restart_future.result()
+        _print_output(code, out)
         restart_exit = code
 
     return [migrate_exit, collectstatic_exit, restart_exit]
