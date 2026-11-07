@@ -1,7 +1,7 @@
 {# Render app status circle and version badges #}
 {# Context: app (App instance), container_statuses (dict mapping names to booleans) #}
 {% load extras %}
-{% with container_statuses|get_item:app.name as status %}
+{% with container_statuses|get_item:app.name as running %}
     {% include 'fragments/running_badge.html' %}
     {% if status %}
         {% if app.juntagrico_version %}<span class="badge {{ app.juntagrico_version|juntagrico_version_badge }}">j{{ app.juntagrico_version }}</span>{% endif %}
