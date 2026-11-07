@@ -48,7 +48,7 @@ class Command(BaseCommand):
             if app.git_branch:
                 build_args['git_ref'] = app.git_branch
 
-            cmd = ['docker', 'buildx', 'build', '-f', '-'] + ['--tag', app.image_tag]
+            cmd = ['docker', 'buildx', 'build'] + ['--tag', app.image_tag]
 
             if options.get('nocache', False):
                 cmd.append('--no-cache')
@@ -61,7 +61,7 @@ class Command(BaseCommand):
 
             # Make the built image available to the local Docker daemon.
             cmd.append('--load')
-            cmd.append(str(app.dir))
+            cmd.append('-')
 
             result = subprocess.run(  # nosec: B603
                 cmd,
