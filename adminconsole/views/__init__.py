@@ -1,6 +1,5 @@
 import ast
 import json
-import re
 import subprocess  # nosec: B404
 from collections import OrderedDict, defaultdict
 
@@ -22,6 +21,7 @@ from adminconsole.util import pid_finished
 from adminconsole.util.docker import get_container_statuses
 from adminconsole.util.git import git_switch, git_current_branch
 from adminconsole.util.log_summary import build_summary, build_header_summary
+from adminconsole.util.log_parsing import parse_log_line, format_timestamp
 from adminconsole.views.generic import (
     confirm_post,
     confirm_password,
@@ -418,137 +418,13 @@ def pgdump(request, app_id):
     return response
 
 
-# Regex patterns for log line parsing
-# Gunicorn: [2026-11-03 08:51:05 +0000] [1] [INFO] Starting gunicorn 25.1.0
-# Django: [2026-11-03 10:07:37,854] WARNING Not Found: //wp-includes/wlwmanifest.xml
-# Stack trace lines: indented or continuation lines
-# Timestamp-only lines: 2026-11-03 12:47:37.895945+01:00 (health checks, log flushes, keep-alives)
-LOG_LINE_RE = re.compile(
-    r'^\[(?P<timestamp>[^\]]+)\]\s+'
-    r'(?:\[(?P<pid>\d+)\]\s+)?'
-    r'(?:\[(?P<level>INFO|WARNING|ERROR|CRITICAL|DEBUG)\]\s+)?'
-    r'(?P<message>.*)',
-    re.IGNORECASE,
-)
-
-DJANGO_LOG_RE = re.compile(
-    r'^\[(?P<timestamp>[^\]]+)\]\s+'
-    r'(?P<level>INFO|WARNING|ERROR|CRITICAL|DEBUG)\s+'
-    r'(?P<message>.*)',
-    re.IGNORECASE,
-)
-
-# Timestamp-only lines (ISO 8601 with microseconds and timezone offset)
-# e.g. 2026-11-03 12:47:37.895945+01:00
-TIMESTAMP_ONLY_RE = re.compile(
-    r'^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d+[+-]\d{2}:\d{2}$'
-)
-
-# Date and time extraction for display
-# Matches YYYY-MM-DD HH:MM:SS from various timestamp formats
-DATETIME_RE = re.compile(r'(\d{4})-(\d{2})-(\d{2})\s+(\d{2}:\d{2}:\d{2})')
-
-MONTH_ABBR = {
-    '01': 'Jan',
-    '02': 'Feb',
-    '03': 'Mär',
-    '04': 'Apr',
-    '05': 'Mai',
-    '06': 'Jun',
-    '07': 'Jul',
-    '08': 'Aug',
-    '09': 'Sep',
-    '10': 'Okt',
-    '11': 'Nov',
-    '12': 'Dez',
-}
-
-
-def format_timestamp(raw):
-    """Format a raw timestamp string for compact display.
-    Returns a shortened version showing date and time, e.g. '03 Nov 08:51:05'.
-    """
-    if not raw:
-        return ''
-    match = DATETIME_RE.search(raw)
-    if match:
-        _, month, day, time = match.groups()
-        month_str = MONTH_ABBR.get(month, month)
-        # Strip trailing zeros from day for compactness
-        day_int = int(day)
-        return f'{day_int} {month_str} {time}'
-    # Fallback: return raw
-    return raw
-
-
-def parse_log_line(line):
-    """Parse a single log line into structured data.
-    Returns a dict with timestamp, level, pid, message, and is_continuation fields.
-    """
-    line = line.rstrip('\r\n')
-    if not line:
-        return None
-
-    # Try Gunicorn format first
-    match = LOG_LINE_RE.match(line)
-    if match and (match.group('level') or match.group('pid')):
-        level = match.group('level')
-        return {
-            'timestamp': match.group('timestamp') or '',
-            'level': level.upper() if level else 'UNKNOWN',
-            'pid': match.group('pid') or '',
-            'message': match.group('message') or '',
-            'is_continuation': False,
-        }
-
-    # Try Django format
-    match = DJANGO_LOG_RE.match(line)
-    if match:
-        return {
-            'timestamp': match.group('timestamp') or '',
-            'level': (match.group('level') or 'INFO').upper(),
-            'pid': '',
-            'message': match.group('message') or '',
-            'is_continuation': False,
-        }
-
-    # Check if it's a stack trace / continuation line (starts with whitespace or traceback pattern)
-    if line.startswith((' ', '\t', 'Traceback', 'File "', '  ')):
-        return {
-            'timestamp': '',
-            'level': 'TRACE',
-            'pid': '',
-            'message': line,
-            'is_continuation': True,
-        }
-
-    # Check if it's a timestamp-only line (health check, log flush, keep-alive)
-    if TIMESTAMP_ONLY_RE.match(line):
-        return {
-            'timestamp': line,
-            'level': 'HEARTBEAT',
-            'pid': '',
-            'message': '',
-            'is_continuation': False,
-        }
-
-    # Fallback: treat as unknown level
-    return {
-        'timestamp': '',
-        'level': 'UNKNOWN',
-        'pid': '',
-        'message': line,
-        'is_continuation': False,
-    }
-
-
 @owner_of_app
 def logs(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     name = app.name
     client = docker.from_env()
     container = client.containers.get(name)
-    result_text = container.logs(tail=1000)
+    result_text = container.logs(tail=1000, timestamps=True)
     result_text = result_text.decode('utf-8')
 
     # Parse raw log text into structured entries
