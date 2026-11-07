@@ -189,7 +189,15 @@ DEFAULT_FROM_EMAIL = os.environ.get('JUNTAGRICO_EMAIL_USER')
 GITHUB_CLIENT_ID = os.environ.get('GITHUB_CLIENT_ID')
 GITHUB_CLIENT_SECRET = os.environ.get('GITHUB_CLIENT_SECRET')
 
-PYTHON_BIN = '.venv/bin/python'
+PYTHON_BIN = os.environ.get('JUNTAGRICO_PYTHON_BIN', '.venv/bin/python')
+
+# Location of the projects directory
+PROJECTS_DIR = os.environ.get('JUNTAGRICO_PROJECTS_DIR', '/var/django/projects')
+# Volume with project directories, requires adminconsole to run in docker.
+APP_VOLUME = os.environ.get('JUNTAGRICO_APP_VOLUME') or None
+
+
+WORK_DIR = os.environ.get('JUNTAGRICO_WORK_DIR', '/var/django/projects')
 APPS_DOMAIN = '.juntagrico.app'
 
 COOKIECUTTER_URL = (

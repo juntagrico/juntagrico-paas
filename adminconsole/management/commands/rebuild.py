@@ -8,7 +8,8 @@ from django.core.management.base import BaseCommand
 from django.template.loader import get_template
 
 from adminconsole.models import App
-from adminconsole.util.create_app import create_docker_file
+from adminconsole.util.create_app import create_docker_file, ensure_dirs
+from adminconsole.util.docker import ensure_dir_permissions
 
 
 class Command(BaseCommand):
@@ -35,9 +36,14 @@ class Command(BaseCommand):
         if python_version:
             build_args['pythonversion'] = python_version
 
+        if not ensure_dirs(app):
+            print('Error: failed create dirs.')
+            print('Return 42', flush=True)
+            return None
+
         if app.version >= 3:
             build_args['appuser'] = app.name
-            build_args['appuid'] = 10000 + app.port
+            build_args['appuid'] = app.uid
             build_args['git_repo'] = app.git_clone_url
             if app.git_branch:
                 build_args['git_ref'] = app.git_branch
@@ -72,31 +78,6 @@ class Command(BaseCommand):
             )
             code = result.returncode
 
-            if code != 0:
-                print(f'Return {code}', flush=True)
-                return None
-
-            # fix volume permissions
-            cmd = ['chown', '-R', str(build_args['appuid'])]
-            client.containers.run(
-                image=app.image_tag,
-                user='0:0',
-                command=cmd + ['/code/internal_files', '/code/media'],
-                volumes={
-                    f'{app.name}-internal': {
-                        'bind': '/code/internal_files/',
-                        'mode': 'rw',
-                    },
-                    app.dir / 'media': {
-                        'bind': '/code/media',
-                        'mode': 'rw',
-                    },
-                },
-                remove=True,
-                stdout=True,
-                stderr=True,
-            )
-
             print(f'Return {code}', flush=True)
             if code != 0:
                 return None
@@ -125,6 +106,11 @@ class Command(BaseCommand):
             print(f'Return {code}', flush=True)
             if code == 1:
                 return None
+
+        if err_code := ensure_dir_permissions(app):
+            print('Error: failed set up dirs.')
+            print(f'Return {err_code}', flush=True)
+            return None
 
         if options.get('restart'):
             return call_command('restart', app.name)
