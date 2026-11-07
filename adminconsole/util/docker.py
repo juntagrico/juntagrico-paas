@@ -90,9 +90,9 @@ def _do_restart(app, name):
         stop_container(name)
         container = create_container(app)
         status = container.status
-        return 0, f'{status}\n'.encode(), b''
+        return 0, f'{status}\n'.encode()
     except Exception as exc:
-        return 1, b'', str(exc).encode()
+        return 1, str(exc).encode()
 
 
 def run_parallel_steps(app, name):
