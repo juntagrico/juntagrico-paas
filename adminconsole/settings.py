@@ -203,6 +203,18 @@ APP_VOLUME = os.environ.get('JUNTAGRICO_APP_VOLUME') or None
 WORK_DIR = os.environ.get('JUNTAGRICO_WORK_DIR', '/var/django/projects')
 APPS_DOMAIN = '.juntagrico.app'
 
+# Directory where nginx site configs are written (included by nginx config)
+NGINX_SITES_DIR = os.environ.get('NGINX_SITES_DIR', '/etc/nginx/sites-available')
+
+# Database host for child apps (e.g., 'db' in Docker, 'localhost' on bare metal)
+JUNTAGRICO_DATABASE_HOST = os.environ.get('JUNTAGRICO_DATABASE_HOST', 'localhost')
+
+# Port for child app databases
+JUNTAGRICO_DATABASE_PORT = os.environ.get('JUNTAGRICO_DATABASE_PORT', '5432')
+
+# Docker network mode for non-isolated apps: 'host' for host network, or a network name to connect to
+DOCKER_NETWORK_MODE = os.environ.get('DOCKER_NETWORK_MODE', 'host')
+
 COOKIECUTTER_URL = (
     'https://github.com/juntagrico/juntagrico-science-django-cookiecutter'
 )

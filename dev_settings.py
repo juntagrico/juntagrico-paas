@@ -154,6 +154,18 @@ GITHUB_CLIENT_SECRET = os.environ.get('GITHUB_CLIENT_SECRET')
 
 DEFAULT_PYTHON_VERSION = '3.12'
 
+DOCKERIZED = False
+
+# Location of the projects directory
+PROJECTS_DIR = os.environ.get('JUNTAGRICO_PROJECTS_DIR', '/var/django/projects')
+# Volume with project directories, requires adminconsole to run in docker.
+APP_VOLUME = os.environ.get('JUNTAGRICO_APP_VOLUME') or None
+
+NGINX_SITES_DIR = '/etc/nginx/sites-available'
+JUNTAGRICO_DATABASE_HOST = 'localhost'
+JUNTAGRICO_DATABASE_PORT = '5432'
+DOCKER_NETWORK_MODE = 'host'
+
 COOKIECUTTER_URL = os.environ.get(
     'COOKIECUTTER_URL', 'https://github.com/juntagrico/juntagrico-template.git'
 )

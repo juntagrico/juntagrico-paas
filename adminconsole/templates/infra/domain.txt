@@ -30,12 +30,12 @@ server {
         limit_req zone=password_reset burst=3 nodelay;
 
         include proxy_params;
-        proxy_pass http://0.0.0.0:{{port}};
+        proxy_pass http://{{name}}:{{port}};
     }
 
     location / {
         include proxy_params;
-        proxy_pass http://0.0.0.0:{{port}};
+        proxy_pass http://{{name}}:{{port}};
     }
 
     include /etc/nginx/snippets/juntagrico-*.conf;

@@ -1,5 +1,6 @@
 import subprocess  # nosec: B404
 
+from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
@@ -32,12 +33,13 @@ class Command(BaseCommand):
 
         # copy tables from prod app
         print('# Clone Database', flush=True)
+        db_host = settings.JUNTAGRICO_DATABASE_HOST
         target_user = app.env.juntagrico_database_user
         load = subprocess.Popen(  # nosec: B603, B607
             [
                 'psql',
                 '-h',
-                'localhost',
+                db_host,
                 '-U',
                 target_user,
                 '--no-password',
@@ -52,7 +54,7 @@ class Command(BaseCommand):
             [
                 'pg_dump',
                 '-h',
-                'localhost',
+                db_host,
                 '-U',
                 source_user,
                 '--no-password',

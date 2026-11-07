@@ -45,10 +45,10 @@ COPY --chown=django:django . .
 COPY docker/entrypoint.sh /docker/entrypoint.sh
 RUN chmod +x /docker/entrypoint.sh
 
-USER django
+ARG PROJECTS_DIR=/var/django/projects
+RUN mkdir -p ${PROJECTS_DIR} && chown django:django ${PROJECTS_DIR}
 
-ARG WORK_DIR=/home/django/projects
-RUN mkdir ${WORK_DIR}
+USER django
 
 EXPOSE 8000
 

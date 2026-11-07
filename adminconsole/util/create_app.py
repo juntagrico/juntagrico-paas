@@ -1,5 +1,3 @@
-import subprocess  # nosec: B404
-
 from django.conf import settings
 from django.db import connection
 from django.template.loader import get_template
@@ -52,10 +50,11 @@ def create_database(app_env, db_name, user_name, replace=False):
             f"TEMPLATE template0 ENCODING 'UTF8' "
             f"LC_COLLATE 'en_US.UTF-8' LC_CTYPE 'en_US.UTF-8'"
         )
-    app_env.juntagrico_database_host = 'localhost'
+    # TODO: don't save in DB use the setting directly.
+    app_env.juntagrico_database_host = settings.JUNTAGRICO_DATABASE_HOST
     app_env.juntagrico_database_name = db_name
     app_env.juntagrico_database_password = password
-    app_env.juntagrico_database_port = '5432'
+    app_env.juntagrico_database_port = settings.JUNTAGRICO_DATABASE_PORT
     app_env.juntagrico_database_user = user_name
     app_env.save()
 
