@@ -34,7 +34,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         app = App.objects.get(name=options['app_name'][0])
         python_version = options['python_version'] or app.python_version
-        target = str(options.get('target'))
+        target = options.get('target', '')
 
         if target and app.version < 3:
             print('Error: --target requires app version 3 or higher.')
