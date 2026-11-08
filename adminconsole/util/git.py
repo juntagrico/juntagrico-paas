@@ -144,14 +144,15 @@ def validate_clone_url(url):
     return None
 
 
-def git_clone(app, key=None, output=None):
+def git_clone(app, output=None):
     if not test_localhost():
+        token = app.get_installation_token()
         branch = ['-b', app.git_branch] if app.git_branch else []
         proc = subprocess.run(  # nosec: B603, B607
             ['git', 'clone', *branch, '--depth=1', app.git_clone_url, app.code_dir],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            env=github_auth_env(key) if key else None,
+            env=github_auth_env(token) if token else None,
         )
         if output is not None:
             output.append(proc.stdout.decode())
@@ -165,6 +166,10 @@ def run_git(args, cdir, **kwargs):
 
 def git_pull(app):
     cdir = app.code_dir
+    # Clone the repo if it doesn't exist yet (e.g., when switching from v3 to v2 apps)
+    if not (cdir / '.git').is_dir():
+        if not git_clone(app):
+            return -1
     # Try to get an installation token for private repo access
     token = app.get_installation_token()
     env = github_auth_env(token) if token else None

@@ -163,11 +163,8 @@ def clone_repo(request, app_id):
     if not app.git_clone_url:
         return redirect('repo-source', app_id=app_id)
 
-    # Get an installation access token from the app's owner's installation
-    key = app.get_installation_token()
-
     errors = []
-    success = git_clone(app, key, errors)
+    success = git_clone(app, errors)
 
     return render(
         request,

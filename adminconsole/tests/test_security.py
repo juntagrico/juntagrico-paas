@@ -142,10 +142,13 @@ class GitCredentialTests(TestCase):
         app = App.objects.create(name='foo', port=8010, git_clone_url=source.as_uri())
         app.work_dir.mkdir()
 
-        with mock.patch(
-            'adminconsole.util.git.subprocess.run', wraps=subprocess.run
-        ) as run:
-            self.assertTrue(git_clone(app, TOKEN))
+        with (
+            mock.patch.object(app, 'get_installation_token', return_value=TOKEN),
+            mock.patch(
+                'adminconsole.util.git.subprocess.run', wraps=subprocess.run
+            ) as run,
+        ):
+            self.assertTrue(git_clone(app))
 
         args, kwargs = run.call_args
         self.assertNotIn(TOKEN, ' '.join(str(a) for a in args[0]))
@@ -164,7 +167,10 @@ class GitCredentialTests(TestCase):
         app = App.objects.create(
             name='foo', port=8010, git_clone_url='https://github.com/a/b.git@main'
         )
-        with mock.patch('adminconsole.util.git.subprocess.run') as run:
+        with (
+            mock.patch.object(app, 'get_installation_token', return_value=None),
+            mock.patch('adminconsole.util.git.subprocess.run') as run,
+        ):
             run.return_value = mock.MagicMock(returncode=0, stdout=b'')
             git_clone(app)
         args, kwargs = run.call_args
