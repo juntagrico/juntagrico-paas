@@ -22,8 +22,10 @@ def install_cronjobs_for_app(app):
             continue
 
         cmd_type = definition.get('type', 'management')
-        if cmd_type == 'shell':
-            cmd = f'{definition["command"]} {app_name}'
+        if cmd_type == 'systemd':
+            # systemd template service: systemctl start {service}@<app>.service
+            service = definition['service']
+            cmd = f'systemctl start {service}@{app_name}.service'
         else:
             cmd = f'docker exec {app_name} python -m manage {definition["command"]}'
         job = cron.new(command=cmd, comment=comment)

@@ -95,7 +95,7 @@ WSGI_APPLICATION = 'adminconsole.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
+        'ENGINE': os.environ.get('JS_DATABASE_ENGINE', 'django.db.backends.sqlite3'),
         'NAME': os.environ.get('JS_DATABASE_NAME'),
         'USER': os.environ.get('JS_DATABASE_USER'),
         'PASSWORD': os.environ.get('JS_DATABASE_PASSWORD'),
@@ -295,8 +295,8 @@ CRONJOBS = [
         'name': 'Automatische Updates (redeploy)',
         'group': None,
         'timing': 'daily',
-        'type': 'shell',
-        'command': '/var/django/adminconsole/tasks/redeploy-v2.sh',
+        'type': 'systemd',
+        'service': 'redeploy',
         'default_hour': 2,
         'default_minute': 'spread',
     },
