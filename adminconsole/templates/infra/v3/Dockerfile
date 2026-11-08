@@ -13,6 +13,10 @@ RUN apk add --no-cache git \
 FROM base AS fetcher
 ARG git_repo
 ARG git_ref=main
+# Force the fetcher stage to re-run on every build so COPY --from=fetcher
+# in downstream stages always gets the latest fetched files.
+# --no-cache-filter fetcher seems insufficient for this purpose
+RUN echo "Break Docker Cache: {% now "Y-m-d H:i:s.u" %}"
 # Fetch approach also works when git_ref is a commit SHA (unlike `git clone --branch`).
 # -b main removes the warning about the initial branch name.
 # The checkout is exported via `git archive` so the image never receives .git/,
