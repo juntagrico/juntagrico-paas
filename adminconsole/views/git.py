@@ -37,10 +37,12 @@ def github_callback(request):
     """
     installation_id = request.GET.get('installation_id', '')
     setup_action = request.GET.get('setup_action', '')
+    callback_state = request.GET.get('state', '')
 
-    # Verify the single-use state token to prevent installation_id spoofing
-    state = request.session.pop('github_install_state', None)
-    if state is None:
+    # Verify the single-use state token to prevent installation_id spoofing.
+    # The state is passed through from the installation URL to the Setup URL callback.
+    session_state = request.session.pop('github_install_state', None)
+    if session_state is None or session_state != callback_state:
         messages.error(request, 'Ungültige GitHub-Antwort. Bitte versuche es erneut.')
         return continue_setup(request)
 
@@ -85,11 +87,15 @@ def repo_source(request, app_id):
             # Store the app_id in the session so the callback can redirect to select_repo
             request.session['github_install_app_id'] = app_id
             # Generate a single-use state token to verify the callback originates
-            # from this legitimate installation flow, preventing installation_id spoofing
-            request.session['github_install_state'] = get_random_string(32)
-            # Redirect to the GitHub App installation page
+            # from this legitimate installation flow, preventing installation_id spoofing.
+            # GitHub passes the state parameter through to the Setup URL callback.
+            state = get_random_string(32)
+            request.session['github_install_state'] = state
+            # Redirect to the GitHub App installation page. After installation, GitHub
+            # redirects to the Setup URL (configured in GitHub App settings) with
+            # ?installation_id=XXX&state=YYY
             return redirect(
-                f'https://github.com/apps/{settings.GITHUB_APP_SLUG}/installations/requests'
+                f'https://github.com/apps/{settings.GITHUB_APP_SLUG}/installations/new?state={state}'
             )
         if action == 'clone':
             clone_url = request.POST.get('clone_url', '').strip()

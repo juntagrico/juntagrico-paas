@@ -1143,7 +1143,11 @@ class RepoSourceTests(TestCase):
                 f'/ca/source/{self.app.id}/',
                 {'action': 'github'},
             )
-        self.assertIn('/apps/my-github-app/installations/requests', resp['Location'])
+        self.assertIn('/apps/my-github-app/installations/new?state=', resp['Location'])
+        # Verify state token was stored in session
+        session = self.client.session
+        self.assertIn('github_install_state', session)
+        self.assertIn(session['github_install_state'], resp['Location'])
 
     def test_skips_to_clone_when_url_already_set(self):
         self.app.git_clone_url = 'https://github.com/user/repo.git'
@@ -1277,6 +1281,7 @@ class GithubCallbackTests(TestCase):
             {
                 'installation_id': '456',
                 'setup_action': 'install',
+                'state': 'test-state-token',
             },
         )
         # Without app_id in session, redirects to home
@@ -1297,6 +1302,7 @@ class GithubCallbackTests(TestCase):
             {
                 'installation_id': '456',
                 'setup_action': 'install',
+                'state': 'test-state-token',
             },
         )
         self.assertRedirects(resp, f'/ca/repo/{app.id}/', fetch_redirect_response=False)
@@ -1309,14 +1315,14 @@ class GithubCallbackTests(TestCase):
     def test_callback_pending_approval(self):
         resp = self.client.get(
             '/github/callback',
-            {'setup_action': 'request'},
+            {'setup_action': 'request', 'state': 'test-state-token'},
         )
         self.assertRedirects(resp, '/', fetch_redirect_response=False)
 
     def test_callback_missing_installation_id(self):
         resp = self.client.get(
             '/github/callback',
-            {},
+            {'state': 'test-state-token'},
         )
         self.assertRedirects(resp, '/', fetch_redirect_response=False)
 
@@ -1326,7 +1332,7 @@ class GithubCallbackTests(TestCase):
 
         resp = self.client.get(
             '/github/callback',
-            {'installation_id': '789'},
+            {'installation_id': '789', 'state': 'test-state-token'},
         )
         self.assertRedirects(resp, '/', fetch_redirect_response=False)
         self.assertEqual(GitHubKey.objects.get(user=self.user).installation_id, '789')
@@ -1345,6 +1351,7 @@ class GithubCallbackTests(TestCase):
             {
                 'installation_id': '999',
                 'setup_action': 'install',
+                'state': 'test-state-token',
             },
         )
         self.assertRedirects(resp, '/', fetch_redirect_response=False)
@@ -1358,18 +1365,42 @@ class GithubCallbackTests(TestCase):
         # First callback succeeds
         resp = self.client.get(
             '/github/callback',
-            {'installation_id': '456', 'setup_action': 'install'},
+            {
+                'installation_id': '456',
+                'setup_action': 'install',
+                'state': 'test-state-token',
+            },
         )
         self.assertRedirects(resp, '/', fetch_redirect_response=False)
         self.assertEqual(GitHubKey.objects.get(user=self.user).installation_id, '456')
         # Second callback with the same session (no state token left) is rejected
         resp = self.client.get(
             '/github/callback',
-            {'installation_id': '999', 'setup_action': 'install'},
+            {
+                'installation_id': '999',
+                'setup_action': 'install',
+                'state': 'test-state-token',
+            },
         )
         self.assertRedirects(resp, '/', fetch_redirect_response=False)
         # installation_id should still be the original value
         self.assertEqual(GitHubKey.objects.get(user=self.user).installation_id, '456')
+
+    def test_callback_rejected_with_mismatched_state(self):
+        """Callback is rejected if the URL state doesn't match the session state."""
+        from adminconsole.models import GitHubKey
+
+        resp = self.client.get(
+            '/github/callback',
+            {
+                'installation_id': '999',
+                'setup_action': 'install',
+                'state': 'wrong-state-token',
+            },
+        )
+        self.assertRedirects(resp, '/', fetch_redirect_response=False)
+        # installation_id should NOT be stored
+        self.assertFalse(GitHubKey.objects.filter(user=self.user).exists())
 
 
 # App.get_installation_token() looks up the app owner's installation token.
