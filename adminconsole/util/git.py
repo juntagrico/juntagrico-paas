@@ -49,6 +49,9 @@ def get_installation_access_token(installation_id: int) -> str | None:
     Returns the access token string, or None on failure.
     The token expires after 1 hour.
     """
+    import logging
+
+    logger = logging.getLogger(__name__)
     try:
         data = _github_app_request(
             'POST',
@@ -56,7 +59,8 @@ def get_installation_access_token(installation_id: int) -> str | None:
             data=b'{}',
         )
         return data.get('token')
-    except (OSError, ValueError):
+    except (OSError, ValueError) as e:
+        logger.error('Failed to generate installation access token: %s', e)
         return None
 
 
