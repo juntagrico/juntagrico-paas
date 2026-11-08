@@ -1095,12 +1095,24 @@ class RepoSourceTests(TestCase):
         self.client.force_login(self.owner)
         self.app = App.objects.create(name='foo', port=8010, user=self.owner)
 
-    def test_get_shows_choice_page(self):
+    def test_get_shows_install_button_without_installation(self):
+        """Without a GitHubKey, the install button is shown, not the repo list link."""
         resp = self.client.get(f'/ca/source/{self.app.id}/')
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, 'clone_url')
         self.assertContains(resp, 'GitHub App installieren')
+        self.assertNotContains(resp, 'Repo aus Liste auswählen')
+
+    def test_get_shows_repo_link_with_installation(self):
+        """With a GitHubKey installation_id, the repo list link is shown, not the install button."""
+        from adminconsole.models import GitHubKey
+
+        GitHubKey.objects.create(user=self.owner, installation_id='123')
+        resp = self.client.get(f'/ca/source/{self.app.id}/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'clone_url')
         self.assertContains(resp, 'Repo aus Liste auswählen')
+        self.assertNotContains(resp, 'GitHub App installieren')
 
     def test_clone_action_validates_and_saves_url(self):
         """Clone URL path is for public repos; no GitHub access check is performed."""

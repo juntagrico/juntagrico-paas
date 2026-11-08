@@ -113,7 +113,16 @@ def repo_source(request, app_id):
             App.objects.filter(pk=app_id).update(git_clone_url=clone_url)
             return redirect('ca-git-clone', app_id=app_id)
 
-    return render(request, 'repo_source.html', {'app': app})
+    # Check if the user has a GitHub App installation
+    has_installation = GitHubKey.objects.filter(
+        user=request.user, installation_id__gt=''
+    ).exists()
+
+    return render(
+        request,
+        'repo_source.html',
+        {'app': app, 'has_installation': has_installation},
+    )
 
 
 @login_required

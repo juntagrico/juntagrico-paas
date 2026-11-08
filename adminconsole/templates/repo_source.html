@@ -34,21 +34,21 @@
 
     <hr />
 
-    <!-- Option 2: Install GitHub App -->
-    <form action="" method="post">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="github" />
+    {% if has_installation %}
+        <!-- User has a GitHub App installation — show repo selection -->
         <p>
-            Oder installiere die GitHub App, um auf ein Repo zuzugreifen.
+            Wähle ein Repo aus der Liste der verfügbaren Repositories.
         </p>
-        <button type="submit" class="btn btn-outline-primary mt-3">GitHub App installieren</button>
-    </form>
-
-    <hr />
-
-    <!-- Option 3: Select from installed repos -->
-    <p>
-        Falls die GitHub App bereits installiert ist, kannst du ein Repo aus der Liste der verfügbaren Repositories auswählen.
-    </p>
-    <a href="{% url 'github-select' app.id %}" class="btn btn-outline-secondary mt-3">Repo aus Liste auswählen</a>
+        <a href="{% url 'github-select' app.id %}" class="btn btn-outline-primary mt-3">Repo aus Liste auswählen</a>
+    {% else %}
+        <!-- User has not installed the GitHub App yet -->
+        <form action="" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="github" />
+            <p>
+                Oder installiere die GitHub App, um auf ein Repo zuzugreifen.
+            </p>
+            <button type="submit" class="btn btn-outline-primary mt-3">GitHub App installieren</button>
+        </form>
+    {% endif %}
 {% endblock %}
