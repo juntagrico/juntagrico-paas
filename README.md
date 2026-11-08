@@ -37,7 +37,7 @@ To release unused Docker images, install the systemd timer:
 cp setup/timers/juntagrico-docker-prune.timer /etc/systemd/system/
 cp setup/timers/juntagrico-docker-prune.service /etc/systemd/system/
 systemctl daemon-reload
-systemctl enable --now juntagrico-docker-prune
+systemctl enable --now juntagrico-docker-prune.timer
 ```
 
 
@@ -201,7 +201,7 @@ Install the systemd timer to stop expired staging app containers daily at 02:00:
 cp setup/timers/juntagrico-stop-staging.timer /etc/systemd/system/
 cp setup/timers/juntagrico-stop-staging.service /etc/systemd/system/
 systemctl daemon-reload
-systemctl enable --now juntagrico-stop-staging
+systemctl enable --now juntagrico-stop-staging.timer
 ```
 
 
@@ -214,7 +214,7 @@ Make sure the instance is re-initialized daily at 04:00 using the systemd timer:
 cp setup/timers/juntagrico-reset-demo.timer /etc/systemd/system/
 cp setup/timers/juntagrico-reset-demo.service /etc/systemd/system/
 systemctl daemon-reload
-systemctl enable --now juntagrico-reset-demo
+systemctl enable --now juntagrico-reset-demo.timer
 ```
 
 Also activate the automatic redeploy cronjob for the demo app
@@ -226,7 +226,7 @@ To pull updated Docker images for supported Python versions weekly:
 cp setup/timers/juntagrico-docker-pull.timer /etc/systemd/system/
 cp setup/timers/juntagrico-docker-pull.service /etc/systemd/system/
 systemctl daemon-reload
-systemctl enable --now juntagrico-docker-pull
+systemctl enable --now juntagrico-docker-pull.timer
 ```
 
 To view all scheduled timers and their next run time:
