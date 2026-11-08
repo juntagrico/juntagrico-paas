@@ -53,7 +53,7 @@ class GitHubKey(models.Model):
     user = models.OneToOneField(
         User, related_name='githubkey', null=True, blank=True, on_delete=models.CASCADE
     )
-    key = models.CharField(max_length=500)
+    installation_id = models.CharField('GitHub App installation ID', max_length=50)
 
     def __str__(self):
         return str(self.user)
@@ -70,7 +70,7 @@ class App(models.Model):
     user = models.ForeignKey(
         User, related_name='app', null=True, blank=True, on_delete=models.CASCADE
     )
-    git_clone_url = models.CharField('github', max_length=100, blank=True)
+    git_clone_url = models.CharField('github', max_length=500, blank=True)
     git_branch = models.CharField('branch', max_length=100, blank=True, default='main')
     name = models.CharField(
         'name',
@@ -185,6 +185,23 @@ class App(models.Model):
 
     def get_absolute_url(self):
         return reverse('overview', args=[self.id])
+
+    def get_installation_token(self) -> str | None:
+        """Get a GitHub App installation access token for this app's owner.
+
+        Looks up the app owner's GitHubKey to find the installation_id, then
+        generates an installation access token. Returns None if no installation
+        is configured for this app's owner.
+        """
+        try:
+            github_key = GitHubKey.objects.get(user=self.user)
+            installation_id = int(github_key.installation_id)
+        except (GitHubKey.DoesNotExist, ValueError, TypeError):
+            return None
+
+        from adminconsole.util.git import get_installation_access_token
+
+        return get_installation_access_token(installation_id)
 
 
 class AppEnv(models.Model):

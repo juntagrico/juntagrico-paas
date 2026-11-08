@@ -1,5 +1,4 @@
 import base64
-import json
 import os
 import shutil
 import smtplib
@@ -9,19 +8,16 @@ import string
 import subprocess  # nosec: B404
 import sys
 import tempfile
-from io import BytesIO
 from pathlib import Path
 from unittest import mock
 from unittest.mock import patch
-from urllib.error import URLError
-from urllib.parse import urlsplit, parse_qs
 
 from django.contrib.auth.models import User
 from django.core.management import call_command, CommandError
 from django.test import TestCase, Client, override_settings, modify_settings, tag
 from docker.errors import NotFound
 
-from adminconsole.models import App, AppEnv, GitHubKey
+from adminconsole.models import App, AppEnv
 from adminconsole.util import generate_password, generate_secret_key
 from adminconsole.util.admin import PASSWORD_ENV, SET_PASSWORD_SCRIPT
 from adminconsole.util.git import git_clone, github_auth_env, remove_credentials
@@ -181,8 +177,9 @@ class GitCredentialTests(TestCase):
         from django.http import HttpResponse
 
         user = User.objects.create_user('owner')
-        GitHubKey.objects.create(user=user, key=TOKEN)
-        app = App.objects.create(name='foo', port=8010, user=user)
+        app = App.objects.create(
+            name='foo', port=8010, user=user, git_clone_url='https://github.com/a/b.git'
+        )
         app.code_dir.mkdir(parents=True)
         git('init', '-q', cwd=app.code_dir)
         git('remote', 'add', 'origin', 'https://github.com/a/b.git', cwd=app.code_dir)
@@ -190,6 +187,7 @@ class GitCredentialTests(TestCase):
         with (
             mock.patch('subprocess.run') as run,
             mock.patch('adminconsole.views.git.render', return_value=HttpResponse()),
+            mock.patch.object(App, 'get_installation_token', return_value=TOKEN),
         ):
             run.return_value = mock.MagicMock(returncode=0, stdout=b'')
             self.client.post(f'/git/push/{app.id}/')
@@ -336,134 +334,33 @@ class CookiecutterTests(TestCase):
         )  # a commit, not a branch or tag that can move
         self.assertIs(kwargs['accept_hooks'], False)
 
-
-def github_response(payload):
-    """simulated response of GitHub's token endpoint"""
-    response = mock.MagicMock()
-    response.__enter__.return_value = BytesIO(json.dumps(payload).encode())
-    return response
-
-
-# The OAuth callback must only accept answers to a request started by the same session (state parameter).
-@modify_settings(
-    MIDDLEWARE={'remove': ['adminconsole.middleware.RequireOTPMiddleware']}
-)
-@override_settings(GITHUB_CLIENT_ID='client-id', GITHUB_CLIENT_SECRET='client-secret')  # nosec: B106
-class GitHubOAuthTests(TestCase):
-    def setUp(self):
-        self.user = User.objects.create_user('owner')
-        self.client.force_login(self.user)
-        patcher = mock.patch('adminconsole.views.git.r.urlopen')
-        self.urlopen = patcher.start()
-        self.addCleanup(patcher.stop)
-        self.urlopen.return_value = github_response({
-            'access_token': TOKEN,
-            'scope': 'public_repo',
-        })
-
-    def start(self):
-        """starts the OAuth flow and returns the state sent to GitHub"""
-        response = self.client.get('/github/request')
-        query = parse_qs(urlsplit(response['Location']).query)
-        self.assertEqual(query['client_id'], ['client-id'])
-        self.assertEqual(query['scope'], ['public_repo'])
-        return query['state'][0]
-
-    def assert_rejected(self, response):
-        self.assertRedirects(response, '/', fetch_redirect_response=False)
-        self.assertFalse(self.urlopen.called, 'GitHub was contacted')
-
-    def test_each_request_gets_a_new_state(self):
-        first, second = self.start(), self.start()
-        self.assertNotEqual(first, second)
-        self.assertGreaterEqual(len(second), 40)
-        self.assertEqual(self.client.session['github_oauth_state'], second)
-
-    def test_callback_without_matching_state_is_rejected(self):
-        for session_state, params in [
-            (None, {'code': 'c', 'state': 'abc'}),  # flow never started
-            ('abc', {'code': 'c'}),  # state missing
-            ('abc', {'code': 'c', 'state': 'xyz'}),  # foreign state
-            ('abc', {'code': 'c', 'state': 'äbc'}),  # non-ascii
-        ]:
-            with self.subTest(session_state=session_state, params=params):
-                session = self.client.session
-                session.pop('github_oauth_state', None)
-                if session_state:
-                    session['github_oauth_state'] = session_state
-                session.save()
-                self.assert_rejected(self.client.get('/github/callback', params))
-                self.assertFalse(GitHubKey.objects.exists())
-
-    def test_valid_callback_stores_token_once(self):
-        state = self.start()
-        session = self.client.session
-        session['next'] = '/ca/repo/1/'
-        session.save()
-
-        response = self.client.get('/github/callback', {'code': 'c', 'state': state})
-        self.assertRedirects(response, '/ca/repo/1/', fetch_redirect_response=False)
-        self.assertEqual(GitHubKey.objects.get(user=self.user).key, TOKEN)
-
-        # the state can be used only once
-        self.urlopen.reset_mock()
-        self.assert_rejected(
-            self.client.get('/github/callback', {'code': 'c', 'state': state})
-        )
-
-    def test_token_request(self):
-        state = self.start()
-        self.client.get('/github/callback', {'code': 'the-code', 'state': state})
-        (request,) = self.urlopen.call_args.args
-        self.assertEqual(self.urlopen.call_args.kwargs['timeout'], 10)
-        self.assertEqual(
-            request.full_url, 'https://github.com/login/oauth/access_token'
-        )
-        self.assertEqual(request.get_header('Accept'), 'application/json')
-        self.assertEqual(
-            parse_qs(request.data.decode()),
-            {
-                'code': ['the-code'],
-                'client_id': ['client-id'],
-                'client_secret': ['client-secret'],
-            },
-        )
-
-    def test_failures_keep_existing_token(self):
-        GitHubKey.objects.create(user=self.user, key='existing')
-        for description, side_effect, return_value in [
-            (
-                'error from GitHub',
-                None,
-                github_response({'error': 'bad_verification_code'}),
-            ),
-            ('network error', URLError('timeout'), None),
-            (
-                'invalid json',
-                None,
-                mock.MagicMock(**{
-                    '__enter__.return_value': BytesIO(b'access_token=x')
-                }),
-            ),
-        ]:
-            with self.subTest(description):
-                self.urlopen.side_effect, self.urlopen.return_value = (
-                    side_effect,
-                    return_value,
-                )
-                state = self.start()
-                response = self.client.get(
-                    '/github/callback', {'code': 'c', 'state': state}
-                )
-                self.assertRedirects(response, '/', fetch_redirect_response=False)
-                self.assertEqual(GitHubKey.objects.get(user=self.user).key, 'existing')
-
-    def test_denied_access_does_not_contact_github(self):
-        state = self.start()
-        self.assert_rejected(
-            self.client.get(
-                '/github/callback', {'error': 'access_denied', 'state': state}
-            )
+    def test_always_goes_to_push(self):
+        """Cookiecutter should always redirect to git push (not localhost)."""
+        user = User.objects.create_user('owner')
+        app = App.objects.create(name='baz', port=8012, user=user)
+        self.client.force_login(user)
+        data = {
+            'project_slug': 'baz',
+            'organisation_name': 'Solawi Baz',
+            'street': 'Weg',
+            'number': '1',
+            'zip': '8000',
+            'city': 'Zürich',
+            'PC': '80-1-1',
+            'IBAN': 'CH00',
+            'BIC': 'X',
+            'NAME': 'Bank',
+            'info_email': 'a@b.ch',
+            'share_price': '250',
+        }
+        with (
+            mock.patch('adminconsole.views.create.cookiecutter'),
+            mock.patch('adminconsole.views.create.test_localhost', return_value=False),
+        ):
+            resp = self.client.post(f'/ck/form/{app.id}/', data)
+        # Should redirect to git push
+        self.assertRedirects(
+            resp, f'/git/push/{app.id}/', fetch_redirect_response=False
         )
 
 
@@ -1180,3 +1077,343 @@ class CreateDatabaseTests(TestCase):
         for password in ["abc'; DROP USER x; --", 'äöü123', 'with space']:
             with self.subTest(password=password), self.assertRaises(ValueError):
                 self.statements(f'app{len(password)}', password=password)
+
+
+# The repo_source view lets the user choose between a clone URL and GitHub.
+@modify_settings(
+    MIDDLEWARE={'remove': ['adminconsole.middleware.RequireOTPMiddleware']}
+)
+class RepoSourceTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user('owner')
+        self.client.force_login(self.owner)
+        self.app = App.objects.create(name='foo', port=8010, user=self.owner)
+
+    def test_get_shows_choice_page(self):
+        resp = self.client.get(f'/ca/source/{self.app.id}/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'clone_url')
+        self.assertContains(resp, 'GitHub App installieren')
+        self.assertContains(resp, 'Repo aus Liste auswählen')
+
+    def test_clone_action_validates_and_saves_url(self):
+        """Clone URL path is for public repos; no GitHub access check is performed."""
+        with mock.patch('adminconsole.util.git.test_localhost', return_value=True):
+            resp = self.client.post(
+                f'/ca/source/{self.app.id}/',
+                {'action': 'clone', 'clone_url': 'https://github.com/user/repo.git'},
+            )
+        self.app.refresh_from_db()
+        self.assertEqual(self.app.git_clone_url, 'https://github.com/user/repo.git')
+        self.assertRedirects(
+            resp, f'/ca/clonerepo/{self.app.id}/', fetch_redirect_response=False
+        )
+
+    def test_clone_action_accepts_non_github_url(self):
+        """Non-GitHub URLs (e.g., GitLab) are accepted without any access check."""
+        with mock.patch('adminconsole.util.git.test_localhost', return_value=True):
+            resp = self.client.post(
+                f'/ca/source/{self.app.id}/',
+                {'action': 'clone', 'clone_url': 'https://gitlab.com/user/repo.git'},
+            )
+        self.app.refresh_from_db()
+        self.assertEqual(self.app.git_clone_url, 'https://gitlab.com/user/repo.git')
+        self.assertRedirects(
+            resp, f'/ca/clonerepo/{self.app.id}/', fetch_redirect_response=False
+        )
+
+    def test_clone_action_rejects_invalid_url(self):
+        with (
+            mock.patch('adminconsole.util.git.test_localhost', return_value=False),
+            mock.patch('adminconsole.util.git.subprocess.run') as run,
+        ):
+            run.return_value.returncode = 2  # git ls-remote failure
+            resp = self.client.post(
+                f'/ca/source/{self.app.id}/',
+                {'action': 'clone', 'clone_url': 'https://github.com/nonexistent.git'},
+            )
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'konnte nicht erreicht werden')
+        self.app.refresh_from_db()
+        self.assertEqual(self.app.git_clone_url, '')
+
+    def test_github_action_redirects_to_installation(self):
+        with override_settings(GITHUB_APP_SLUG='my-github-app'):
+            resp = self.client.post(
+                f'/ca/source/{self.app.id}/',
+                {'action': 'github'},
+            )
+        self.assertIn('/apps/my-github-app/installations/requests', resp['Location'])
+
+    def test_skips_to_clone_when_url_already_set(self):
+        self.app.git_clone_url = 'https://github.com/user/repo.git'
+        self.app.save()
+        resp = self.client.get(f'/ca/source/{self.app.id}/')
+        self.assertRedirects(
+            resp, f'/ca/clonerepo/{self.app.id}/', fetch_redirect_response=False
+        )
+
+    def test_other_user_cannot_access(self):
+        other = User.objects.create_user('other', password='pw')  # nosec: B106
+        self.client.force_login(other)
+        resp = self.client.get(f'/ca/source/{self.app.id}/')
+        self.assertRedirects(resp, '/', fetch_redirect_response=False)
+
+
+# validate_clone_url checks whether a URL points to an accessible repo.
+class ValidateCloneUrlTests(TestCase):
+    def test_empty_url(self):
+        from adminconsole.util.git import validate_clone_url
+
+        self.assertIsNotNone(validate_clone_url(''))
+        self.assertIsNotNone(validate_clone_url('  '))
+        self.assertIsNotNone(validate_clone_url(None))
+
+    def test_valid_url_in_localhost_mode(self):
+        from adminconsole.util.git import validate_clone_url
+
+        with mock.patch('adminconsole.util.git.test_localhost', return_value=True):
+            error = validate_clone_url('https://github.com/any/thing.git')
+        self.assertIsNone(error, 'should pass in localhost mode')
+
+    def test_invalid_url_outside_localhost(self):
+        from adminconsole.util.git import validate_clone_url
+
+        with (
+            mock.patch('adminconsole.util.git.test_localhost', return_value=False),
+            mock.patch('adminconsole.util.git.subprocess.run') as run,
+        ):
+            run.return_value.returncode = 2
+            error = validate_clone_url('https://github.com/nope.git')
+        self.assertIsNotNone(error)
+        run.assert_called_once()
+        args = run.call_args[0][0]
+        self.assertEqual(
+            args, ['git', 'ls-remote', '--exit-code', 'https://github.com/nope.git']
+        )
+
+
+# The select_repo view lists repos from the current user's GitHub App installation.
+@modify_settings(
+    MIDDLEWARE={'remove': ['adminconsole.middleware.RequireOTPMiddleware']}
+)
+class SelectRepoTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user('owner')
+        self.client.force_login(self.owner)
+        self.app = App.objects.create(name='foo', port=8010, user=self.owner)
+        from adminconsole.models import GitHubKey
+
+        GitHubKey.objects.create(user=self.owner, installation_id='123')
+
+    def test_get_shows_repo_list(self):
+        with mock.patch(
+            'adminconsole.views.git.list_installation_repos',
+            return_value=[{'full_name': 'myorg/repo1', 'name': 'repo1'}],
+        ):
+            resp = self.client.get(f'/ca/repo/{self.app.id}/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'myorg/repo1')
+
+    def test_post_selects_repo_and_saves_url(self):
+        with mock.patch(
+            'adminconsole.views.git.list_installation_repos', return_value=[]
+        ):
+            resp = self.client.post(
+                f'/ca/repo/{self.app.id}/',
+                {
+                    'repo_full_name': 'myorg/repo1',
+                },
+            )
+        self.app.refresh_from_db()
+        self.assertEqual(self.app.git_clone_url, 'https://github.com/myorg/repo1.git')
+        self.assertRedirects(
+            resp, f'/ca/clonerepo/{self.app.id}/', fetch_redirect_response=False
+        )
+
+    def test_redirects_to_source_when_no_github_key(self):
+        from adminconsole.models import GitHubKey
+
+        GitHubKey.objects.filter(user=self.owner).delete()
+        resp = self.client.get(f'/ca/repo/{self.app.id}/')
+        self.assertRedirects(
+            resp, f'/ca/source/{self.app.id}/', fetch_redirect_response=False
+        )
+
+    def test_skips_to_clone_when_url_already_set(self):
+        self.app.git_clone_url = 'https://github.com/user/repo.git'
+        self.app.save()
+        resp = self.client.get(f'/ca/repo/{self.app.id}/')
+        self.assertRedirects(
+            resp, f'/ca/clonerepo/{self.app.id}/', fetch_redirect_response=False
+        )
+
+    def test_other_user_cannot_access(self):
+        other = User.objects.create_user('other', password='pw')  # nosec: B106
+        self.client.force_login(other)
+        resp = self.client.get(f'/ca/repo/{self.app.id}/')
+        self.assertRedirects(resp, '/', fetch_redirect_response=False)
+
+
+# The github_callback view captures installation_id after GitHub App installation.
+# A single-use state token in the session prevents installation_id spoofing.
+@modify_settings(
+    MIDDLEWARE={'remove': ['adminconsole.middleware.RequireOTPMiddleware']}
+)
+class GithubCallbackTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user('owner')
+        self.client.force_login(self.user)
+        # Set up the single-use state token that repo_source generates
+        session = self.client.session
+        session['github_install_state'] = 'test-state-token'
+        session.save()
+
+    def test_callback_stores_installation_id(self):
+        from adminconsole.models import GitHubKey
+
+        resp = self.client.get(
+            '/github/callback',
+            {
+                'installation_id': '456',
+                'setup_action': 'install',
+            },
+        )
+        # Without app_id in session, redirects to home
+        self.assertRedirects(resp, '/', fetch_redirect_response=False)
+        self.assertEqual(GitHubKey.objects.get(user=self.user).installation_id, '456')
+
+    def test_callback_redirects_to_select_repo(self):
+        """When app_id is in the session, redirect to repo selection."""
+        from adminconsole.models import App, GitHubKey
+
+        app = App.objects.create(name='test-app', port=8010, user=self.user)
+        session = self.client.session
+        session['github_install_app_id'] = app.id
+        session.save()
+
+        resp = self.client.get(
+            '/github/callback',
+            {
+                'installation_id': '456',
+                'setup_action': 'install',
+            },
+        )
+        self.assertRedirects(resp, f'/ca/repo/{app.id}/', fetch_redirect_response=False)
+        self.assertEqual(GitHubKey.objects.get(user=self.user).installation_id, '456')
+        # Verify session is cleaned up
+        session = self.client.session
+        self.assertNotIn('github_install_app_id', session)
+        self.assertNotIn('github_install_state', session)
+
+    def test_callback_pending_approval(self):
+        resp = self.client.get(
+            '/github/callback',
+            {'setup_action': 'request'},
+        )
+        self.assertRedirects(resp, '/', fetch_redirect_response=False)
+
+    def test_callback_missing_installation_id(self):
+        resp = self.client.get(
+            '/github/callback',
+            {},
+        )
+        self.assertRedirects(resp, '/', fetch_redirect_response=False)
+
+    def test_callback_does_not_require_code(self):
+        """The callback no longer needs an OAuth code parameter."""
+        from adminconsole.models import GitHubKey
+
+        resp = self.client.get(
+            '/github/callback',
+            {'installation_id': '789'},
+        )
+        self.assertRedirects(resp, '/', fetch_redirect_response=False)
+        self.assertEqual(GitHubKey.objects.get(user=self.user).installation_id, '789')
+
+    def test_callback_rejected_without_state_token(self):
+        """Callback is rejected if no state token is in the session."""
+        from adminconsole.models import GitHubKey
+
+        # Remove the state token set in setUp
+        session = self.client.session
+        del session['github_install_state']
+        session.save()
+
+        resp = self.client.get(
+            '/github/callback',
+            {
+                'installation_id': '999',
+                'setup_action': 'install',
+            },
+        )
+        self.assertRedirects(resp, '/', fetch_redirect_response=False)
+        # installation_id should NOT be stored
+        self.assertFalse(GitHubKey.objects.filter(user=self.user).exists())
+
+    def test_callback_state_token_is_single_use(self):
+        """State token is consumed after the first callback, preventing replay."""
+        from adminconsole.models import GitHubKey
+
+        # First callback succeeds
+        resp = self.client.get(
+            '/github/callback',
+            {'installation_id': '456', 'setup_action': 'install'},
+        )
+        self.assertRedirects(resp, '/', fetch_redirect_response=False)
+        self.assertEqual(GitHubKey.objects.get(user=self.user).installation_id, '456')
+        # Second callback with the same session (no state token left) is rejected
+        resp = self.client.get(
+            '/github/callback',
+            {'installation_id': '999', 'setup_action': 'install'},
+        )
+        self.assertRedirects(resp, '/', fetch_redirect_response=False)
+        # installation_id should still be the original value
+        self.assertEqual(GitHubKey.objects.get(user=self.user).installation_id, '456')
+
+
+# App.get_installation_token() looks up the app owner's installation token.
+class InstallationTokenForAppTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user('owner')
+        self.app = App.objects.create(name='foo', port=8010, user=self.user)
+        from adminconsole.models import GitHubKey
+
+        GitHubKey.objects.create(user=self.user, installation_id='456')
+
+    def test_returns_token_when_github_key_exists(self):
+        with mock.patch(
+            'adminconsole.util.git.get_installation_access_token',
+            return_value='install-token-123',
+        ) as mock_token:
+            token = self.app.get_installation_token()
+        self.assertEqual(token, 'install-token-123')
+        mock_token.assert_called_once_with(456)
+
+    def test_returns_none_when_no_github_key(self):
+        from adminconsole.models import GitHubKey
+
+        GitHubKey.objects.filter(user=self.user).delete()
+        token = self.app.get_installation_token()
+        self.assertIsNone(token)
+
+    def test_returns_none_when_app_has_no_user(self):
+        self.app.user = None
+        self.app.save()
+        token = self.app.get_installation_token()
+        self.assertIsNone(token)
+
+    def test_returns_none_when_installation_id_is_invalid(self):
+        from adminconsole.models import GitHubKey
+
+        GitHubKey.objects.filter(user=self.user).update(installation_id='not-a-number')
+        token = self.app.get_installation_token()
+        self.assertIsNone(token)
+
+    def test_returns_none_when_token_generation_fails(self):
+        with mock.patch(
+            'adminconsole.util.git.get_installation_access_token',
+            return_value=None,
+        ):
+            token = self.app.get_installation_token()
+        self.assertIsNone(token)

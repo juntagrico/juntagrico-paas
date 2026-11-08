@@ -39,9 +39,9 @@ urlpatterns = [
     path('pgdump/<int:app_id>/', views.pgdump, name='pgdump'),
     # create application urls in the right order how they flow
     path('ca/af', create.app_form, name='create-app'),
-    path('github/request', git.github_request, name='github-access'),
-    path('github/callback', git.github_callback),
+    path('ca/source/<int:app_id>/', git.repo_source, name='repo-source'),
     path('ca/repo/<int:app_id>/', git.select_repo, name='github-select'),
+    path('github/callback', git.github_callback, name='github-callback'),
     path('ca/clonerepo/<int:app_id>/', git.clone_repo, name='ca-git-clone'),
     path('ca/overwrite/<int:app_id>/', create.overwrite_app, name='ca-overwrite'),
     path('ck/form/<int:app_id>/', create.cookiecutter_form, name='ca-cookiecutter'),

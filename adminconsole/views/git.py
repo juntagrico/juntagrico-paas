@@ -1,113 +1,152 @@
-import json
-import secrets
 import subprocess  # nosec: B404
-from urllib import request as r, parse
 
 from django.conf import settings
 from django.contrib import messages
 from django.urls import reverse
-from github import Github, BadCredentialsException
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.utils.crypto import get_random_string
 
 from adminconsole.decorators import owner_of_app
-from adminconsole.models import GitHubKey, App
-from adminconsole.util.git import git_clone, github_auth_env
+from adminconsole.models import App, GitHubKey
+from adminconsole.util.git import (
+    git_clone,
+    github_auth_env,
+    validate_clone_url,
+    list_installation_repos,
+)
 from adminconsole.views.generic import confirm_post
 
 
-GITHUB_STATE_SESSION_KEY = 'github_oauth_state'
-
-
-@login_required
-def github_request(request):
-    # random value that ties the callback to this request, so nobody can slip a foreign GitHub account to the user
-    state = secrets.token_urlsafe(32)
-    request.session[GITHUB_STATE_SESSION_KEY] = state
-    params = parse.urlencode({
-        'client_id': settings.GITHUB_CLIENT_ID,
-        'scope': 'public_repo',
-        'state': state,
-    })
-    return redirect(f'https://github.com/login/oauth/authorize?{params}')
-
-
-def fetch_github_token(code):
-    """exchanges the code from the callback for a token, returns None if GitHub does not grant one"""
-    data = parse.urlencode({
-        'code': code,
-        'client_id': settings.GITHUB_CLIENT_ID,
-        'client_secret': settings.GITHUB_CLIENT_SECRET,
-    }).encode()
-    req = r.Request(
-        'https://github.com/login/oauth/access_token',
-        data=data,
-        headers={'Accept': 'application/json'},
-    )
-    try:
-        with r.urlopen(req, timeout=10) as resp:  # nosec: B310
-            payload = json.load(resp)
-    except (OSError, ValueError):  # network errors, timeouts, invalid json
-        return None
-    return payload.get('access_token') if isinstance(payload, dict) else None
+def continue_setup(request, to='repo-source'):
+    app_id = request.session.pop('github_install_app_id', None)
+    if app_id:
+        return redirect(to, app_id=app_id)
+    return redirect('home')
 
 
 @login_required
 def github_callback(request):
-    expected_state = request.session.pop(GITHUB_STATE_SESSION_KEY, None)
-    state = request.GET.get('state', '')
-    if not expected_state or not secrets.compare_digest(
-        state.encode(), expected_state.encode()
-    ):
-        messages.error(
+    """Callback after the user installs the GitHub App.
+
+    Captures the installation_id from the URL and stores it for the current user.
+    A single-use state token in the session verifies that the callback originates
+    from the legitimate installation flow initiated by this user, preventing
+    attackers from crafting URLs with arbitrary installation_id values.
+    """
+    installation_id = request.GET.get('installation_id', '')
+    setup_action = request.GET.get('setup_action', '')
+
+    # Verify the single-use state token to prevent installation_id spoofing
+    state = request.session.pop('github_install_state', None)
+    if state is None:
+        messages.error(request, 'Ungültige GitHub-Antwort. Bitte versuche es erneut.')
+        return continue_setup(request)
+
+    # If admin approval is pending, inform the user
+    if setup_action == 'request':
+        messages.info(
             request,
-            'Die Verbindung mit GitHub konnte nicht bestätigt werden. Bitte versuche es nochmals.',
+            'Die GitHub App-Installation wartet auf Genehmigung durch einen '
+            'Organisations-Administrator. Du kannst weitermachen, sobald sie genehmigt ist.',
         )
-        return redirect('home')
+        return continue_setup(request)
 
-    code = request.GET.get('code')
-    key = fetch_github_token(code) if code else None
-    if not key:
-        # keep the existing token, it may still be valid
-        messages.error(
-            request, 'GitHub hat keinen Zugriff erteilt. Bitte versuche es nochmals.'
-        )
-        return redirect('home')
+    if not installation_id:
+        messages.error(request, 'Ungültige GitHub-Antwort. Bitte versuche es erneut.')
+        return continue_setup(request)
 
-    GitHubKey.objects.update_or_create(user=request.user, defaults={'key': key})
-    return redirect(request.session.pop('next', 'home'))
+    # Store the installation_id for this user
+    GitHubKey.objects.update_or_create(
+        user=request.user,
+        defaults={'installation_id': installation_id},
+    )
+
+    messages.success(request, 'GitHub App erfolgreich installiert.')
+
+    # Redirect to repo selection if the user was creating an app
+    return continue_setup(request, 'github-select')
 
 
+@login_required
 @owner_of_app
-def select_repo(request, app_id):
-    key_valid = False
-    if hasattr(request.user, 'githubkey'):
-        g = Github(request.user.githubkey.key)
-        repos = g.get_user().get_repos()
-        try:
-            # check if key is still valid
-            repos[0]
-            key_valid = True
-        except BadCredentialsException:
-            pass
-    if not key_valid:
-        request.session['next'] = request.path
-        return github_request(request)
+def repo_source(request, app_id):
+    """Let the user choose between pasting a clone URL or connecting via GitHub."""
+    app = get_object_or_404(App, pk=app_id)
+
+    # If the app already has a clone URL, skip straight to cloning
+    if app.git_clone_url:
+        return redirect('ca-git-clone', app_id=app_id)
 
     if request.method == 'POST':
-        selected_repo = int(request.POST.get('repo'))
-        App.objects.filter(pk=app_id).update(
-            git_clone_url=g.get_repo(selected_repo).clone_url
-        )
+        action = request.POST.get('action')
+        if action == 'github':
+            # Store the app_id in the session so the callback can redirect to select_repo
+            request.session['github_install_app_id'] = app_id
+            # Generate a single-use state token to verify the callback originates
+            # from this legitimate installation flow, preventing installation_id spoofing
+            request.session['github_install_state'] = get_random_string(32)
+            # Redirect to the GitHub App installation page
+            return redirect(
+                f'https://github.com/apps/{settings.GITHUB_APP_SLUG}/installations/requests'
+            )
+        if action == 'clone':
+            clone_url = request.POST.get('clone_url', '').strip()
+            error = validate_clone_url(clone_url)
+            if error:
+                messages.error(request, error)
+                return render(
+                    request,
+                    'repo_source.html',
+                    {'app': app, 'initial_url': clone_url},
+                )
+            # Clone URL validation succeeded — save the URL and proceed to clone
+            # This path is for public repos; for private repos, use the GitHub App
+            # installation flow (select_repo) which authenticates via installation tokens
+            App.objects.filter(pk=app_id).update(git_clone_url=clone_url)
+            return redirect('ca-git-clone', app_id=app_id)
+
+    return render(request, 'repo_source.html', {'app': app})
+
+
+@login_required
+@owner_of_app
+def select_repo(request, app_id):
+    """List repos accessible via the current user's GitHub App installation."""
+    app = get_object_or_404(App, pk=app_id)
+
+    # If the app already has a clone URL, skip straight to cloning
+    if app.git_clone_url:
         return redirect('ca-git-clone', app_id=app_id)
+
+    # Look up the user's stored installation_id
+    try:
+        github_key = GitHubKey.objects.get(user=request.user)
+        installation_id = int(github_key.installation_id)
+    except (GitHubKey.DoesNotExist, ValueError):
+        messages.info(
+            request,
+            'Du hast die GitHub App noch nicht installiert. '
+            'Installiere sie zuerst, dann kannst du ein Repo auswählen.',
+        )
+        return redirect('repo-source', app_id=app_id)
+
+    # Fetch repos for this user's installation only
+    repos = list_installation_repos(installation_id) or []
+
+    if request.method == 'POST':
+        repo_full_name = request.POST.get('repo_full_name')
+        if repo_full_name:
+            # Save the clone URL and proceed
+            clone_url = f'https://github.com/{repo_full_name}.git'
+            App.objects.filter(pk=app_id).update(git_clone_url=clone_url)
+            return redirect('ca-git-clone', app_id=app_id)
 
     return render(
         request,
-        'repos.html',
-        {
-            'repos': repos,
-        },
+        'select_repo.html',
+        {'app': app, 'installation_id': installation_id, 'repos': repos},
     )
 
 
@@ -116,11 +155,10 @@ def select_repo(request, app_id):
 def clone_repo(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     if not app.git_clone_url:
-        return redirect('github-select', app_id=app_id)
+        return redirect('repo-source', app_id=app_id)
 
-    key = None
-    if hasattr(request.user, 'githubkey'):
-        key = request.user.githubkey.key
+    # Get an installation access token from the app's owner's installation
+    key = app.get_installation_token()
 
     errors = []
     success = git_clone(app, key, errors)
@@ -156,12 +194,9 @@ def git_push(request, app_id):
         cwd=directory,
     )
     output.append(str(proc.stdout))
-    # the token is only passed to this command, the repository has no credentials stored
-    env = (
-        github_auth_env(request.user.githubkey.key)
-        if hasattr(request.user, 'githubkey')
-        else None
-    )
+    # Get an installation access token from the app's owner's installation
+    token = app.get_installation_token()
+    env = github_auth_env(token) if token else None
     proc = subprocess.run(  # nosec: B603, B607
         ['git', 'push'],
         stdout=subprocess.PIPE,

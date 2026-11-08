@@ -1,15 +1,96 @@
 import base64
 import os
 import re
+import time
 import subprocess  # nosec: B404
 from urllib.parse import urlsplit, urlunsplit
 
+import jwt
+
+from django.conf import settings
 from adminconsole.config import test_localhost
+
+
+def _create_github_jwt():
+    """Create a JSON Web Token for authenticating as a GitHub App."""
+    now = int(time.time())
+    payload = {
+        'iat': now - 60,  # 1 minute ago (clock skew tolerance)
+        'exp': now + 600,  # 10 minutes from now (GitHub max)
+        'iss': settings.GITHUB_APP_ID,
+    }
+    return jwt.encode(payload, settings.GITHUB_APP_PRIVATE_KEY, algorithm='RS256')
+
+
+def _github_app_request(method, url, **kwargs):
+    """Make an authenticated request to the GitHub API as a GitHub App."""
+    import urllib.request as ur  # defer import
+
+    jwt_token = _create_github_jwt()
+    req = ur.Request(
+        url,
+        method=method,
+        headers={
+            'Accept': 'application/vnd.github+json',
+            'Authorization': f'Bearer {jwt_token}',
+            'X-GitHub-Api-Version': '2022-11-28',
+        },
+        **kwargs,
+    )
+    with ur.urlopen(req, timeout=10) as resp:
+        import json
+
+        return json.load(resp)
+
+
+def get_installation_access_token(installation_id: int) -> str | None:
+    """Generate an installation access token for a GitHub App installation.
+
+    Returns the access token string, or None on failure.
+    The token expires after 1 hour.
+    """
+    try:
+        data = _github_app_request(
+            'POST',
+            f'https://api.github.com/app/installations/{installation_id}/access_tokens',
+            data=b'{}',
+        )
+        return data.get('token')
+    except (OSError, ValueError):
+        return None
+
+
+def list_installation_repos(installation_id: int) -> list[dict] | None:
+    """List repositories accessible to a specific GitHub App installation.
+
+    Returns a list of repo dicts (each with 'owner', 'name', 'full_name', etc.), or None on failure.
+    """
+    try:
+        token = get_installation_access_token(installation_id)
+        if token is None:
+            return None
+        import urllib.request as ur
+
+        req = ur.Request(
+            'https://api.github.com/installation/repositories',
+            method='GET',
+            headers={
+                'Accept': 'application/vnd.github+json',
+                'Authorization': f'Bearer {token}',
+                'X-GitHub-Api-Version': '2022-11-28',
+            },
+        )
+        with ur.urlopen(req, timeout=10) as resp:
+            import json
+
+            return json.load(resp).get('repositories', [])
+    except (OSError, ValueError):
+        return None
 
 
 def github_auth_env(key):
     """
-    Environment for a single git command that authenticates with the GitHub token.
+    Environment for a single git command that authenticates with a GitHub token.
     The token is passed as HTTP header via environment variables (requires git >= 2.31), so it is neither stored
     in the repository (e.g. in the remote url) nor visible in the process list. The header is only sent to
     https://github.com/.
@@ -36,6 +117,29 @@ def remove_credentials(url):
     return urlunsplit(parts._replace(netloc=parts.netloc.rpartition('@')[2]))
 
 
+def validate_clone_url(url):
+    """Check whether a git clone URL points to an accessible repository.
+
+    Uses `git ls-remote` which only lists refs without cloning anything.
+    Returns None on success, or an error message string on failure.
+    """
+    if not url or not url.strip():
+        return 'Bitte gib eine gültige Clone-URL ein.'
+    if not test_localhost():
+        proc = subprocess.run(  # nosec: B603, B607
+            ['git', 'ls-remote', '--exit-code', url],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=30,
+        )
+        if proc.returncode != 0:
+            return (
+                'Das Repo konnte nicht erreicht werden. '
+                'Bitte überprüfe die URL und versuche es erneut.'
+            )
+    return None
+
+
 def git_clone(app, key=None, output=None):
     if not test_localhost():
         branch = ['-b', app.git_branch] if app.git_branch else []
@@ -57,11 +161,16 @@ def run_git(args, cdir, **kwargs):
 
 def git_pull(app):
     cdir = app.code_dir
+    # Try to get an installation token for private repo access
+    token = app.get_installation_token()
+    env = github_auth_env(token) if token else None
+
     if app.git_branch:
         fetch = run_git(
             ['fetch', '--no-tags', '--depth=1', app.git_clone_url, app.git_branch],
             cdir,
             stderr=subprocess.STDOUT,
+            env=env,
         )
         if fetch.returncode != 0:
             return fetch.returncode
@@ -82,7 +191,7 @@ def git_pull(app):
         return reset.returncode
 
     proc1 = subprocess.run(  # nosec: B603, B607
-        ['git', 'fetch', '--depth=1'], stderr=subprocess.STDOUT, cwd=cdir
+        ['git', 'fetch', '--depth=1'], stderr=subprocess.STDOUT, cwd=cdir, env=env
     )
     if proc1.returncode != 0:
         return proc1.returncode
@@ -107,6 +216,10 @@ def validate_branch(app, branch):
         return proc.stdout.decode(errors='replace')
 
     if app.version >= 3:
+        # Try to get an installation token for private repo access
+        token = app.get_installation_token()
+        env = github_auth_env(token) if token else None
+
         proc = subprocess.run(  # nosec: B603, B607
             [
                 'git',
@@ -118,6 +231,7 @@ def validate_branch(app, branch):
             ],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
+            env=env,
         )
         if proc.returncode != 0:
             return 'Branch nicht gefunden'

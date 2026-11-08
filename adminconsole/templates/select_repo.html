@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h4>Repo auswählen</h4>
+    <p>Wähle ein Repo aus den Repositories, auf die deine GitHub App-Installation Zugriff hat.</p>
+
+    {% if repos %}
+        <form action="" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="installation_id" value="{{ installation_id }}" />
+            <div class="form-group">
+                <select name="repo_full_name" class="form-control" required>
+                    <option value="" disabled selected>— Repo auswählen —</option>
+                    {% for repo in repos %}
+                        <option value="{{ repo.full_name }}">{{ repo.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-success mt-3">Repo klonen</button>
+        </form>
+    {% else %}
+        <div class="alert alert-warning">
+            Keine Repositories gefunden. Stelle sicher, dass die GitHub App installiert ist und Zugriff auf mindestens ein Repository hat.
+        </div>
+        <a href="{% url 'repo-source' app.id %}" class="btn btn-secondary mt-3">Zurück</a>
+    {% endif %}
+{% endblock %}

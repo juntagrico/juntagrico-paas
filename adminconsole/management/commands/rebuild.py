@@ -75,6 +75,13 @@ class Command(BaseCommand):
             for key, value in build_args.items():
                 cmd.extend(['--build-arg', f'{key}={value}'])
 
+            # Pass the token as an environment variable for the BuildKit secret
+            token = app.get_installation_token()
+            env = {}
+            if token:
+                cmd.extend(['--secret', 'id=git_token,env=GIT_TOKEN'])
+                env['GIT_TOKEN'] = token
+
             # Make the built image available to the local Docker daemon.
             cmd.append('--load')
             cmd.append('-')
@@ -87,6 +94,7 @@ class Command(BaseCommand):
                 }),
                 text=True,
                 check=False,
+                env=env,
             )
             code = result.returncode
 

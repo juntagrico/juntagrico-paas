@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h4>Quelloptionen f&uuml;r die Applikation</h4>
+    <p>W&auml;hle, wie die Applikation erstellt werden soll.</p>
+
+    {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
+    <!-- Option 1: Paste a clone URL -->
+    <form action="" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="clone" />
+
+        <div class="form-group">
+            <label for="id_clone_url">Clone-URL eines bestehenden Repos</label>
+            <input
+                type="text"
+                name="clone_url"
+                id="id_clone_url"
+                class="form-control"
+                placeholder="https://github.com/user/repo.git"
+                value="{{ initial_url|default:'' }}"
+                aria-describedby="clone_url_help"
+            />
+            <small id="clone_url_help" class="form-text text-muted">
+                Gib die Clone-URL eines bestehenden Repos ein. Das Repo wird als bestehende App angenommen.
+            </small>
+        </div>
+
+        <button type="submit" class="btn btn-success mt-3">Repo klonen</button>
+    </form>
+
+    <hr />
+
+    <!-- Option 2: Install GitHub App -->
+    <form action="" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="github" />
+        <p>
+            Oder installiere die GitHub App, um auf ein Repo zuzugreifen.
+        </p>
+        <button type="submit" class="btn btn-outline-primary mt-3">GitHub App installieren</button>
+    </form>
+
+    <hr />
+
+    <!-- Option 3: Select from installed repos -->
+    <p>
+        Falls die GitHub App bereits installiert ist, kannst du ein Repo aus der Liste der verfügbaren Repositories auswählen.
+    </p>
+    <a href="{% url 'github-select' app.id %}" class="btn btn-outline-secondary mt-3">Repo aus Liste auswählen</a>
+{% endblock %}

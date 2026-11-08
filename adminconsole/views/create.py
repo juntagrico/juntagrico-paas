@@ -27,7 +27,7 @@ def app_form(request):
         form = AppForm(request.POST, instance=app)
         if form.is_valid():
             form.save()
-            return redirect('github-select', app_id=app.id)
+            return redirect('repo-source', app_id=app.id)
     else:
         form = AppForm()
 
