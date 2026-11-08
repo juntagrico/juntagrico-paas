@@ -8,3 +8,6 @@ User=juntagrico
 WorkingDirectory=/var/django/adminconsole
 EnvironmentFile=/var/django/adminconsole/.venv/env.env
 ExecStart=/var/django/adminconsole/.venv/bin/python manage.py stop_staging
+
+[Install]
+WantedBy=multi-user.target

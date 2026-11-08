@@ -6,3 +6,6 @@ After=docker.service
 Type=oneshot
 User=juntagrico
 ExecStart=/usr/bin/docker exec demo python -m manage reset
+
+[Install]
+WantedBy=multi-user.target

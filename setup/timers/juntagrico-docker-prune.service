@@ -4,3 +4,6 @@ Description=Prune unused Docker resources
 [Service]
 Type=oneshot
 ExecStart=/usr/bin/docker system prune -f
+
+[Install]
+WantedBy=multi-user.target
