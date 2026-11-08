@@ -187,8 +187,14 @@ EMAIL_USE_SSL = os.environ.get('JUNTAGRICO_EMAIL_SSL', 'False') == 'True'
 DEFAULT_FROM_EMAIL = os.environ.get('JUNTAGRICO_EMAIL_USER')
 
 GITHUB_APP_ID = os.environ.get('GITHUB_APP_ID')
-GITHUB_APP_PRIVATE_KEY = os.environ.get('GITHUB_APP_PRIVATE_KEY')
+GITHUB_APP_PRIVATE_KEY_PATH = os.environ.get('GITHUB_APP_PRIVATE_KEY_PATH')
 GITHUB_APP_SLUG = os.environ.get('GITHUB_APP_SLUG')
+
+# Load the GitHub App private key from the file specified by GITHUB_APP_PRIVATE_KEY_PATH
+GITHUB_APP_PRIVATE_KEY = None
+if GITHUB_APP_PRIVATE_KEY_PATH:
+    with open(GITHUB_APP_PRIVATE_KEY_PATH) as f:
+        GITHUB_APP_PRIVATE_KEY = f.read()
 
 PYTHON_BIN = os.environ.get('JUNTAGRICO_PYTHON_BIN', '.venv/bin/python')
 
