@@ -32,8 +32,13 @@ Add this to `/etc/docker/daemon.json` or create the file if it doesn't exist.
 }
 ```
 
-To release unused docker images add this cronjob
-`5 1 * * * docker image prune -f`
+To release unused Docker images, install the systemd timer:
+```
+cp setup/timers/juntagrico-docker-prune.timer /etc/systemd/system/
+cp setup/timers/juntagrico-docker-prune.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now juntagrico-docker-prune
+```
 
 
 ### Install from Source
@@ -191,22 +196,42 @@ You can now open your juntagrico PaaS in the browser.
 
 ### Enable staging auto-stop
 
-Add this cronjob to stop expired staging app containers regularly
-`0 2 * * * /var/django/adminconsole/tasks/stop_staging.sh`
+Install the systemd timer to stop expired staging app containers daily at 02:00:
+```
+cp setup/timers/juntagrico-stop-staging.timer /etc/systemd/system/
+cp setup/timers/juntagrico-stop-staging.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now juntagrico-stop-staging
+```
 
 
 ## Create Demo App
 
 The juntagrico demo app can be installed like any other app from https://github.com/juntagrico/juntagrico-demo
 
-Make sure the instance is re-initialized at least every day using a cronjob:
-`0 4 * * * /var/django/adminconsole/tasks/reset_demo.sh`
+Make sure the instance is re-initialized daily at 04:00 using the systemd timer:
+```
+cp setup/timers/juntagrico-reset-demo.timer /etc/systemd/system/
+cp setup/timers/juntagrico-reset-demo.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now juntagrico-reset-demo
+```
 
 
-## Auto Upgrade Apps
+## Refresh docker base images
 
-If desired, add this to crontab for apps that should upgrade automatically
-`0 2 * * * /var/django/adminconsole/tasks/redeploy-v2.sh <app-name>`
+To pull updated Docker images for supported Python versions weekly:
+```
+cp setup/timers/juntagrico-docker-pull.timer /etc/systemd/system/
+cp setup/timers/juntagrico-docker-pull.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now juntagrico-docker-pull
+```
+
+To view all scheduled timers and their next run time:
+```
+systemctl list-timers --all
+```
 
 
 ## Maintenance Mode

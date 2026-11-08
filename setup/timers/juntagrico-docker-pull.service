@@ -1,0 +1,10 @@
+[Unit]
+Description=Pull updated Docker images for supported Python versions
+After=docker.service
+
+[Service]
+Type=oneshot
+User=juntagrico
+WorkingDirectory=/var/django/adminconsole
+EnvironmentFile=/var/django/adminconsole/.venv/env.env
+ExecStart=/var/django/adminconsole/.venv/bin/python manage.py docker_pull

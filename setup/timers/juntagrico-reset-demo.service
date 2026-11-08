@@ -1,0 +1,8 @@
+[Unit]
+Description=Reset demo environment
+After=docker.service
+
+[Service]
+Type=oneshot
+User=juntagrico
+ExecStart=/var/django/adminconsole/tasks/reset_demo.sh
