@@ -217,7 +217,7 @@ systemctl daemon-reload
 systemctl enable --now juntagrico-reset-demo.timer
 ```
 
-Also activate the automatic redeploy cronjob for the demo app
+Also activate the automatic redeploy cronjob for the demo app.
 
 ## Refresh docker base images
 
@@ -234,6 +234,13 @@ To view all scheduled timers and their next run time:
 systemctl list-timers --all
 ```
 
+## Install other services
+
+install the `redeploy@` systemd template service:
+```
+cp setup/redeploy@.service /etc/systemd/system/
+systemctl daemon-reload
+```
 
 ## Maintenance Mode
 
