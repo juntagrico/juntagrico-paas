@@ -28,7 +28,7 @@ RUN --mount=type=secret,id=git_token,env=GIT_TOKEN \
     && git init -b main /code \
     && git -C /code remote add origin "$git_repo" \
     && if test -n "${GIT_TOKEN}"; then \
-         git -C /code fetch --depth 1 -o "Authorization: Basic $(echo -n "${GIT_TOKEN}:x-oauth-basic" | base64 -w0)" origin "$git_ref"; \
+         git -C /code fetch --depth 1 -o "Authorization: Basic $(echo -n "x-access-token:${GIT_TOKEN}" | base64 -w0)" origin "$git_ref"; \
        else \
          git -C /code fetch --depth 1 origin "$git_ref"; \
        fi \

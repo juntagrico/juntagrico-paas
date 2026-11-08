@@ -68,7 +68,7 @@ class GitCredentialTests(TestCase):
         header = env['GIT_CONFIG_VALUE_0']
         self.assertEqual(
             base64.b64decode(header.removeprefix('Authorization: Basic ')).decode(),
-            f'{TOKEN}:x-oauth-basic',
+            f'x-access-token:{TOKEN}',
         )
         # ask git itself which urls get the header
         for url, expected in [
@@ -153,7 +153,7 @@ class GitCredentialTests(TestCase):
         self.assertEqual(
             git('remote', 'get-url', 'origin', cwd=app.code_dir), source.as_uri()
         )
-        encoded = base64.b64encode(f'{TOKEN}:x-oauth-basic'.encode()).decode()
+        encoded = base64.b64encode(f'x-access-token:{TOKEN}'.encode()).decode()
         for file in (app.code_dir / '.git').rglob('*'):
             if file.is_file():
                 content = file.read_bytes()
@@ -204,7 +204,7 @@ class GitCredentialTests(TestCase):
     def test_remove_credentials(self):
         for url, expected in [
             (
-                f'https://{TOKEN}:x-oauth-basic@github.com/a/b.git',
+                f'https://x-access-token:{TOKEN}@github.com/a/b.git',
                 'https://github.com/a/b.git',
             ),
             ('https://user@github.com/a/b.git', 'https://github.com/a/b.git'),

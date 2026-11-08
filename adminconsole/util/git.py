@@ -101,7 +101,7 @@ def github_auth_env(key):
     Credential helpers are disabled, so git neither sends other stored credentials nor erases them if the token
     is rejected.
     """
-    credentials = base64.b64encode(f'{key}:x-oauth-basic'.encode()).decode()
+    credentials = base64.b64encode(f'x-access-token:{key}'.encode()).decode()
     return {
         **os.environ,
         'GIT_CONFIG_COUNT': '2',

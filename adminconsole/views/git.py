@@ -214,6 +214,12 @@ def git_push(request, app_id):
 
     errors = []
     if proc.returncode > 0:
+        if token is None:
+            output.insert(
+                0,
+                'Keine GitHub App-Installation gefunden. Für private Repos '
+                'musst du zuerst die GitHub App installieren.',
+            )
         errors.append(output)
 
     return render(
