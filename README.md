@@ -217,6 +217,7 @@ systemctl daemon-reload
 systemctl enable --now juntagrico-reset-demo
 ```
 
+Also activate the automatic redeploy cronjob for the demo app
 
 ## Refresh docker base images
 
