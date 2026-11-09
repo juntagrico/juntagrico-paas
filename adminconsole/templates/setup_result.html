@@ -3,23 +3,25 @@
 
 {% block next_link %}
     <div id="setup-result" style="display:none;">
-        {% if is_setup %}
-            <div id="password-box" style="display:none;" class="alert alert-info mt-3">
-                <strong>Notiere dieses Passwort:</strong>
-                <code id="admin-password" style="font-size:1.2em; user-select:all;"></code>
+        <div id="password-box" class="alert alert-info mt-3">
+            <strong>Notiere diese Zugangsdaten:</strong>
+            <div class="mt-2">
+                <span>Benutzer:</span> <code style="font-size:1.2em; user-select:all;">{{ admin_username }}</code>
             </div>
-            <form id="next-form" action="{{ next }}" method="POST">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-primary disabled" id="next">weiter</button>
-            </form>
-        {% endif %}
+            <div class="mt-1">
+                <span>Passwort:</span> <code style="font-size:1.2em; user-select:all;">{{ admin_password }}</code>
+            </div>
+        </div>
+        <form id="next-form" action="{{ next }}" method="POST">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary disabled" id="next">weiter</button>
+        </form>
     </div>
 {% endblock %}
 
 {% block scripts %}
     <script type="text/javascript">
         var url = '{{ url }}';
-        var adminPassword = '{{ admin_password }}';
         var showResultUrl = '{{ show_result_url }}';
     </script>
     <script type="text/javascript" src="{% static 'js/progress.js' %}"></script>

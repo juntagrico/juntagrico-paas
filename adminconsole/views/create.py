@@ -19,7 +19,7 @@ from adminconsole.forms import (
     AppEnvVarFormSet,
 )
 from adminconsole.util import generate_password
-from adminconsole.util.admin import PASSWORD_ENV
+from adminconsole.util.admin import ADMIN_USERNAME, PASSWORD_ENV
 from adminconsole.util.create_app import find_port
 from adminconsole.util.git import git_push_app
 
@@ -136,7 +136,7 @@ def env_form(request, app_id):
                     'url': reverse('progress', args=[app_id, proc.pid]),
                     'pid': proc.pid,
                     'next': reverse('overview', args=[app.id]),
-                    'is_setup': True,
+                    'admin_username': ADMIN_USERNAME,
                     'admin_password': password,
                     'show_result_url': reverse('show-result', args=[app.id])
                     + '?from_setup=1',
