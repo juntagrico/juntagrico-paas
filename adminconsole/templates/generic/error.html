@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <p>Schritt {{ step }} ist fehlgeschlagen:</p>
+    {% for error in errors %}
+        <div>
+            <pre>{{ error }}</pre>
+        </div>
+    {% endfor %}
+{% endblock %}

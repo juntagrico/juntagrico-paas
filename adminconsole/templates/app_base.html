@@ -5,15 +5,17 @@
 {% endblock %}
 
 {% block content %}
-    {% if not is_setup %}
-    <div class="mb-3">
-        {% if request.GET.from_setup %}
-        <a href="{% url 'ca-create-env' app.id %}" class="btn btn-warning">Zurück zur Konfiguration</a>
-        {% else %}
-        <a href="{% url 'overview' app.id %}" class="btn btn-secondary">&larr; zurück zur Übersicht</a>
+    {% block buttons %}
+        {% if not is_setup %}
+        <div class="mb-3">
+            {% if request.GET.from_setup %}
+            <a href="{% url 'ca-create-env' app.id %}" class="btn btn-warning">Zurück zur Konfiguration</a>
+            {% else %}
+            <a href="{% url 'overview' app.id %}" class="btn btn-secondary">&larr; zurück zur Übersicht</a>
+            {% endif %}
+        </div>
         {% endif %}
-    </div>
-    {% endif %}
+    {% endblock %}
     {% block page_subtitle %}{% endblock %}
     {% block inner_content %}{% endblock %}
 {% endblock %}

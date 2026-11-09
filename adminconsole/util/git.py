@@ -1,6 +1,7 @@
 import base64
 import os
 import re
+import shutil
 import time
 import subprocess  # nosec: B404
 from urllib.parse import urlsplit, urlunsplit
@@ -146,6 +147,8 @@ def validate_clone_url(url):
 
 def git_clone(app, output=None):
     if not test_localhost():
+        if app.code_dir.is_dir():
+            shutil.rmtree(app.code_dir)
         token = app.get_installation_token()
         branch = ['-b', app.git_branch] if app.git_branch else []
         proc = subprocess.run(  # nosec: B603, B607

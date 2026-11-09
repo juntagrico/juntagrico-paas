@@ -48,15 +48,7 @@ urlpatterns = [
     path('ca/env/form/<int:app_id>/', create.env_form, name='ca-create-env'),
     # staging app
     path('staging/create/<int:app_id>/', staging.create, name='staging-create'),
-    path(
-        'staging/git/clone/<int:app_id>/', staging.clone_repo, name='staging-git-clone'
-    ),
-    path('staging/db/init/<int:app_id>/', staging.init_db, name='staging-init-db'),
-    path(
-        'staging/domain/init/<int:app_id>/',
-        staging.init_domain,
-        name='staging-init-domain',
-    ),
+    path('staging/result/<int:app_id>/', staging.result, name='staging-result'),
     path('staging/db/clone/<int:app_id>/', staging.clone_db, name='staging-clone-db'),
     path('staging/renew/<int:app_id>/', staging.renew, name='staging-renew'),
     # v2 apps

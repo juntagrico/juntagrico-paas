@@ -8,7 +8,7 @@ from django.views.decorators.http import require_POST
 
 from adminconsole.decorators import owner_of_app
 from adminconsole.models import App
-from adminconsole.util.git import git_clone, git_status
+from adminconsole.views import _parse_log_file
 
 
 @owner_of_app
@@ -17,21 +17,62 @@ def create(request, app_id):
     if prod_app.staging_of:
         messages.error(request, f'{prod_app} already is a staging app.')
         return redirect('overview', app_id)
-    if prod_app.stagings.exists():
-        # resume staging creation process
-        return redirect('staging-git-clone', prod_app.stagings.first().id)
+    existing = prod_app.stagings.first()
+    if existing and not existing.installation_pending:
+        # Staging already installed, no action needed
+        messages.info(request, f'Staging für {prod_app.name} existiert bereits.')
+        return redirect('overview', existing.id)
 
     if request.method == 'POST':
-        staging_app = App.objects.create(
-            name=prod_app.name + '-staging',
-            git_clone_url=prod_app.git_clone_url,
-            git_branch=prod_app.git_branch,
-            user=request.user,
-            port=10000 + prod_app.port,
-            staging_of=prod_app,
-            version=2,
+        if existing and existing.installation_pending:
+            # Staging exists but installation failed or is pending, reuse it
+            # Reset properties in case production app changed since the last attempt
+            existing.name = prod_app.name + '-staging'
+            existing.git_clone_url = prod_app.git_clone_url
+            existing.git_branch = prod_app.git_branch
+            existing.port = 10000 + prod_app.port
+            existing.installation_pending = True
+            existing.save()
+            staging_app = existing
+        else:
+            staging_app = App.objects.create(
+                name=prod_app.name + '-staging',
+                git_clone_url=prod_app.git_clone_url,
+                git_branch=prod_app.git_branch,
+                user=request.user,
+                port=10000 + prod_app.port,
+                staging_of=prod_app,
+                version=2,
+                installation_pending=True,
+            )
+        # Spawn setup_staging as a background task
+        with open(staging_app.log_file, 'wb') as out:
+            proc = subprocess.Popen(  # nosec: B603
+                [
+                    settings.PYTHON_BIN,
+                    '-m',
+                    'manage',
+                    'setup_staging',
+                    staging_app.name,
+                ],
+                stdout=out,
+                stderr=out,
+            )
+
+        app_id = staging_app.id
+        progress_url = reverse('progress', args=[app_id, proc.pid])
+
+        return render(
+            None,  # request not needed for this template
+            'wait_redeploy.html',
+            {
+                'page_title': f'Staging für {prod_app.name} einrichten',
+                'step': 'Staging einrichten',
+                'url': progress_url,
+                'pid': proc.pid,
+                'next': reverse('staging-result', args=[app_id]),
+            },
         )
-        return redirect('staging-git-clone', app_id=staging_app.id)
 
     return render(
         request,
@@ -39,109 +80,6 @@ def create(request, app_id):
         {
             'page_title': 'Staging einrichten',
             'button_text': f'Staging für {prod_app.name} einrichten',
-        },
-    )
-
-
-@owner_of_app
-def clone_repo(request, app_id):
-    app = get_object_or_404(App, pk=app_id)
-
-    if git_status(app):
-        return redirect('staging-init-db', app_id)
-
-    if request.method == 'POST':
-        errors = []
-        success = git_clone(app, output=errors)
-
-        return render(
-            request,
-            'generic/done_next_submit.html',
-            {
-                'errors': '' if success else errors,
-                'step': 'Repo Klonen',
-                'next': reverse('staging-init-db', args=[app_id]),
-            },
-        )
-
-    return render(
-        request,
-        'generic/submit.html',
-        {
-            'page_title': 'Staging Repo Klonen',
-            'button_text': 'Repo klonen',
-        },
-    )
-
-
-@owner_of_app
-def init_db(request, app_id):
-    app = get_object_or_404(App, pk=app_id)
-
-    if request.method == 'POST':
-        with open(app.log_file, 'wb') as out:
-            proc = subprocess.Popen(  # nosec: B603
-                [
-                    settings.PYTHON_BIN,
-                    '-m',
-                    'manage',
-                    'clone_db',
-                    '--no-restart',
-                    app.name,
-                ],
-                stdout=out,
-                stderr=out,
-            )
-
-        return render(
-            request,
-            'generic/wait_next_submit.html',
-            {
-                'step': 'Datenbank initiieren und kopieren',
-                'pid': proc.pid,
-                'next': reverse('staging-init-domain', args=[app_id]),
-            },
-        )
-
-    return render(
-        request,
-        'generic/submit.html',
-        {
-            'page_title': 'Staging Datenbank erstellen',
-            'button_text': 'Datenbank erstellen',
-        },
-    )
-
-
-@owner_of_app
-def init_domain(request, app_id):
-    app = get_object_or_404(App, pk=app_id)
-
-    if request.method == 'POST':
-        domain = app.domains.get_or_create(name=f'{app.name}{settings.APPS_DOMAIN}')[0]
-        with open(app.log_file, 'wb') as out:
-            proc = subprocess.Popen(  # nosec: B603
-                [settings.PYTHON_BIN, '-m', 'manage', 'add_domain', domain.name],
-                stdout=out,
-                stderr=out,
-            )
-
-        return render(
-            request,
-            'generic/wait_next_submit.html',
-            {
-                'step': 'Domain einrichten',
-                'pid': proc.pid,
-                'next': reverse('redeploy-v2', args=[app_id]),
-            },
-        )
-
-    return render(
-        request,
-        'generic/submit.html',
-        {
-            'page_title': 'Domain einrichten',
-            'button_text': 'Domain einrichten',
         },
     )
 
@@ -177,3 +115,12 @@ def renew(request, app_id):
     app.renew()
 
     return redirect('overview', app.id)
+
+
+@owner_of_app
+def result(request, app_id):
+    """Show the setup result for a staging app with a retry button on failure."""
+    app = get_object_or_404(App, pk=app_id)
+    sections, overall_failed = _parse_log_file(app)
+    context = {'app': app, 'sections': sections, 'overall_failed': overall_failed}
+    return render(request, 'staging/result.html', context)

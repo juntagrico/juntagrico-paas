@@ -76,16 +76,15 @@ def overview(request, app_id):
     if app.creation_pending:
         return redirect('repo-source', app_id=app.id)
 
-    # Redirect to env creation if installation hasn't been completed
+    staging = app.staging_of is not None
+
+    # Redirect if installation is still pending
     if app.installation_pending:
+        if staging:
+            return redirect('staging-create', app_id=app.staging_of.id)
         return redirect('ca-create-env', app_id=app.id)
 
     running = app.running
-
-    staging = app.staging_of is not None
-    if staging and not app.code_dir.is_dir():
-        # resume staging creation process
-        return redirect('staging-git-clone', app_id=app.id)
 
     # Get staging app running status if this is the main app
     staging_running = None
@@ -108,10 +107,11 @@ def pidcheck(request, pid):
     return JsonResponse({'finished': pid_finished(pid)})
 
 
-@owner_of_app
-def show_result(request, app_id):
-    app = get_object_or_404(App, pk=app_id)
-    # parse log
+def _parse_log_file(app):
+    """Parse the log file of an app into sections with summaries.
+
+    Returns (sections dict, overall_failed bool).
+    """
     sections = {'Log': {'text': '', 'result': 1}}
     current = sections['Log']  # capture error output before the first section
     with open(app.log_file, 'r') as file:
@@ -145,7 +145,20 @@ def show_result(request, app_id):
             section['text'], section['result'], section_name
         )
 
-    return render(request, 'app/show_result.html', {'app': app, 'sections': sections})
+    overall_failed = any(s.get('result', 0) != 0 for s in sections.values())
+    return sections, overall_failed
+
+
+@owner_of_app
+def show_result(request, app_id):
+    app = get_object_or_404(App, pk=app_id)
+    sections, overall_failed = _parse_log_file(app)
+
+    return render(
+        request,
+        'app/show_result.html',
+        {'app': app, 'sections': sections, 'overall_failed': overall_failed},
+    )
 
 
 @owner_of_app

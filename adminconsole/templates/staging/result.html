@@ -1,0 +1,13 @@
+{% extends "app/show_result.html" %}
+
+{% block page_subtitle %}
+    <h4>Staging-Einrichtung für {{ app.name }}</h4>
+{% endblock %}
+
+{% block buttons %}
+    {% if overall_failed %}
+        <div class="text-center mt-3">
+            <a href="{% url 'staging-create' app.staging_of.id %}" class="btn btn-warning">Staging einrichten wiederholen</a>
+        </div>
+    {% endif %}
+{% endblock %}
