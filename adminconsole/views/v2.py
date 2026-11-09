@@ -127,6 +127,7 @@ def show_progress(request, app_id, pid):
     current_section = 0
     current_section_progress = None
     current_title = None
+    setup_success = None
     docker_build_header = re.compile(r'^#(\d+)\s+\[([^\]]+)\]\s*(.*)$')
     docker_build_done = re.compile(r'^#(\d+)\s+(DONE|CACHED)')
     with open(app.log_file, 'r') as file:
@@ -156,6 +157,9 @@ def show_progress(request, app_id, pid):
                     current_section_progress = num / den
                 except ValueError:
                     pass
+            # Track setup success/failure
+            if line.startswith('Return '):
+                setup_success = line[len('Return ') :].rstrip() == '0'
         read_until = file.tell()
 
     expected = None
@@ -168,14 +172,17 @@ def show_progress(request, app_id, pid):
         else:
             expected = 6.1  # v2 has an extra git pull step
 
-    return JsonResponse({
+    data = {
         'finished': pid_finished(pid),
         'section': current_section,
         'section_progress': current_section_progress,
         'expected_steps': expected,
         'title': current_title,
         'read': read_until,
-    })
+    }
+    if setup_success is not None:
+        data['setup_success'] = setup_success
+    return JsonResponse(data)
 
 
 @owner_of_app

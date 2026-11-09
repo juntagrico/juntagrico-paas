@@ -183,3 +183,5 @@ APPS_NETWORK = {
     'bridge': 'br-juntagrico',
 }
 APPS_MEMORY_LIMIT = '600m'
+
+APPS_DOMAIN = '.juntagrico.app'

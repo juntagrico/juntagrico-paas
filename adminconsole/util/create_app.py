@@ -1,8 +1,10 @@
+import subprocess  # nosec: B404
+
 from django.conf import settings
 from django.db import connection
 from django.template.loader import get_template
 
-from adminconsole.models import App
+from adminconsole.models import App, AppCronjob, get_available_cronjobs
 from adminconsole.util import generate_password
 
 
@@ -39,14 +41,16 @@ def create_database(app_env, db_name, user_name, replace=False):
             cursor.execute(f'DROP DATABASE IF EXISTS {db}')
             cursor.execute('RESET ROLE')
             cursor.execute(f'DROP USER IF EXISTS {user}')
-        cursor.execute(f"CREATE USER {user} WITH PASSWORD '{password}'")
+        # Idempotent: create user if not exists, then always set password and alter
+        cursor.execute(f'CREATE USER IF NOT EXISTS {user}')
+        cursor.execute(f"ALTER ROLE {user} WITH PASSWORD '{password}'")
         cursor.execute(f"ALTER ROLE {user} SET client_encoding TO 'utf8'")
         cursor.execute(
             f"ALTER ROLE {user} SET default_transaction_isolation TO 'read committed'"
         )
         cursor.execute(f"ALTER ROLE {user} SET timezone TO 'Europe/Zurich'")
         cursor.execute(
-            f'CREATE DATABASE {db} OWNER {user} '
+            f'CREATE DATABASE IF NOT EXISTS {db} OWNER {user} '
             f"TEMPLATE template0 ENCODING 'UTF8' "
             f"LC_COLLATE 'en_US.UTF-8' LC_CTYPE 'en_US.UTF-8'"
         )
@@ -66,3 +70,44 @@ def create_docker_file(app):
                 'default_python_version': settings.DEFAULT_PYTHON_VERSION,
             })
         )
+
+
+def setup_domain(app):
+    """Create the default domain for an app and request an SSL certificate.
+    Returns True on success, False on failure.
+    """
+    domain_name = f'{app.name}{settings.APPS_DOMAIN}'
+    domain, _ = app.domains.get_or_create(name=domain_name)
+    with open(f'/var/django/domains/{domain_name}', 'w') as domain_file:
+        domain_file.write(
+            get_template('infra/domain.txt').render({
+                'name': app.name,
+                'port': app.port,
+                'domain': domain_name,
+            })
+        )
+    proc = subprocess.run(  # nosec: B603, B607
+        ['sudo', '/usr/local/sbin/juntagrico-certbot', domain_name],
+        stdout=subprocess.PIPE,
+    )
+    print(str(proc.stdout))
+    return proc.returncode == 0
+
+
+def create_default_cronjobs(app):
+    """Create default/required cronjobs for an app (idempotent)."""
+    available = get_available_cronjobs(app.name)
+    for cj_def in available:
+        if cj_def.get('default') or cj_def.get('required'):
+            timing = cj_def.get('timing', 'fixed')
+            defaults = {}
+            if timing == 'daily':
+                defaults['hour'] = cj_def.get('default_hour', 23)
+                dm = cj_def.get('default_minute', 0)
+                defaults['minute'] = app.port % 60 if dm == 'spread' else dm
+            elif timing == 'hourly':
+                dm = cj_def.get('default_minute', 0)
+                defaults['minute'] = app.port % 60 if dm == 'spread' else dm
+            AppCronjob.objects.get_or_create(
+                app=app, cronjob_id=cj_def['id'], defaults=defaults
+            )

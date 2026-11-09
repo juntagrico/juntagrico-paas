@@ -1,0 +1,29 @@
+{% extends "wait_redeploy.html" %}
+{% load static %}
+
+{% block next_link %}
+    <div id="setup-result" style="display:none;">
+        {% if is_setup %}
+            <div id="password-box" style="display:none;" class="alert alert-info mt-3">
+                <strong>Notiere dieses Passwort:</strong>
+                <code id="admin-password" style="font-size:1.2em; user-select:all;"></code>
+            </div>
+            <form id="next-form" action="{{ next }}" method="POST">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary disabled" id="next">weiter</button>
+            </form>
+            <form id="retry-form" action="" method="POST" style="display:none;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-warning" id="retry">Wiederholen</button>
+            </form>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script type="text/javascript">
+        var url = '{{ url }}';
+        var adminPassword = '{{ admin_password }}';
+    </script>
+    <script type="text/javascript" src="{% static 'js/progress.js' %}"></script>
+{% endblock %}

@@ -312,8 +312,8 @@ class CookiecutterTests(TestCase):
         )  # a commit, not a branch or tag that can move
         self.assertIs(kwargs['accept_hooks'], False)
 
-    def test_always_goes_to_push(self):
-        """Cookiecutter runs git push directly and redirects to init-db on success."""
+    def test_always_goes_to_env_form(self):
+        """Cookiecutter runs git push directly and redirects to env form on success."""
         user = User.objects.create_user('owner')
         app = App.objects.create(name='baz', port=8012, user=user)
         self.client.force_login(user)
@@ -337,8 +337,10 @@ class CookiecutterTests(TestCase):
             mock.patch('adminconsole.views.create.git_push_app', return_value=True),
         ):
             resp = self.client.post(f'/ck/form/{app.id}/', data)
-        # Should redirect to init-db (git push runs directly, no intermediate step)
-        self.assertRedirects(resp, f'/ca/db/{app.id}/', fetch_redirect_response=False)
+        # Should redirect to env form (git push runs directly, no intermediate step)
+        self.assertRedirects(
+            resp, f'/ca/env/form/{app.id}/', fetch_redirect_response=False
+        )
 
 
 class SecretGenerationTests(TestCase):
@@ -374,30 +376,6 @@ class AdminPasswordTests(TestCase):
 
     def assert_not_cached(self, response):
         self.assertIn('no-store', response['Cache-Control'])
-
-    def test_create_admin_step(self):
-        tmp = Path(tempfile.mkdtemp())
-        self.addCleanup(shutil.rmtree, tmp)
-        with (
-            mock.patch.object(
-                App,
-                'log_file',
-                new_callable=mock.PropertyMock,
-                return_value=str(tmp / 'log'),
-            ),
-            mock.patch('subprocess.Popen') as popen,
-        ):
-            popen.return_value.pid = 4242
-            response = self.client.post(f'/ca/createadmin/{self.app.id}/')
-
-        password = popen.call_args.kwargs['env'][PASSWORD_ENV]
-        self.assertEqual(
-            popen.call_args.args[0], ['python', '-m', 'manage', 'create_admin', 'foo']
-        )
-        self.assertNotEqual(password, 'DBPASSWORD')
-        self.assertEqual(len(password), 20)
-        self.assertContains(response, password)
-        self.assert_not_cached(response)
 
     def test_create_admin_command(self):
         with mock.patch.dict(os.environ, {PASSWORD_ENV: 'NEWPASSWORD'}):
@@ -1042,11 +1020,26 @@ class CreateDatabaseTests(TestCase):
                 'DROP DATABASE IF EXISTS "foo_staging"',
                 'RESET ROLE',
                 'DROP USER IF EXISTS "foo_staging"',
-                'CREATE USER "foo_staging" WITH PASSWORD \'ABC123\'',
+                'CREATE USER IF NOT EXISTS "foo_staging"',
+                'ALTER ROLE "foo_staging" WITH PASSWORD \'ABC123\'',
                 'ALTER ROLE "foo_staging" SET client_encoding TO \'utf8\'',
                 'ALTER ROLE "foo_staging" SET default_transaction_isolation TO \'read committed\'',
                 'ALTER ROLE "foo_staging" SET timezone TO \'Europe/Zurich\'',
-                "CREATE DATABASE \"foo_staging\" OWNER \"foo_staging\" TEMPLATE template0 ENCODING 'UTF8' LC_COLLATE 'en_US.UTF-8' LC_CTYPE 'en_US.UTF-8'",
+                "CREATE DATABASE IF NOT EXISTS \"foo_staging\" OWNER \"foo_staging\" TEMPLATE template0 ENCODING 'UTF8' LC_COLLATE 'en_US.UTF-8' LC_CTYPE 'en_US.UTF-8'",
+            ],
+        )
+
+    def test_statements_non_replace(self):
+        """Non-replace mode skips DROP statements and uses idempotent CREATE."""
+        self.assertEqual(
+            self.statements('bar', replace=False),
+            [
+                'CREATE USER IF NOT EXISTS "bar"',
+                'ALTER ROLE "bar" WITH PASSWORD \'ABC123\'',
+                'ALTER ROLE "bar" SET client_encoding TO \'utf8\'',
+                'ALTER ROLE "bar" SET default_transaction_isolation TO \'read committed\'',
+                'ALTER ROLE "bar" SET timezone TO \'Europe/Zurich\'',
+                "CREATE DATABASE IF NOT EXISTS \"bar\" OWNER \"bar\" TEMPLATE template0 ENCODING 'UTF8' LC_COLLATE 'en_US.UTF-8' LC_CTYPE 'en_US.UTF-8'",
             ],
         )
 
@@ -1054,6 +1047,318 @@ class CreateDatabaseTests(TestCase):
         for password in ["abc'; DROP USER x; --", 'äöü123', 'with space']:
             with self.subTest(password=password), self.assertRaises(ValueError):
                 self.statements(f'app{len(password)}', password=password)
+
+
+# The create_admin_user utility creates the admin user in a container (idempotent).
+class CreateAdminUserTests(TestCase):
+    def setUp(self):
+        patcher = mock.patch('docker.from_env')
+        self.docker_mock = patcher.start().return_value
+        self.addCleanup(patcher.stop)
+        self.container = self.docker_mock.containers.get.return_value
+        self.container.exec_run.return_value = mock.MagicMock(exit_code=0, output=b'')
+
+    def test_creates_admin_successfully(self):
+        from adminconsole.util.admin import create_admin_user
+
+        result = create_admin_user('foo', 'SecretPw')
+        self.assertTrue(result)
+        args, kwargs = self.container.exec_run.call_args
+        self.assertEqual(
+            args[0], ['python', '-m', 'manage', 'createadmin', '--noinput']
+        )
+        self.assertEqual(kwargs['environment']['DJANGO_SUPERUSER_PASSWORD'], 'SecretPw')
+
+    def test_fallback_sets_password_when_user_exists(self):
+        """When createadmin fails (user exists), set_admin_password is called as fallback."""
+        from adminconsole.util.admin import create_admin_user, PASSWORD_ENV
+
+        # First call (createadmin) fails, second call (set_admin_password fallback) succeeds
+        self.container.exec_run.side_effect = [
+            mock.MagicMock(exit_code=1, output=b'User exists'),
+            mock.MagicMock(exit_code=0, output=b''),
+        ]
+        result = create_admin_user('foo', 'NewPw')
+        self.assertTrue(result)
+        # Should be called twice: first createadmin, then set_admin_password
+        self.assertEqual(self.container.exec_run.call_count, 2)
+        second_call = self.container.exec_run.call_args_list[1]
+        self.assertEqual(second_call.kwargs['environment'][PASSWORD_ENV], 'NewPw')
+
+    def test_returns_false_when_container_not_found(self):
+        from adminconsole.util.admin import create_admin_user
+
+        self.docker_mock.containers.get.side_effect = NotFound('no such container')
+        result = create_admin_user('foo', 'pw')
+        self.assertFalse(result)
+
+    def test_returns_false_when_fallback_fails(self):
+        """When both createadmin and the fallback fail, return False."""
+        from adminconsole.util.admin import create_admin_user
+
+        self.container.exec_run.return_value = mock.MagicMock(
+            exit_code=1, output=b'Error'
+        )
+        result = create_admin_user('foo', 'pw')
+        self.assertFalse(result)
+
+
+# The setup_domain utility creates the default domain and requests an SSL certificate.
+class SetupDomainTests(TestCase):
+    def setUp(self):
+        self.app = App.objects.create(name='foo', port=8010)
+
+    def test_success(self):
+        from adminconsole.util.create_app import setup_domain
+
+        with (
+            mock.patch('adminconsole.util.create_app.subprocess.run') as run,
+            mock.patch('builtins.open', mock.mock_open()),
+        ):
+            run.return_value = mock.MagicMock(returncode=0, stdout=b'ok')
+            result = setup_domain(self.app)
+        self.assertTrue(result)
+        run.assert_called_once()
+        self.assertIn('/usr/local/sbin/juntagrico-certbot', run.call_args[0][0])
+
+    def test_certbot_failure(self):
+        from adminconsole.util.create_app import setup_domain
+
+        with (
+            mock.patch('adminconsole.util.create_app.subprocess.run') as run,
+            mock.patch('builtins.open', mock.mock_open()),
+        ):
+            run.return_value = mock.MagicMock(returncode=1, stdout=b'error')
+            result = setup_domain(self.app)
+        self.assertFalse(result)
+
+
+# The create_default_cronjobs utility creates default/required cronjobs for an app.
+class CreateDefaultCronjobsTests(TestCase):
+    def test_creates_default_and_required_cronjobs(self):
+        from adminconsole.util.create_app import create_default_cronjobs
+
+        app = App.objects.create(name='foo', port=8010)
+        cronjobs = [
+            {
+                'id': 'cj1',
+                'default': True,
+                'timing': 'daily',
+                'default_hour': 23,
+                'default_minute': 0,
+            },
+            {
+                'id': 'cj2',
+                'required': True,
+                'timing': 'hourly',
+                'default_minute': 'spread',
+            },
+            {'id': 'cj3', 'default': False, 'required': False, 'timing': 'fixed'},
+        ]
+        with mock.patch(
+            'adminconsole.util.create_app.get_available_cronjobs', return_value=cronjobs
+        ):
+            create_default_cronjobs(app)
+        # cj1 (default) and cj2 (required) should be created; cj3 should not
+        created = list(app.cronjobs.values_list('cronjob_id', 'minute', 'hour'))
+        self.assertEqual(len(created), 2)
+        ids = {row[0] for row in created}
+        self.assertEqual(ids, {'cj1', 'cj2'})
+        # cj1: daily, hour=23, minute=0
+        cj_map = {
+            row[0]: (row[1], row[2])
+            for row in app.cronjobs.values_list('cronjob_id', 'hour', 'minute')
+        }
+        self.assertEqual(cj_map['cj1'], (23, 0))
+        # cj2: hourly, minute = port % 60 = 8010 % 60 = 30
+        self.assertEqual(cj_map['cj2'], (None, 30))
+
+    def test_idempotent_on_second_call(self):
+        """Calling twice does not create duplicates."""
+        from adminconsole.util.create_app import create_default_cronjobs
+
+        app = App.objects.create(name='bar', port=8020)
+        cronjobs = [
+            {'id': 'cj1', 'default': True, 'timing': 'fixed'},
+        ]
+        with mock.patch(
+            'adminconsole.util.create_app.get_available_cronjobs', return_value=cronjobs
+        ):
+            create_default_cronjobs(app)
+            create_default_cronjobs(app)
+        self.assertEqual(app.cronjobs.count(), 1)
+
+
+# The setup command checks for PASSWORD_ENV and fails immediately if missing.
+class SetupCommandTests(TestCase):
+    def test_fails_without_password_env(self):
+        from adminconsole.util.admin import PASSWORD_ENV
+
+        app = App.objects.create(name='foo', port=8010)
+        # Remove PASSWORD_ENV if it happens to be set
+        saved = os.environ.pop(PASSWORD_ENV, None)
+        try:
+            with mock.patch('builtins.print', autospec=True) as mock_print:
+                call_command('setup', app.name)
+            # Should print failure message
+            calls = [str(c) for c in mock_print.call_args_list]
+            self.assertTrue(any('Passwort nicht gesetzt' in c for c in calls))
+            self.assertTrue(any('Return 1' in c for c in calls))
+        finally:
+            if saved is not None:
+                os.environ[PASSWORD_ENV] = saved
+
+
+# The git_pull function clones the repo if .git doesn't exist yet.
+@modify_settings(
+    MIDDLEWARE={'remove': ['adminconsole.middleware.RequireOTPMiddleware']}
+)
+class GitPullCloneFallbackTests(TestCase):
+    def setUp(self):
+        self.base = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.base, ignore_errors=True)
+        for patcher in [
+            mock.patch.object(
+                App, 'dir', new=property(lambda app: self.base / app.name)
+            ),
+            mock.patch.object(
+                App, 'work_dir', new=property(lambda app: self.base / app.name)
+            ),
+            mock.patch.dict('os.environ', {'GIT_CEILING_DIRECTORIES': str(self.base)}),
+        ]:
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def test_clones_when_git_dir_missing(self):
+        """If .git doesn't exist, git_pull clones the repo first."""
+        from adminconsole.util.git import git_pull
+
+        app = App.objects.create(
+            name='foo',
+            port=8010,
+            git_clone_url='https://github.com/a/b.git',
+            git_branch='main',
+        )
+        app.work_dir.mkdir()
+        with (
+            mock.patch('adminconsole.util.git.test_localhost', return_value=True),
+            mock.patch('adminconsole.util.git.git_clone', return_value=True) as clone,
+            mock.patch('adminconsole.util.git.run_git') as run_git,
+            mock.patch.object(app, 'get_installation_token', return_value=None),
+        ):
+            run_git.return_value = mock.MagicMock(returncode=0, stdout='abc123')
+            result = git_pull(app)
+        clone.assert_called_once_with(app)
+        self.assertEqual(result, 0)
+
+    def test_returns_minus1_when_clone_fails(self):
+        """If clone fails during fallback, return -1."""
+        from adminconsole.util.git import git_pull
+
+        app = App.objects.create(
+            name='foo', port=8010, git_clone_url='https://github.com/a/b.git'
+        )
+        app.work_dir.mkdir()
+        with (
+            mock.patch('adminconsole.util.git.test_localhost', return_value=True),
+            mock.patch('adminconsole.util.git.git_clone', return_value=False),
+        ):
+            result = git_pull(app)
+        self.assertEqual(result, -1)
+
+
+# The git_push_app function adds, commits, and pushes changes.
+class GitPushAppTests(TestCase):
+    def setUp(self):
+        self.base = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.base, ignore_errors=True)
+        for patcher in [
+            mock.patch.object(
+                App, 'dir', new=property(lambda app: self.base / app.name)
+            ),
+            mock.patch.object(
+                App, 'work_dir', new=property(lambda app: self.base / app.name)
+            ),
+        ]:
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def test_push_success(self):
+        from adminconsole.util.git import git_push_app
+
+        app = App.objects.create(name='foo', port=8010)
+        app.work_dir.mkdir()
+        output = []
+        with (
+            mock.patch('adminconsole.util.git.subprocess.run') as run,
+            mock.patch.object(app, 'get_installation_token', return_value=None),
+        ):
+            run.return_value = mock.MagicMock(returncode=0, stdout=b'ok')
+            result = git_push_app(app, output)
+        self.assertTrue(result)
+        # Should call git add, commit, push
+        self.assertEqual(run.call_count, 3)
+        self.assertEqual(run.call_args_list[0][0][0][1], 'add')
+        self.assertEqual(run.call_args_list[1][0][0][1], 'commit')
+        self.assertEqual(run.call_args_list[2][0][0][1], 'push')
+
+    def test_push_failure(self):
+        from adminconsole.util.git import git_push_app
+
+        app = App.objects.create(name='foo', port=8010)
+        app.work_dir.mkdir()
+        output = []
+        with (
+            mock.patch('adminconsole.util.git.subprocess.run') as run,
+            mock.patch.object(app, 'get_installation_token', return_value=None),
+        ):
+            run.side_effect = [
+                mock.MagicMock(returncode=0, stdout=b''),
+                mock.MagicMock(returncode=0, stdout=b''),
+                mock.MagicMock(returncode=1, stdout=b'error'),
+            ]
+            result = git_push_app(app, output)
+        self.assertFalse(result)
+
+
+# The env_form view passes the admin password via environment variable.
+@modify_settings(
+    MIDDLEWARE={'remove': ['adminconsole.middleware.RequireOTPMiddleware']}
+)
+class EnvFormViewTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user('owner')
+        self.app = App.objects.create(name='foo', port=8010, user=self.owner)
+        AppEnv.objects.create(app=self.app)
+        self.client.force_login(self.owner)
+
+    def test_post_passes_password_env(self):
+        """POST to env_form passes PASSWORD_ENV to the setup subprocess."""
+        from adminconsole.util.admin import PASSWORD_ENV
+
+        data = {
+            'juntagrico_secret_key': 'x' * 50,
+            'juntagrico_email_host': 'mail.example.org',
+            'juntagrico_email_port': '587',
+            'juntagrico_email_security': 'none',
+            'skip_check': '',
+        }
+        with (
+            mock.patch('subprocess.Popen') as mock_popen,
+            mock.patch.object(
+                App, 'log_file', new=property(lambda self: '/tmp/test.log')
+            ),
+            mock.patch('builtins.open', mock.mock_open()),
+        ):
+            mock_popen.return_value = mock.MagicMock(pid=12345)
+            resp = self.client.post(f'/ca/env/form/{self.app.id}/', data)
+        # Verify PASSWORD_ENV is passed
+        call_kwargs = mock_popen.call_args.kwargs
+        self.assertIn(PASSWORD_ENV, call_kwargs.get('env', {}))
+        # Password should be a non-empty string
+        self.assertTrue(call_kwargs['env'][PASSWORD_ENV])
+        # Response should contain the password in context
+        self.assertEqual(resp.status_code, 200)
 
 
 # The repo_source view lets the user choose between a clone URL and GitHub.
