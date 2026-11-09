@@ -998,14 +998,20 @@ class CreateDatabaseTests(TestCase):
         # First fetchone: pg_roles check (user_exists controls SET ROLE path)
         # Second fetchone: pg_database check (always None so CREATE DATABASE runs)
         cursor.fetchone.side_effect = [1 if user_exists else None, None]
+        pg_conn = mock.MagicMock()
+        pg_conn.ops.quote_name = lambda value: '"%s"' % value
+        pg_conn.cursor.return_value.__enter__.return_value = cursor
         with (
+            mock.patch(
+                'adminconsole.util.create_app.get_postgres_connection',
+                return_value=pg_conn,
+            ),
             mock.patch('adminconsole.util.create_app.connection') as connection,
             mock.patch(
                 'adminconsole.util.create_app.generate_password', return_value=password
             ),
         ):
             connection.ops.quote_name = lambda value: '"%s"' % value
-            connection.cursor.return_value.__enter__.return_value = cursor
             create_database(env, name, name, replace=replace)
         return [call.args[0] for call in cursor.execute.call_args_list]
 
@@ -1061,91 +1067,63 @@ class CreateDatabaseTests(TestCase):
             ],
         )
 
-    def test_autocommit_reset_on_success(self):
-        """Autocommit is reset to False after successful CREATE DATABASE."""
+    def test_separate_connection_used(self):
+        """create_database uses a separate connection, not the default Django connection."""
         from adminconsole.util.create_app import create_database
 
-        app = App.objects.create(name='auto-test', port=8010 + App.objects.count())
+        app = App.objects.create(name='sep-conn', port=8010 + App.objects.count())
         env = AppEnv.objects.create(app=app)
         cursor = mock.MagicMock()
-        cursor.fetchone.side_effect = [
-            None,
-            None,
-        ]  # user doesn't exist, db doesn't exist
-        # Track autocommit assignments using a list
-        autocommit_log = []
-
-        class TrackedConnection:
-            _autocommit = False
-
-            @property
-            def autocommit(self):
-                return self._autocommit
-
-            @autocommit.setter
-            def autocommit(self, value):
-                autocommit_log.append(value)
-                self._autocommit = value
-
-        tracked = TrackedConnection()
-        tracked.ops = mock.MagicMock()
-        tracked.ops.quote_name = lambda value: '"%s"' % value
-        tracked.cursor = mock.MagicMock()
-        tracked.cursor.return_value.__enter__.return_value = cursor
-
+        cursor.fetchone.side_effect = [None, None]
+        pg_conn = mock.MagicMock()
+        pg_conn.cursor.return_value.__enter__.return_value = cursor
         with (
-            mock.patch('adminconsole.util.create_app.connection', tracked),
+            mock.patch(
+                'adminconsole.util.create_app.get_postgres_connection',
+                return_value=pg_conn,
+            ) as mock_get_conn,
+            mock.patch('adminconsole.util.create_app.connection') as default_conn,
             mock.patch(
                 'adminconsole.util.create_app.generate_password', return_value='ABC123'
             ),
         ):
+            default_conn.ops.quote_name = lambda value: '"%s"' % value
             create_database(env, app.name, app.name)
-            # Verify autocommit was set to True then reset to False
-            self.assertIn(True, autocommit_log)
-            self.assertFalse(tracked.autocommit)
 
-    def test_autocommit_reset_on_error(self):
-        """Autocommit is reset to False even when CREATE DATABASE fails."""
+        # The separate connection should be created, connected, and closed
+        mock_get_conn.assert_called_once()
+        pg_conn.connect.assert_called_once()
+        pg_conn.close.assert_called_once()
+        # The default connection should NOT have been used for cursors
+        default_conn.cursor.assert_not_called()
+
+    def test_separate_connection_closed_on_error(self):
+        """The separate connection is closed even when CREATE DATABASE fails."""
         from django.db.utils import DatabaseError
         from adminconsole.util.create_app import create_database
 
-        app = App.objects.create(name='auto-err', port=8010 + App.objects.count())
+        app = App.objects.create(name='sep-err', port=8010 + App.objects.count())
         env = AppEnv.objects.create(app=app)
         cursor = mock.MagicMock()
-        cursor.fetchone.side_effect = [
-            None,
-            None,
-        ]  # user doesn't exist, db doesn't exist
+        cursor.fetchone.side_effect = [None, None]
         cursor.execute.side_effect = DatabaseError('simulated failure')
-
-        class TrackedConnection:
-            _autocommit = False
-
-            @property
-            def autocommit(self):
-                return self._autocommit
-
-            @autocommit.setter
-            def autocommit(self, value):
-                self._autocommit = value
-
-        tracked = TrackedConnection()
-        tracked.ops = mock.MagicMock()
-        tracked.ops.quote_name = lambda value: '"%s"' % value
-        tracked.cursor = mock.MagicMock()
-        tracked.cursor.return_value.__enter__.return_value = cursor
-
+        pg_conn = mock.MagicMock()
+        pg_conn.cursor.return_value.__enter__.return_value = cursor
         with (
-            mock.patch('adminconsole.util.create_app.connection', tracked),
+            mock.patch(
+                'adminconsole.util.create_app.get_postgres_connection',
+                return_value=pg_conn,
+            ),
+            mock.patch('adminconsole.util.create_app.connection') as default_conn,
             mock.patch(
                 'adminconsole.util.create_app.generate_password', return_value='ABC123'
             ),
         ):
+            default_conn.ops.quote_name = lambda value: '"%s"' % value
             result = create_database(env, app.name, app.name)
-            # Should return False on error
-            self.assertFalse(result)
-            # Autocommit must be reset to False even on error
-            self.assertFalse(tracked.autocommit)
+
+        self.assertFalse(result)
+        pg_conn.close.assert_called_once()
 
     def test_password_must_be_alphanumeric(self):
         from adminconsole.util.create_app import create_database
@@ -1157,6 +1135,7 @@ class CreateDatabaseTests(TestCase):
                 )
                 env = AppEnv.objects.create(app=app)
                 with (
+                    mock.patch('adminconsole.util.create_app.get_postgres_connection'),
                     mock.patch('adminconsole.util.create_app.connection') as connection,
                     mock.patch(
                         'adminconsole.util.create_app.generate_password',
@@ -1164,8 +1143,6 @@ class CreateDatabaseTests(TestCase):
                     ),
                 ):
                     connection.ops.quote_name = lambda value: '"%s"' % value
-                    cursor = mock.MagicMock()
-                    connection.cursor.return_value.__enter__.return_value = cursor
                     result = create_database(env, app.name, app.name)
                 self.assertFalse(result)
 

@@ -5,8 +5,20 @@ from django.db import connection
 from django.db.utils import DatabaseError
 from django.template.loader import get_template
 
-from adminconsole.models import App, AppCronjob, get_available_cronjobs
+from adminconsole.models import App, AppCronjob, Domain, get_available_cronjobs
 from adminconsole.util import generate_password
+
+
+def get_postgres_connection():
+    """Create a separate connection to the 'postgres' database for admin operations.
+    This avoids polluting the default Django connection with autocommit/transaction state.
+    Import is lazy so the module loads cleanly even when psycopg is unavailable.
+    """
+    from django.db.backends.postgresql.base import DatabaseWrapper
+
+    settings_dict = connection.settings_dict.copy()
+    settings_dict['NAME'] = 'postgres'
+    return DatabaseWrapper(settings_dict)
 
 
 def find_port():
@@ -30,6 +42,8 @@ def ensure_dirs(app):
 
 def create_database(app_env, db_name, user_name, replace=False):
     """Create a database and user for an app (idempotent when replace=False).
+    Uses a separate connection to the 'postgres' database so the default Django
+    connection is never touched (avoids autocommit/SAVEPOINT issues).
     Returns True on success, False on failure (with error details printed).
     """
     try:
@@ -43,42 +57,48 @@ def create_database(app_env, db_name, user_name, replace=False):
             connection.ops.quote_name(db_name),
             connection.ops.quote_name(user_name),
         )
-        with connection.cursor() as cursor:
-            if replace:
-                # Only SET ROLE if the user exists (needed to drop its database)
-                cursor.execute(f"SELECT 1 FROM pg_roles WHERE rolname = '{user_name}'")
-                if cursor.fetchone():
-                    cursor.execute(f'SET ROLE {user}')
-                    cursor.execute(f'DROP DATABASE IF EXISTS {db}')
-                    cursor.execute('RESET ROLE')
-                cursor.execute(f'DROP USER IF EXISTS {user}')
-                cursor.execute(f'CREATE USER {user}')
-            else:
-                # Idempotent: skip if user already exists
-                cursor.execute(f"SELECT 1 FROM pg_roles WHERE rolname = '{user_name}'")
-                if not cursor.fetchone():
+        # Use a separate connection so the default Django connection stays clean
+        pg_conn = get_postgres_connection()
+        try:
+            pg_conn.connect()
+            with pg_conn.cursor() as cursor:
+                if replace:
+                    # Only SET ROLE if the user exists (needed to drop its database)
+                    cursor.execute(
+                        f"SELECT 1 FROM pg_roles WHERE rolname = '{user_name}'"
+                    )
+                    if cursor.fetchone():
+                        cursor.execute(f'SET ROLE {user}')
+                        cursor.execute(f'DROP DATABASE IF EXISTS {db}')
+                        cursor.execute('RESET ROLE')
+                    cursor.execute(f'DROP USER IF EXISTS {user}')
                     cursor.execute(f'CREATE USER {user}')
-            # Always set password and alter role settings
-            cursor.execute(f"ALTER ROLE {user} WITH PASSWORD '{password}'")
-            cursor.execute(f"ALTER ROLE {user} SET client_encoding TO 'utf8'")
-            cursor.execute(
-                f"ALTER ROLE {user} SET default_transaction_isolation TO 'read committed'"
-            )
-            cursor.execute(f"ALTER ROLE {user} SET timezone TO 'Europe/Zurich'")
-        # CREATE DATABASE must run outside a transaction block
-        with connection.cursor() as cursor:
-            cursor.execute(f"SELECT 1 FROM pg_database WHERE datname = '{db_name}'")
-            if not cursor.fetchone():
-                connection.autocommit = True
-                try:
-                    with connection.cursor() as db_cursor:
-                        db_cursor.execute(
-                            f'CREATE DATABASE {db} OWNER {user} '
-                            f"TEMPLATE template0 ENCODING 'UTF8' "
-                            f"LC_COLLATE 'en_US.UTF-8' LC_CTYPE 'en_US.UTF-8'"
-                        )
-                finally:
-                    connection.autocommit = False
+                else:
+                    # Idempotent: skip if user already exists
+                    cursor.execute(
+                        f"SELECT 1 FROM pg_roles WHERE rolname = '{user_name}'"
+                    )
+                    if not cursor.fetchone():
+                        cursor.execute(f'CREATE USER {user}')
+                # Always set password and alter role settings
+                cursor.execute(f"ALTER ROLE {user} WITH PASSWORD '{password}'")
+                cursor.execute(f"ALTER ROLE {user} SET client_encoding TO 'utf8'")
+                cursor.execute(
+                    f"ALTER ROLE {user} SET default_transaction_isolation TO 'read committed'"
+                )
+                cursor.execute(f"ALTER ROLE {user} SET timezone TO 'Europe/Zurich'")
+            # CREATE DATABASE must run outside a transaction block
+            pg_conn.autocommit = True
+            with pg_conn.cursor() as cursor:
+                cursor.execute(f"SELECT 1 FROM pg_database WHERE datname = '{db_name}'")
+                if not cursor.fetchone():
+                    cursor.execute(
+                        f'CREATE DATABASE {db} OWNER {user} '
+                        f"TEMPLATE template0 ENCODING 'UTF8' "
+                        f"LC_COLLATE 'en_US.UTF-8' LC_CTYPE 'en_US.UTF-8'"
+                    )
+        finally:
+            pg_conn.close()
         app_env.juntagrico_database_host = 'localhost'
         app_env.juntagrico_database_name = db_name
         app_env.juntagrico_database_password = password
@@ -105,22 +125,28 @@ def setup_domain(app):
     """Create the default domain for an app and request an SSL certificate.
     Returns True on success, False on failure.
     """
-    domain_name = f'{app.name}{settings.APPS_DOMAIN}'
-    domain, _ = app.domains.get_or_create(name=domain_name)
-    with open(f'/var/django/domains/{domain_name}', 'w') as domain_file:
-        domain_file.write(
-            get_template('infra/domain.txt').render({
-                'name': app.name,
-                'port': app.port,
-                'domain': domain_name,
-            })
+    try:
+        domain_name = f'{app.name}{settings.APPS_DOMAIN}'
+        domain, _ = Domain.objects.get_or_create(
+            name=domain_name, defaults={'app': app}
         )
-    proc = subprocess.run(  # nosec: B603, B607
-        ['sudo', '/usr/local/sbin/juntagrico-certbot', domain_name],
-        stdout=subprocess.PIPE,
-    )
-    print(str(proc.stdout))
-    return proc.returncode == 0
+        with open(f'/var/django/domains/{domain_name}', 'w') as domain_file:
+            domain_file.write(
+                get_template('infra/domain.txt').render({
+                    'name': app.name,
+                    'port': app.port,
+                    'domain': domain_name,
+                })
+            )
+        proc = subprocess.run(  # nosec: B603, B607
+            ['sudo', '/usr/local/sbin/juntagrico-certbot', domain_name],
+            stdout=subprocess.PIPE,
+        )
+        print(str(proc.stdout))
+        return proc.returncode == 0
+    except (Domain.DoesNotExist, DatabaseError) as e:
+        print(f'Domain erstellen fehlgeschlagen: {e}', flush=True)
+        return False
 
 
 def create_default_cronjobs(app):
