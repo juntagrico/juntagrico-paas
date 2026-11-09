@@ -52,7 +52,7 @@ $(function () {
 
                 // Setup mode: use the stored setupSuccess value (may have arrived before finished=True)
                 if ($("#setup-result").length) {
-                    if (setupSuccess === true && adminPassword) {
+                    if (setupSuccess === true) {
                         $("#next").removeClass("disabled")
                         $("#setup-result").show()
                     } else {
