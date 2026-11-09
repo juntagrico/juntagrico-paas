@@ -44,7 +44,7 @@ def overwrite_app(request, app_id):
         if form.is_valid():
             if form.cleaned_data['overwrite']:
                 return redirect('ca-cookiecutter', app_id=app_id)
-            return redirect('ca-init-db', app_id=app_id)
+            return redirect('ca-create-env', app_id=app_id)
     else:
         form = OverwriteAppForm()
 
@@ -95,10 +95,10 @@ def cookiecutter_form(request, app_id):
                         {
                             'step': 'Cookiecutter anwenden und repo pushen',
                             'errors': [output],
-                            'next': reverse('ca-init-db', args=[app_id]),
+                            'next': reverse('ca-create-env', args=[app_id]),
                         },
                     )
-            return redirect('ca-init-db', app_id=app_id)
+            return redirect('ca-create-env', app_id=app_id)
     else:
         form = ProjectForm(initial={'project_slug': app.name})
 
@@ -112,7 +112,7 @@ def init_db(request, app_id):
     name = app.name
     app_env = AppEnv.objects.get_or_create(app=app)[0]
     create_database(app_env, name, name)
-    return redirect('ca-create-env', app_id=app_id)
+    return redirect('ca-init-domain', app_id=app_id)
 
 
 @owner_of_app
@@ -122,7 +122,7 @@ def env_form(request, app_id):
         form = EnvForm(request.POST, instance=app.env)
         if form.is_valid():
             form.save()
-            return redirect('ca-init-domain', app_id=app_id)
+            return redirect('ca-init-db', app_id=app_id)
     else:
         form = EnvForm(instance=app.env)
     return render(request, 'app/env.html', {'form': form, 'app': app})
