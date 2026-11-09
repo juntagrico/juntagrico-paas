@@ -7,7 +7,7 @@
            {% if checked %}checked{% endif %}
            {% if disabled %}disabled{% endif %}>
     <label class="form-check-label" for="cronjob_{{ cj.id }}">
-        {{ cj.name }} <small class="text-muted">({{ cj.command }})</small>
+        {{ cj.name }}{% if cj.command %} <small class="text-muted">({{ cj.command }})</small>{% elif cj.service %} <small class="text-muted">({{ cj.service }}.service)</small>{% endif %}
     </label>
     {% include "fragments/cronjob_timing.html" %}
 </div>
