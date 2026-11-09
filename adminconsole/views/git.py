@@ -111,7 +111,8 @@ def repo_source(request, app_id):
             # This path is for public repos; for private repos, use the GitHub App
             # installation flow (select_repo) which authenticates via installation tokens
             App.objects.filter(pk=app_id).update(git_clone_url=clone_url)
-            return redirect('ca-git-clone', app_id=app_id)
+            app.git_clone_url = clone_url
+            return _clone_and_render(request, app)
 
     # Check if the user has a GitHub App installation
     has_installation = GitHubKey.objects.filter(
@@ -153,15 +154,35 @@ def select_repo(request, app_id):
     if request.method == 'POST':
         repo_full_name = request.POST.get('repo_full_name')
         if repo_full_name:
-            # Save the clone URL and proceed
+            # Save the clone URL and proceed directly
             clone_url = f'https://github.com/{repo_full_name}.git'
             App.objects.filter(pk=app_id).update(git_clone_url=clone_url)
-            return redirect('ca-git-clone', app_id=app_id)
+            app.git_clone_url = clone_url
+            return _clone_and_render(request, app)
 
     return render(
         request,
         'select_repo.html',
         {'app': app, 'installation_id': installation_id, 'repos': repos},
+    )
+
+
+def _clone_and_render(request, app):
+    """Run git_clone and render the done-next page (redirects on success)."""
+    errors = []
+    success = git_clone(app, errors)
+
+    next_url = reverse('ca-overwrite', args=[app.id])
+    if success:
+        return redirect(next_url)
+    return render(
+        request,
+        'app/done_next.html',
+        {
+            'errors': errors,
+            'step': 'Repo Klonen',
+            'next': next_url,
+        },
     )
 
 
@@ -172,18 +193,7 @@ def clone_repo(request, app_id):
     if not app.git_clone_url:
         return redirect('repo-source', app_id=app_id)
 
-    errors = []
-    success = git_clone(app, errors)
-
-    return render(
-        request,
-        'app/done_next.html',
-        {
-            'errors': '' if success else errors,
-            'step': 'Repo Klonen',
-            'next': reverse('ca-overwrite', args=[app_id]),
-        },
-    )
+    return _clone_and_render(request, app)
 
 
 @owner_of_app

@@ -1115,8 +1115,11 @@ class RepoSourceTests(TestCase):
         self.assertNotContains(resp, 'GitHub App installieren')
 
     def test_clone_action_validates_and_saves_url(self):
-        """Clone URL path is for public repos; no GitHub access check is performed."""
-        with mock.patch('adminconsole.util.git.test_localhost', return_value=True):
+        """Clone URL path runs clone directly and redirects to overwrite check on success."""
+        with (
+            mock.patch('adminconsole.util.git.test_localhost', return_value=True),
+            mock.patch('adminconsole.util.git.git_clone', return_value=True),
+        ):
             resp = self.client.post(
                 f'/ca/source/{self.app.id}/',
                 {'action': 'clone', 'clone_url': 'https://github.com/user/repo.git'},
@@ -1124,12 +1127,15 @@ class RepoSourceTests(TestCase):
         self.app.refresh_from_db()
         self.assertEqual(self.app.git_clone_url, 'https://github.com/user/repo.git')
         self.assertRedirects(
-            resp, f'/ca/clonerepo/{self.app.id}/', fetch_redirect_response=False
+            resp, f'/ca/overwrite/{self.app.id}/', fetch_redirect_response=False
         )
 
     def test_clone_action_accepts_non_github_url(self):
-        """Non-GitHub URLs (e.g., GitLab) are accepted without any access check."""
-        with mock.patch('adminconsole.util.git.test_localhost', return_value=True):
+        """Non-GitHub URLs (e.g., GitLab) are accepted and redirect to overwrite check on success."""
+        with (
+            mock.patch('adminconsole.util.git.test_localhost', return_value=True),
+            mock.patch('adminconsole.util.git.git_clone', return_value=True),
+        ):
             resp = self.client.post(
                 f'/ca/source/{self.app.id}/',
                 {'action': 'clone', 'clone_url': 'https://gitlab.com/user/repo.git'},
@@ -1137,7 +1143,7 @@ class RepoSourceTests(TestCase):
         self.app.refresh_from_db()
         self.assertEqual(self.app.git_clone_url, 'https://gitlab.com/user/repo.git')
         self.assertRedirects(
-            resp, f'/ca/clonerepo/{self.app.id}/', fetch_redirect_response=False
+            resp, f'/ca/overwrite/{self.app.id}/', fetch_redirect_response=False
         )
 
     def test_clone_action_rejects_invalid_url(self):
@@ -1238,8 +1244,12 @@ class SelectRepoTests(TestCase):
         self.assertContains(resp, 'myorg/repo1')
 
     def test_post_selects_repo_and_saves_url(self):
-        with mock.patch(
-            'adminconsole.views.git.list_installation_repos', return_value=[]
+        """Selecting a repo runs clone and redirects to overwrite check on success."""
+        with (
+            mock.patch(
+                'adminconsole.views.git.list_installation_repos', return_value=[]
+            ),
+            mock.patch('adminconsole.views.git.git_clone', return_value=True),
         ):
             resp = self.client.post(
                 f'/ca/repo/{self.app.id}/',
@@ -1250,7 +1260,7 @@ class SelectRepoTests(TestCase):
         self.app.refresh_from_db()
         self.assertEqual(self.app.git_clone_url, 'https://github.com/myorg/repo1.git')
         self.assertRedirects(
-            resp, f'/ca/clonerepo/{self.app.id}/', fetch_redirect_response=False
+            resp, f'/ca/overwrite/{self.app.id}/', fetch_redirect_response=False
         )
 
     def test_redirects_to_source_when_no_github_key(self):
