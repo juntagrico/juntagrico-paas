@@ -31,6 +31,7 @@ def create(request, app_id):
             existing.git_clone_url = prod_app.git_clone_url
             existing.git_branch = prod_app.git_branch
             existing.port = 10000 + prod_app.port
+            existing.wsgi = prod_app.wsgi
             existing.installation_pending = True
             existing.save()
             staging_app = existing
@@ -41,6 +42,7 @@ def create(request, app_id):
                 git_branch=prod_app.git_branch,
                 user=request.user,
                 port=10000 + prod_app.port,
+                wsgi=prod_app.wsgi,
                 staging_of=prod_app,
                 version=2,
                 installation_pending=True,

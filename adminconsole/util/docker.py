@@ -45,7 +45,7 @@ def _run_in_temp_container(app, name, command, mounts=None, user=None, extra_env
         mounts = mounts + [
             Mount(
                 target='/code/',
-                source=str(app.dir / 'code'),
+                source=str(app.code_dir),
                 type='bind',
                 read_only=True,
             )
