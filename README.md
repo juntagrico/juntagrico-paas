@@ -130,6 +130,16 @@ systemctl start gunicorn
 systemctl status gunicorn
 ```
 
+### Clear expired sessions
+
+Install the systemd timer to clear expired Django sessions daily at 01:10:
+```
+cp setup/timers/juntagrico-clearsessions.timer /etc/systemd/system/
+cp setup/timers/juntagrico-clearsessions.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now juntagrico-clearsessions.timer
+```
+
 ### Setup reverse proxy
 
 Using nginx

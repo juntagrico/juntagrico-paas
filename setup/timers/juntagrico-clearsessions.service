@@ -1,0 +1,13 @@
+[Unit]
+Description=Clear expired Django sessions
+
+[Service]
+Type=oneshot
+User=juntagrico
+Group=www-data
+EnvironmentFile=/var/django/adminconsole/.venv/env.env
+WorkingDirectory=/var/django/adminconsole/
+ExecStart=/var/django/adminconsole/.venv/bin/python manage.py clearsessions
+
+[Install]
+WantedBy=multi-user.target
