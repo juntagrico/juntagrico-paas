@@ -397,14 +397,16 @@ class AdminPasswordTests(TestCase):
         self.assertFalse(self.container.exec_run.called)
 
     def test_reset_admin_password(self):
-        response = self.client.post(f'/app/{self.app.id}/admin-password/')
+        with mock.patch('adminconsole.util.admin._run_in_temp_container') as run_mock:
+            run_mock.return_value = (0, b'')
+            response = self.client.post(f'/app/{self.app.id}/admin-password/')
 
-        args, kwargs = self.container.exec_run.call_args
-        password = kwargs['environment'][PASSWORD_ENV]
+        args, kwargs = run_mock.call_args
+        password = kwargs['extra_env'][PASSWORD_ENV]
         self.assertEqual(
-            args[0], ['python', '-m', 'manage', 'shell', '-c', SET_PASSWORD_SCRIPT]
+            args[2], ['python', '-m', 'manage', 'shell', '-c', SET_PASSWORD_SCRIPT]
         )
-        self.assertNotIn(password, ' '.join(args[0]))
+        self.assertNotIn(password, ' '.join(args[2]))
         self.assertNotEqual(password, 'DBPASSWORD')
         self.assertTemplateUsed(response, 'app/admin_password.html')
         self.assertContains(response, password)
@@ -412,20 +414,12 @@ class AdminPasswordTests(TestCase):
         self.assertNotIn('messages', response.cookies)
 
     def test_reset_admin_password_failures(self):
-        for description, exec_run in [
-            (
-                'no admin user',
-                {'return_value': mock.MagicMock(exit_code=1, output=b'DoesNotExist')},
-            ),
-            ('container not found', {'side_effect': NotFound('no such container')}),
-        ]:
-            with self.subTest(description):
-                self.container.exec_run.reset_mock(return_value=True, side_effect=True)
-                self.container.exec_run.configure_mock(**exec_run)
-                response = self.client.post(f'/app/{self.app.id}/admin-password/')
-                self.assertRedirects(
-                    response, f'/overview/{self.app.id}/', fetch_redirect_response=False
-                )
+        with mock.patch('adminconsole.util.admin._run_in_temp_container') as run_mock:
+            run_mock.return_value = (1, b'DoesNotExist')
+            response = self.client.post(f'/app/{self.app.id}/admin-password/')
+        self.assertRedirects(
+            response, f'/overview/{self.app.id}/', fetch_redirect_response=False
+        )
 
     def test_set_password_script(self):
         # run the script that is executed in the app container against this test database
@@ -1070,57 +1064,51 @@ class CreateDatabaseTests(TestCase):
                 self.assertFalse(result)
 
 
-# The create_admin_user utility creates the admin user in a container (idempotent).
+# The create_admin_user utility creates the admin user in a temporary container (idempotent).
 class CreateAdminUserTests(TestCase):
     def setUp(self):
-        patcher = mock.patch('docker.from_env')
-        self.docker_mock = patcher.start().return_value
-        self.addCleanup(patcher.stop)
-        self.container = self.docker_mock.containers.get.return_value
-        self.container.exec_run.return_value = mock.MagicMock(exit_code=0, output=b'')
+        self.patcher = mock.patch('adminconsole.util.admin._run_in_temp_container')
+        self.run_mock = self.patcher.start().return_value
+        self.addCleanup(self.patcher.stop)
+        self.run_mock.return_value = (0, b'')
 
     def test_creates_admin_successfully(self):
         from adminconsole.util.admin import create_admin_user
 
-        result = create_admin_user('foo', 'SecretPw')
+        app = App.objects.create(name='foo', port=8010)
+        result = create_admin_user(app, 'SecretPw')
         self.assertTrue(result)
-        args, kwargs = self.container.exec_run.call_args
+        self.run_mock.assert_called_once()
+        args, kwargs = self.run_mock.call_args
         self.assertEqual(
-            args[0], ['python', '-m', 'manage', 'createadmin', '--noinput']
+            args[2], ['python', '-m', 'manage', 'createadmin', '--noinput']
         )
-        self.assertEqual(kwargs['environment']['DJANGO_SUPERUSER_PASSWORD'], 'SecretPw')
+        self.assertEqual(kwargs['extra_env']['DJANGO_SUPERUSER_PASSWORD'], 'SecretPw')
 
     def test_fallback_sets_password_when_user_exists(self):
         """When createadmin fails (user exists), set_admin_password is called as fallback."""
         from adminconsole.util.admin import create_admin_user, PASSWORD_ENV
 
+        app = App.objects.create(name='foo', port=8010)
         # First call (createadmin) fails, second call (set_admin_password fallback) succeeds
-        self.container.exec_run.side_effect = [
-            mock.MagicMock(exit_code=1, output=b'User exists'),
-            mock.MagicMock(exit_code=0, output=b''),
+        self.run_mock.side_effect = [
+            (1, b'User exists'),
+            (0, b''),
         ]
-        result = create_admin_user('foo', 'NewPw')
+        result = create_admin_user(app, 'NewPw')
         self.assertTrue(result)
         # Should be called twice: first createadmin, then set_admin_password
-        self.assertEqual(self.container.exec_run.call_count, 2)
-        second_call = self.container.exec_run.call_args_list[1]
-        self.assertEqual(second_call.kwargs['environment'][PASSWORD_ENV], 'NewPw')
-
-    def test_returns_false_when_container_not_found(self):
-        from adminconsole.util.admin import create_admin_user
-
-        self.docker_mock.containers.get.side_effect = NotFound('no such container')
-        result = create_admin_user('foo', 'pw')
-        self.assertFalse(result)
+        self.assertEqual(self.run_mock.call_count, 2)
+        second_call = self.run_mock.call_args_list[1]
+        self.assertEqual(second_call.kwargs['extra_env'][PASSWORD_ENV], 'NewPw')
 
     def test_returns_false_when_fallback_fails(self):
         """When both createadmin and the fallback fail, return False."""
         from adminconsole.util.admin import create_admin_user
 
-        self.container.exec_run.return_value = mock.MagicMock(
-            exit_code=1, output=b'Error'
-        )
-        result = create_admin_user('foo', 'pw')
+        app = App.objects.create(name='foo', port=8010)
+        self.run_mock.return_value = (1, b'Error')
+        result = create_admin_user(app, 'pw')
         self.assertFalse(result)
 
 

@@ -79,18 +79,20 @@ class Command(BaseCommand):
         print('# Cronjob einrichten', flush=True)
         create_default_cronjobs(app)
         if not install_cronjobs_for_app(app):
-            print('Cronjob einrichten fehlgeschlagen', flush=True)
-            print('Return 1')
+            print('Cronjob einrichten fehlgeschlagen')
+            print('Return 1', flush=True)
             return
-        print('Return 0')
+        print('Cronjob eingerichtet')
+        print('Return 0', flush=True)
 
         # --- Step 5: Create admin user (idempotent) ---
         print('# Admin erstellen', flush=True)
-        if not create_admin_user(app.name, password):
-            print('Admin erstellen fehlgeschlagen', flush=True)
-            print('Return 1')
+        if not create_admin_user(app, password):
+            print('Admin erstellen fehlgeschlagen')
+            print('Return 1', flush=True)
             return
-        print('Return 0')
+        print('Admin erstellt')
+        print('Return 0', flush=True)
 
         # --- Collect version at the very end (non-fatal) ---
         print('# Collect Version', flush=True)

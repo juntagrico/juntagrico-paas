@@ -1,4 +1,4 @@
-import docker
+from adminconsole.util.docker import _run_in_temp_container
 
 ADMIN_USERNAME = 'admin'
 # passes the password to commands, so it does not appear in command lines or the process list
@@ -13,33 +13,33 @@ user.save()
 """
 
 
-def set_admin_password(container, password):
-    """sets the password of the admin user of the app running in the container, returns the exec result"""
-    return container.exec_run(
+def set_admin_password_in_container(app, password):
+    """Set the admin password in a temporary container, returns exit code."""
+    exit_code, _ = _run_in_temp_container(
+        app,
+        f'{app.name}-admin-password',
         ['python', '-m', 'manage', 'shell', '-c', SET_PASSWORD_SCRIPT],
-        environment={PASSWORD_ENV: password},
+        extra_env={PASSWORD_ENV: password},
     )
+    return exit_code
 
 
-def create_admin_user(app_name, password):
-    """Create the admin user in the app container (idempotent).
+def create_admin_user(app, password):
+    """Create the admin user using a temporary container (idempotent).
     Returns True on success, False on failure.
     """
-    try:
-        container = docker.from_env().containers.get(app_name)
-    except docker.errors.NotFound:
-        return False
-
-    # Try to create the admin user; if it already exists, just set the password
-    result = container.exec_run(
+    # Try to create the admin user
+    exit_code, _ = _run_in_temp_container(
+        app,
+        f'{app.name}-admin',
         ['python', '-m', 'manage', 'createadmin', '--noinput'],
-        environment={
+        extra_env={
             'DJANGO_SUPERUSER_USERNAME': ADMIN_USERNAME,
             'DJANGO_SUPERUSER_PASSWORD': password,
             'DJANGO_SUPERUSER_EMAIL': 'admin@example.com',
         },
     )
     # If user already exists (exit code 1 for createsuperuser --noinput), set password instead
-    if result.exit_code != 0:
-        result = set_admin_password(container, password)
-    return result.exit_code == 0
+    if exit_code != 0:
+        exit_code = set_admin_password_in_container(app, password)
+    return exit_code == 0

@@ -20,7 +20,7 @@ from adminconsole.decorators import owner_of_app
 from adminconsole.forms import EnvForm, BranchForm, AppEnvVarFormSet
 from adminconsole.models import App
 from adminconsole.util import generate_password, parse_log_file, _mask_value
-from adminconsole.util.admin import ADMIN_USERNAME, set_admin_password
+from adminconsole.util.admin import ADMIN_USERNAME, set_admin_password_in_container
 from adminconsole.util.docker import create_container, stop_container
 from adminconsole.util.git import git_switch, git_current_branch
 from adminconsole.util.log_parsing import parse_log_line, format_timestamp
@@ -68,12 +68,8 @@ def stop(request, app_id):
 def reset_admin_password(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     password = generate_password()
-    try:
-        result = set_admin_password(app.container, password)
-    except DockerException as e:
-        messages.error(request, str(e))
-        return redirect('overview', app.id)
-    if result.exit_code != 0:
+    exit_code = set_admin_password_in_container(app, password)
+    if exit_code != 0:
         messages.error(
             request,
             f'Das Passwort konnte nicht gesetzt werden. Gibt es den Benutzer «{ADMIN_USERNAME}»?',

@@ -31,7 +31,7 @@ def get_container_env_and_network(app, client):
     return environment, network_kwargs
 
 
-def _run_in_temp_container(app, name, command, mounts=None, user=None):
+def _run_in_temp_container(app, name, command, mounts=None, user=None, extra_env=None):
     """
     Run a command in a temporary container with the latest environment.
     Returns (exit_code, output_bytes, error_bytes).
@@ -51,6 +51,8 @@ def _run_in_temp_container(app, name, command, mounts=None, user=None):
             )
         ]
     environment, network_kwargs = get_container_env_and_network(app, client)
+    if extra_env:
+        environment = environment + [f'{k}={v}' for k, v in extra_env.items()]
     kwargs = {
         'image': app.image_tag,
         'environment': environment,
