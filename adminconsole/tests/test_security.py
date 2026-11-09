@@ -1346,6 +1346,10 @@ class EnvFormViewTests(TestCase):
             'juntagrico_email_port': '587',
             'juntagrico_email_security': 'none',
             'skip_check': '',
+            'env_vars-TOTAL_FORMS': '0',
+            'env_vars-INITIAL_FORMS': '0',
+            'env_vars-MIN_NUM_FORMS': '0',
+            'env_vars-MAX_NUM_FORMS': '50',
         }
         with (
             mock.patch('subprocess.Popen') as mock_popen,

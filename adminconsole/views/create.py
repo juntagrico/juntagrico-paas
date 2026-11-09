@@ -11,7 +11,13 @@ from django.urls import reverse
 from adminconsole.config import test_localhost
 from adminconsole.decorators import owner_of_app
 from adminconsole.models import App
-from adminconsole.forms import ProjectForm, AppForm, OverwriteAppForm, EnvForm
+from adminconsole.forms import (
+    ProjectForm,
+    AppForm,
+    OverwriteAppForm,
+    EnvForm,
+    AppEnvVarFormSet,
+)
 from adminconsole.util import generate_password
 from adminconsole.util.admin import PASSWORD_ENV
 from adminconsole.util.create_app import find_port
@@ -108,8 +114,10 @@ def env_form(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     if request.method == 'POST':
         form = EnvForm(request.POST, instance=app.env)
-        if form.is_valid():
+        formset = AppEnvVarFormSet(request.POST, instance=app.env)
+        if form.is_valid() and formset.is_valid():
             form.save()
+            formset.save()
             # Generate admin password and pass it safely via environment variable
             password = generate_password()
             with open(app.log_file, 'wb') as out:
@@ -134,4 +142,7 @@ def env_form(request, app_id):
             )
     else:
         form = EnvForm(instance=app.env)
-    return render(request, 'app/env.html', {'form': form, 'app': app})
+        formset = AppEnvVarFormSet(instance=app.env)
+    return render(
+        request, 'app/env.html', {'form': form, 'formset': formset, 'app': app}
+    )
