@@ -27,7 +27,7 @@ from adminconsole.util.log_parsing import parse_log_line, format_timestamp
 from adminconsole.views.generic import (
     confirm_post,
     confirm_password,
-    security_log,
+    audit_log,
     client_address,
 )
 
@@ -36,7 +36,9 @@ from adminconsole.views.generic import (
 @owner_of_app
 def start(request, app_id):
     app = get_object_or_404(App, pk=app_id)
-
+    audit_log.info(
+        '%s starts %s from %s', request.user, app.name, client_address(request)
+    )
     if app.staging_of:
         app.renew()
 
@@ -53,7 +55,9 @@ def start(request, app_id):
 @owner_of_app
 def stop(request, app_id):
     app = get_object_or_404(App, pk=app_id)
-
+    audit_log.info(
+        '%s stops %s from %s', request.user, app.name, client_address(request)
+    )
     try:
         stop_container(app.name)
     except (DockerException, APIError) as e:
@@ -67,6 +71,12 @@ def stop(request, app_id):
 @never_cache
 def reset_admin_password(request, app_id):
     app = get_object_or_404(App, pk=app_id)
+    audit_log.info(
+        '%s resets admin password of %s from %s',
+        request.user,
+        app.name,
+        client_address(request),
+    )
     password = generate_password()
     exit_code = set_admin_password_in_container(app, password)
     if exit_code != 0:
@@ -141,6 +151,12 @@ def env(request, app_id):
         if form.is_valid() and formset.is_valid():
             form.save()
             formset.save()
+            audit_log.info(
+                '%s updates settings of %s from %s',
+                request.user,
+                app.name,
+                client_address(request),
+            )
             # Only restart the container if it currently exists
             container_exists = False
             try:
@@ -264,6 +280,13 @@ def change_branch(request, app_id):
         if form.is_valid():
             error = git_switch(app, form.cleaned_data['branch'])
             success = not error
+            audit_log.info(
+                '%s changes branch of %s to %s from %s',
+                request.user,
+                app.name,
+                form.cleaned_data['branch'],
+                client_address(request),
+            )
 
     form = BranchForm(initial={'branch': git_current_branch(app)})
     return render(
@@ -277,6 +300,12 @@ def change_branch(request, app_id):
 @confirm_post('Depotliste generieren', 'Depotliste erzeugen')
 def generate_depot_list(request, app_id):
     app = get_object_or_404(App, pk=app_id)
+    audit_log.info(
+        '%s generates depot list of %s from %s',
+        request.user,
+        app.name,
+        client_address(request),
+    )
     name = app.name
     client = docker.from_env()
     container = client.containers.get(name)
@@ -326,7 +355,7 @@ def mailtexts(request, app_id):
 def dumpdata(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     name = app.name
-    security_log.info(
+    audit_log.info(
         '%s exports JSON of %s from %s', request.user, name, client_address(request)
     )
     client = docker.from_env()
@@ -356,7 +385,7 @@ def dumpdata(request, app_id):
 def pgdump(request, app_id):
     app = get_object_or_404(App, pk=app_id)
     name = app.name
-    security_log.info(
+    audit_log.info(
         '%s exports SQL of %s from %s', request.user, name, client_address(request)
     )
     db_user = settings.DATABASES['default']['USER']

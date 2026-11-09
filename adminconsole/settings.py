@@ -167,8 +167,8 @@ LOGGING = {
             'handlers': ['console'],
             'level': 'WARNING',
         },
-        # exports and failed password confirmations, in the log of gunicorn (journalctl -u gunicorn)
-        'adminconsole.security': {
+        # user actions (exports, password failures, app operations), in the log of gunicorn (journalctl -u gunicorn)
+        'adminconsole.audit': {
             'handlers': ['console'],
             'level': 'INFO',
             'propagate': False,

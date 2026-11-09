@@ -7,6 +7,7 @@ from django.urls import reverse
 from adminconsole.decorators import owner_of_app
 from adminconsole.forms import CronjobForm
 from adminconsole.models import App
+from adminconsole.views.generic import audit_log, client_address
 
 
 @owner_of_app
@@ -16,6 +17,12 @@ def manage(request, app_id):
         form = CronjobForm(request.POST, app=app)
         if form.is_valid():
             form.save()
+            audit_log.info(
+                '%s installs cronjobs for %s from %s',
+                request.user,
+                app.name,
+                client_address(request),
+            )
             with open(app.log_file, 'wb') as out:
                 out.write(b'# Cronjobs erstellen\n')
                 proc = subprocess.Popen(  # nosec: B603

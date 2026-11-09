@@ -12,6 +12,7 @@ from adminconsole.decorators import owner_of_app
 from adminconsole.forms import PythonVersionForm, RedeployForm
 from adminconsole.models import App
 from adminconsole.util import pid_finished
+from adminconsole.views.generic import audit_log, client_address
 
 
 def _spawn_redeploy(app, step_title, extra_args=None, copy_data=False):
@@ -58,6 +59,14 @@ def set_version(request, app_id):
     old_version = app.version
     app.version = version
     app.save()
+    audit_log.info(
+        '%s changes infrastructure version of %s from V%s to V%s from %s',
+        request.user,
+        app.name,
+        old_version,
+        version,
+        client_address(request),
+    )
     messages.success(
         request, f'Infrastruktur-Version geändert von V{old_version} nach V{version}.'
     )
@@ -74,6 +83,13 @@ def redeploy(request, app_id, upgrade=False):
 
     if request.method == 'POST':
         extra_args = ['--upgrade'] if upgrade else []
+        audit_log.info(
+            '%s %s %s from %s',
+            request.user,
+            'upgrades' if upgrade else 'redeployes',
+            app.name,
+            client_address(request),
+        )
         return _spawn_redeploy(app, 'Upgrade' if upgrade else 'Redeploy', extra_args)
 
     return render(
@@ -91,6 +107,12 @@ def redeploy_with_form(request, app):
     if request.method == 'POST':
         form = RedeployForm(request.POST, app=app)
         if form.is_valid():
+            audit_log.info(
+                '%s redeployes %s from %s',
+                request.user,
+                app.name,
+                client_address(request),
+            )
             # Save the adjusted values
             app.python_version = form.cleaned_data['python_version']
             app.set_branch(form.cleaned_data['branch'])
@@ -197,6 +219,13 @@ def set_python_version(request, app_id):
         form = PythonVersionForm(request.POST, instance=app)
         if form.is_valid():
             form.save()
+            audit_log.info(
+                '%s changes Python version of %s to %s from %s',
+                request.user,
+                app.name,
+                app.python_version,
+                client_address(request),
+            )
             success = True
     else:
         form = PythonVersionForm(instance=app)

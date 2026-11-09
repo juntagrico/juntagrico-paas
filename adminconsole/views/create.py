@@ -22,6 +22,7 @@ from adminconsole.util import generate_password
 from adminconsole.util.admin import ADMIN_USERNAME, PASSWORD_ENV
 from adminconsole.util.create_app import find_port
 from adminconsole.util.git import git_push_app
+from adminconsole.views.generic import audit_log, client_address
 
 
 @login_required
@@ -37,6 +38,12 @@ def app_form(request):
         form = AppForm(request.POST, instance=app)
         if form.is_valid():
             form.save()
+            audit_log.info(
+                '%s creates app %s from %s',
+                request.user,
+                app.name,
+                client_address(request),
+            )
             return redirect('repo-source', app_id=app.id)
     else:
         form = AppForm()

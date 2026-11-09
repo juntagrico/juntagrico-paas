@@ -9,6 +9,7 @@ from django.shortcuts import get_object_or_404, render, redirect
 
 from adminconsole.decorators import owner_of_app
 from adminconsole.models import App
+from adminconsole.views.generic import audit_log, client_address
 
 
 @owner_of_app
@@ -17,6 +18,12 @@ def update_permissions(request, app_id):
     cmd = ['python', '-m', 'manage', 'update_permissions']
     container = docker.from_env().containers.get(app.name)
     if request.method == 'POST':
+        audit_log.info(
+            '%s updates permissions of %s from %s',
+            request.user,
+            app.name,
+            client_address(request),
+        )
         result = container.exec_run(cmd)
         messages.success(request, result[1].decode().split('\n')[-2])
         return redirect('overview', app_id)

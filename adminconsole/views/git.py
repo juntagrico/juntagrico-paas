@@ -13,7 +13,7 @@ from adminconsole.util.git import (
     validate_clone_url,
     list_installation_repos,
 )
-from adminconsole.views.generic import confirm_post
+from adminconsole.views.generic import confirm_post, audit_log, client_address
 
 
 def continue_setup(request, to='repo-source'):
@@ -190,4 +190,10 @@ def clone_repo(request, app_id):
     if not app.git_clone_url:
         return redirect('repo-source', app_id=app_id)
 
+    audit_log.info(
+        '%s clones repo of %s from %s',
+        request.user,
+        app.name,
+        client_address(request),
+    )
     return _clone_and_render(request, app)

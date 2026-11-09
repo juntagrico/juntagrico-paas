@@ -9,6 +9,7 @@ from django.views.decorators.http import require_POST
 from adminconsole.decorators import owner_of_app
 from adminconsole.models import App
 from adminconsole.util import parse_log_file
+from adminconsole.views.generic import audit_log, client_address
 
 
 @owner_of_app
@@ -24,6 +25,12 @@ def create(request, app_id):
         return redirect('overview', existing.id)
 
     if request.method == 'POST':
+        audit_log.info(
+            '%s creates staging for %s from %s',
+            request.user,
+            prod_app.name,
+            client_address(request),
+        )
         if existing and existing.installation_pending:
             # Staging exists but installation failed or is pending, reuse it
             # Reset properties in case production app changed since the last attempt
@@ -90,7 +97,12 @@ def create(request, app_id):
 @owner_of_app
 def clone_db(request, app_id):
     app = get_object_or_404(App, pk=app_id)
-
+    audit_log.info(
+        '%s clones database of %s from %s',
+        request.user,
+        app.name,
+        client_address(request),
+    )
     with open(app.log_file, 'wb') as out:
         proc = subprocess.Popen(  # nosec: B603
             [settings.PYTHON_BIN, '-m', 'manage', 'clone_db', app.name],
@@ -113,7 +125,12 @@ def clone_db(request, app_id):
 @owner_of_app
 def renew(request, app_id):
     app = get_object_or_404(App, pk=app_id)
-
+    audit_log.info(
+        '%s renews staging %s from %s',
+        request.user,
+        app.name,
+        client_address(request),
+    )
     app.renew()
 
     return redirect('overview', app.id)

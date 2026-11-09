@@ -12,7 +12,7 @@ from adminconsole.models import App
 from adminconsole.util import pid_finished
 from adminconsole.util.docker import get_container_statuses
 
-security_log = logging.getLogger('adminconsole.security')
+audit_log = logging.getLogger('adminconsole.audit')
 
 # wrong passwords in a row before the session is logged out
 MAX_PASSWORD_FAILURES = 5
@@ -64,7 +64,7 @@ def confirm_password(page_title, button_text):
                     return view(request, *args, **kwargs)
                 failures = request.session.get('password_failures', 0) + 1
                 request.session['password_failures'] = failures
-                security_log.warning(
+                audit_log.warning(
                     'wrong password (%d) for %s by %s from %s',
                     failures,
                     request.path,

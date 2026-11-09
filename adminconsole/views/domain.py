@@ -9,6 +9,7 @@ from django.views.decorators.http import require_POST
 from adminconsole.decorators import owner_of_app, owner_of_domain
 from adminconsole.forms import DomainForm
 from adminconsole.models import App, Domain
+from adminconsole.views.generic import audit_log, client_address
 
 
 @owner_of_app
@@ -18,6 +19,13 @@ def manage(request, app_id):
         form = DomainForm(request.POST, app=app)
         if form.is_valid():
             domain = form.save()
+            audit_log.info(
+                '%s adds domain %s to %s from %s',
+                request.user,
+                domain.name,
+                app.name,
+                client_address(request),
+            )
             with open(app.log_file, 'wb') as out:
                 out.write('# Domain hinzufügen\n'.encode())
                 proc = subprocess.Popen(  # nosec: B603
@@ -53,6 +61,13 @@ def add(request, app_id, pid):
 def remove(request, domain_id):
     domain = get_object_or_404(Domain, pk=domain_id)
     app = domain.app
+    audit_log.info(
+        '%s removes domain %s from %s from %s',
+        request.user,
+        domain.name,
+        app.name,
+        client_address(request),
+    )
     domain.delete()
     return redirect(reverse('domain-manage', args=[app.id]))
 
@@ -61,6 +76,13 @@ def remove(request, domain_id):
 @require_POST
 def renew(request, domain_id):
     domain = get_object_or_404(Domain, pk=domain_id)
+    audit_log.info(
+        '%s renews domain %s of %s from %s',
+        request.user,
+        domain.name,
+        domain.app.name,
+        client_address(request),
+    )
     with open(domain.app.log_file, 'wb') as out:
         out.write('# Domain erneuern\n'.encode())
         proc = subprocess.Popen(  # nosec: B603
