@@ -101,7 +101,7 @@ def repo_source(request, app_id):
                 messages.error(request, error)
                 return render(
                     request,
-                    'repo_source.html',
+                    'git/repo_source.html',
                     {'app': app, 'initial_url': clone_url},
                 )
             # Clone URL validation succeeded — save the URL and proceed to clone
@@ -118,7 +118,7 @@ def repo_source(request, app_id):
 
     return render(
         request,
-        'repo_source.html',
+        'git/repo_source.html',
         {'app': app, 'has_installation': has_installation},
     )
 
@@ -159,7 +159,7 @@ def select_repo(request, app_id):
 
     return render(
         request,
-        'select_repo.html',
+        'git/select_repo.html',
         {'app': app, 'installation_id': installation_id, 'repos': repos},
     )
 
@@ -174,7 +174,7 @@ def _clone_and_render(request, app):
         return redirect(next_url)
     return render(
         request,
-        'app/done_next.html',
+        'flow/done_next.html',
         {
             'errors': errors,
             'step': 'Repo Klonen',

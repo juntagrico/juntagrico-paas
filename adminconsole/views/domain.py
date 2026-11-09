@@ -45,7 +45,7 @@ def add(request, app_id, pid):
         'pid': pid,
         'next': reverse('show-result', args=[app.id]),
     }
-    return render(request, 'app/wait_next.html', render_dict)
+    return render(request, 'flow/wait_next.html', render_dict)
 
 
 @owner_of_domain

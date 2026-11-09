@@ -137,7 +137,7 @@ def env_form(request, app_id):
                 )
             return render(
                 request,
-                'setup_result.html',
+                'flow/setup_result.html',
                 {
                     'step': 'App einrichten',
                     'page_title': 'App einrichten',

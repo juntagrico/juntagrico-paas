@@ -119,7 +119,7 @@ def overview(request, app_id):
         'staging_running': staging_running,
         'has_2fa': user_has_device(request.user),
     }
-    return render(request, 'overview.html', renderdict)
+    return render(request, 'app/overview.html', renderdict)
 
 
 @owner_of_app
@@ -129,7 +129,7 @@ def show_result(request, app_id):
 
     return render(
         request,
-        'app/show_result.html',
+        'flow/show_result.html',
         {'app': app, 'sections': sections, 'overall_failed': overall_failed},
     )
 
@@ -161,7 +161,7 @@ def env(request, app_id):
                     )
                 return render(
                     request,
-                    'app/wait_next.html',
+                    'flow/wait_next.html',
                     {
                         'step': 'Einstellungen anwenden',
                         'pid': proc.pid,
@@ -290,7 +290,7 @@ def generate_depot_list(request, app_id):
         'step': 'Depotliste generieren',
         'next': reverse('overview', args=[app.id]),
     }
-    return render(request, 'app/done_next.html', render_dict)
+    return render(request, 'flow/done_next.html', render_dict)
 
 
 @owner_of_app
@@ -320,7 +320,7 @@ def mailtexts(request, app_id):
         del sections['Log']
     return render(
         request,
-        'app/show_result.html',
+        'flow/show_result.html',
         {'app': app, 'sections': sections, 'title': 'Email-Texte'},
     )
 

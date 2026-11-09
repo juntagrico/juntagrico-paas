@@ -20,7 +20,7 @@
                 <div class="px-3 py-2{% if forloop.counter|divisibleby:2 %} bg-light{% endif %}">
                     <div style="font-weight: 600;"><code class="text-dark">{{ setting.key }}</code></div>
                     <div class="mt-1">
-                        {% include 'extras/render_value.html' with value=setting.value %}
+                        {% include 'fragments/render_value.html' with value=setting.value %}
                     </div>
                 </div>
             {% empty %}

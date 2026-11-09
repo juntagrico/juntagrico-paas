@@ -64,7 +64,7 @@ def create(request, app_id):
 
         return render(
             None,  # request not needed for this template
-            'wait_redeploy.html',
+            'flow/wait_redeploy.html',
             {
                 'page_title': f'Staging für {prod_app.name} einrichten',
                 'step': 'Staging einrichten',
@@ -98,7 +98,7 @@ def clone_db(request, app_id):
 
     return render(
         request,
-        'app/wait_next.html',
+        'flow/wait_next.html',
         {
             'step': 'Datenbank neu erstellen und kopieren',
             'pid': proc.pid,

@@ -112,7 +112,7 @@ class StagingCreationTests(TestCase):
             resp = self.client.post(reverse('staging-create', args=[self.prod_app.id]))
 
         self.assertEqual(resp.status_code, 200)
-        self.assertTemplateUsed(resp, 'wait_redeploy.html')
+        self.assertTemplateUsed(resp, 'flow/wait_redeploy.html')
         staging = App.objects.get(name='prod-app-staging')
         self.assertEqual(staging.staging_of, self.prod_app)
         self.assertEqual(staging.git_clone_url, self.prod_app.git_clone_url)
@@ -532,7 +532,7 @@ class StagingCreationTests(TestCase):
             mock_running.return_value = False
             resp = self.client.get(reverse('overview', args=[staging.id]))
         self.assertEqual(resp.status_code, 200)
-        self.assertTemplateUsed(resp, 'overview.html')
+        self.assertTemplateUsed(resp, 'app/overview.html')
 
     def test_overview_redirects_pending_prod_to_env_form(self):
         """Overview redirects production app with installation_pending to env form."""
@@ -591,7 +591,7 @@ class StagingCreationTests(TestCase):
             resp = self.client.post(reverse('staging-clone-db', args=[staging.id]))
 
         self.assertEqual(resp.status_code, 200)
-        self.assertTemplateUsed(resp, 'app/wait_next.html')
+        self.assertTemplateUsed(resp, 'flow/wait_next.html')
         call_args = mock_popen.call_args
         self.assertIn('clone_db', call_args[0][0])
 

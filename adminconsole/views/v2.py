@@ -34,7 +34,7 @@ def _spawn_redeploy(app, step_title, extra_args=None, copy_data=False):
 
     return render(
         None,  # request not needed for this template
-        'wait_redeploy.html',
+        'flow/wait_redeploy.html',
         {
             'page_title': app.name,
             'step': step_title,

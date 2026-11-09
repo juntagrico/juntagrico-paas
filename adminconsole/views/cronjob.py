@@ -25,7 +25,7 @@ def manage(request, app_id):
                 )
             return render(
                 request,
-                'app/wait_next.html',
+                'flow/wait_next.html',
                 {
                     'step': 'Cronjobs installieren',
                     'pid': proc.pid,

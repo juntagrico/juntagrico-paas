@@ -120,7 +120,7 @@ def home(request):
 
     return render(
         request,
-        'home.html',
+        'generic/home.html',
         {
             'grouped_apps': dict(sorted(grouped_apps.items())),
             'number_of_apps': number_of_apps,
@@ -141,7 +141,7 @@ def profile(request):
             return redirect('/')
     else:
         form = ProfileForm({'email': user.email})
-    return render(request, 'profile.html', {'form': form})
+    return render(request, 'generic/profile.html', {'form': form})
 
 
 @login_required
