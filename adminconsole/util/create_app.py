@@ -35,6 +35,14 @@ def ensure_dirs(app):
         app.dir.mkdir(parents=True, exist_ok=True)
         (app.dir / app.STATIC_DIR).mkdir(parents=True, exist_ok=True)
         (app.dir / app.MEDIA_DIR).mkdir(parents=True, exist_ok=True)
+
+        if app.version < 3:
+            # For version < 3 apps, the code directory is mounted read-only at /code/
+            # and the static volume is mounted at /code/static/.  The static subdirectory
+            # must exist inside the code directory so Docker can create the mount point
+            # on top of the read-only overlay.
+            (app.code_dir / app.STATIC_DIR).mkdir(parents=True, exist_ok=True)
+            (app.code_dir / app.MEDIA_DIR).mkdir(parents=True, exist_ok=True)
         return True
     except PermissionError:
         return False
