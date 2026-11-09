@@ -99,11 +99,10 @@ def _do_restart(app, name):
 
 def run_parallel_steps(app, name):
     """
-    Run migration, collectstatic, and restart in parallel.
-    All three work tasks start immediately via Futures. The main thread prints
-    each step's header right away, then waits for that Future to print its output.
-    This ensures headers appear before their work completes, while output blocks
-    remain sequential: migration → collectstatic → restart.
+    Run migration and collectstatic in parallel, then restart after collectstatic completes.
+    Migration and collectstatic start immediately via Futures. The restart waits for
+    collectstatic to finish first, because if the app restarts before collectstatic
+    completes, Django may load an incomplete static manifest and fail to recover.
     Returns a list of exit codes for each step.
     """
 
@@ -113,8 +112,8 @@ def run_parallel_steps(app, name):
             print(out.decode('utf-8', errors='replace'), end='', flush=True)
         print(f'Return {code}', flush=True)
 
-    # Submit all work as Futures — they start immediately
-    with ThreadPoolExecutor(max_workers=3) as executor:
+    # Submit migration and collectstatic as Futures — they start immediately
+    with ThreadPoolExecutor(max_workers=2) as executor:
         migrate_future = executor.submit(
             _run_in_temp_container,
             app,
@@ -128,7 +127,6 @@ def run_parallel_steps(app, name):
             'python -m manage collectstatic --noinput -c',
             mounts=[app.static_files_mount(read_only=False)],
         )
-        restart_future = executor.submit(_do_restart, app, name)
 
         # Print migration block: header immediately, output when ready
         print('# Django Migrate', flush=True)
@@ -142,11 +140,12 @@ def run_parallel_steps(app, name):
         _print_output(code, out)
         collectstatic_exit = code
 
-        # Print restart block: header immediately, output when ready
-        print('# Docker Start', flush=True)
-        code, out = restart_future.result()
-        _print_output(code, out)
-        restart_exit = code
+    # Restart only after collectstatic has completed, so the static manifest
+    # is fully written before Django tries to load it
+    print('# Docker Start', flush=True)
+    restart_code, restart_out = _do_restart(app, name)
+    _print_output(restart_code, restart_out)
+    restart_exit = restart_code
 
     return [migrate_exit, collectstatic_exit, restart_exit]
 
