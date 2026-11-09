@@ -1,7 +1,7 @@
 import subprocess  # nosec: B404
 
 from django.core.management import call_command
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
 from adminconsole.util.docker import _run_migration_in_temp_container
 from adminconsole.models import App, AppEnv
@@ -38,7 +38,7 @@ class Command(BaseCommand):
             app.env = app_env
         if not create_database(app.env, app.name, app.name, replace=True):
             print('Return 1')
-            return 1
+            raise CommandError('Database creation failed')
 
         # copy tables from prod app
         print('# Clone Database', flush=True)
@@ -78,14 +78,16 @@ class Command(BaseCommand):
         try:
             dump.communicate(timeout=timeout)
             load.communicate(timeout=timeout)
-        except subprocess.TimeoutExpired:
+        except subprocess.TimeoutExpired as exc:
             dump.kill()
             load.kill()
             dump.wait()
             load.wait()
             print(f'Database clone timed out after {timeout} seconds', flush=True)
             print('Return 1')
-            return 1
+            raise CommandError(
+                f'Database clone timed out after {timeout} seconds'
+            ) from exc
         print('Return 0', flush=True)
 
         if not options.get('no_restart'):
@@ -99,4 +101,4 @@ class Command(BaseCommand):
             result = call_command('restart', app.name)
             print('Return', result, flush=True)
 
-        return 0
+        return

@@ -1,5 +1,5 @@
 from django.core.management import call_command
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 
 from adminconsole.models import App
@@ -63,8 +63,9 @@ class Command(BaseCommand):
 
         if options.get('copy_data'):
             print('# Clone Database', flush=True)
-            result = call_command('clone_db', '--no-restart', app.name)
-            if result != 0:
+            try:
+                call_command('clone_db', '--no-restart', app.name)
+            except CommandError:
                 return
 
         # Run migration, collectstatic, and restart in parallel

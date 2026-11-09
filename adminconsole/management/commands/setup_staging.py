@@ -1,5 +1,5 @@
 from django.core.management import call_command
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
 from adminconsole.models import App, AppEnv
 from adminconsole.util.create_app import setup_domain
@@ -55,10 +55,11 @@ class Command(BaseCommand):
 
         # --- Step 3: Clone database from production (also creates the database) ---
         print('# Clone Database', flush=True)
-        result = call_command(
-            'clone_db', '--no-restart', '--timeout', options['timeout'], app.name
-        )
-        if result != 0:
+        try:
+            call_command(
+                'clone_db', '--no-restart', '--timeout', options['timeout'], app.name
+            )
+        except CommandError:
             print('Return 1')
             return
         # Refresh app.env so the migration container gets the new database password

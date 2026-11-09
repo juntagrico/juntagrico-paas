@@ -302,11 +302,12 @@ class StagingCreationTests(TestCase):
         )
         staging.code_dir.mkdir(parents=True)
 
-        def fake_clone_db(*args, **kwargs):
-            # Simulate clone_db creating a new database password
-            staging.env.juntagrico_database_password = 'new_staging_password'
-            staging.env.save()
-            return 0
+        def fake_call_command(cmd, *args, **kwargs):
+            if cmd == 'clone_db':
+                # Simulate clone_db creating a new database password
+                staging.env.juntagrico_database_password = 'new_staging_password'
+                staging.env.save()
+            return 0 if cmd in ('rebuild', 'collect_version') else None
 
         received_apps = []
 
@@ -317,7 +318,7 @@ class StagingCreationTests(TestCase):
         with (
             mock.patch(
                 'adminconsole.management.commands.setup_staging.call_command',
-                side_effect=fake_clone_db,
+                side_effect=fake_call_command,
             ),
             mock.patch(
                 'adminconsole.management.commands.setup_staging.setup_domain',
@@ -378,10 +379,13 @@ class StagingCreationTests(TestCase):
         )
         staging.code_dir.mkdir(parents=True)
 
+        def fake_call_command(cmd, *args, **kwargs):
+            return 0 if cmd in ('rebuild', 'collect_version') else None
+
         with (
             mock.patch(
                 'adminconsole.management.commands.setup_staging.call_command',
-                return_value=0,
+                side_effect=fake_call_command,
             ),
             mock.patch(
                 'adminconsole.management.commands.setup_staging.setup_domain',
@@ -425,6 +429,8 @@ class StagingCreationTests(TestCase):
 
     def test_setup_staging_aborts_on_clone_db_failure(self):
         """Command stops if clone_db fails."""
+        from django.core.management.base import CommandError
+
         staging = App.objects.create(
             name='staging-app',
             port=18010,
@@ -438,7 +444,7 @@ class StagingCreationTests(TestCase):
             contextlib.redirect_stdout(stdout),
             mock.patch(
                 'adminconsole.management.commands.setup_staging.call_command',
-                return_value=1,
+                side_effect=CommandError('clone failed'),
             ),
         ):
             call_command('setup_staging', staging.name)
@@ -461,7 +467,7 @@ class StagingCreationTests(TestCase):
             contextlib.redirect_stdout(stdout),
             mock.patch(
                 'adminconsole.management.commands.setup_staging.call_command',
-                return_value=0,
+                return_value=None,
             ),
             mock.patch(
                 'adminconsole.management.commands.setup_staging.setup_domain',
@@ -484,11 +490,9 @@ class StagingCreationTests(TestCase):
         staging.code_dir.mkdir(parents=True)
 
         def selective_call_command(cmd, *args, **kwargs):
-            if cmd == 'clone_db':
-                return 0
             if cmd == 'rebuild':
                 return 1
-            return 0
+            return None
 
         stdout = io.StringIO()
         with (
@@ -518,7 +522,7 @@ class StagingCreationTests(TestCase):
         staging.code_dir.mkdir(parents=True)
 
         def selective_call_command(cmd, *args, **kwargs):
-            return 0
+            return None
 
         stdout = io.StringIO()
         with (
@@ -751,8 +755,9 @@ class CloneDbCommandTests(TestCase):
         )
 
     def test_clone_db_timeout_kills_processes(self):
-        """When pg_dump | psql exceeds timeout, processes are killed and command returns 1."""
+        """When pg_dump | psql exceeds timeout, processes are killed and command raises CommandError."""
         import subprocess
+        from django.core.management.base import CommandError
         from adminconsole.management.commands.clone_db import Command
 
         stdout = io.StringIO()
@@ -771,11 +776,9 @@ class CloneDbCommandTests(TestCase):
             )
             mock_popen.side_effect = [load_mock, dump_mock]
             cmd = Command()
-            result = cmd.handle(
-                app_name=[self.staging.name], timeout=300, no_restart=False
-            )
+            with self.assertRaises(CommandError):
+                cmd.handle(app_name=[self.staging.name], timeout=300, no_restart=False)
 
-        self.assertEqual(result, 1)
         dump_mock.kill.assert_called_once()
         load_mock.kill.assert_called_once()
         output = stdout.getvalue()
@@ -785,6 +788,7 @@ class CloneDbCommandTests(TestCase):
     def test_clone_db_default_timeout(self):
         """The default timeout is 300 seconds."""
         import subprocess
+        from django.core.management.base import CommandError
         from adminconsole.management.commands.clone_db import Command
 
         stdout = io.StringIO()
@@ -803,7 +807,8 @@ class CloneDbCommandTests(TestCase):
             )
             mock_popen.side_effect = [load_mock, dump_mock]
             cmd = Command()
-            cmd.handle(app_name=[self.staging.name], timeout=300, no_restart=False)
+            with self.assertRaises(CommandError):
+                cmd.handle(app_name=[self.staging.name], timeout=300, no_restart=False)
 
         output = stdout.getvalue()
         self.assertIn('300', output)
