@@ -11,6 +11,7 @@ from adminconsole.util.create_app import (
     setup_domain,
 )
 from adminconsole.util.docker import run_parallel_steps
+from adminconsole.util.git import git_pull
 from adminconsole.management.commands.install_cronjob import install_cronjobs_for_app
 
 
@@ -39,6 +40,16 @@ class Command(BaseCommand):
             return
         print('Datenbank erstellt', flush=True)
         print('Return 0')
+
+        # --- Step 1.5: Pull latest code for v2 apps ---
+        if app.version == 2:
+            print('# Git Pull (v2)', flush=True)
+            pull_result = git_pull(app)
+            if pull_result != 0:
+                print('Git Pull fehlgeschlagen', flush=True)
+                print('Return 1')
+                return
+            print('Return 0')
 
         # --- Step 2: Redeploy (idempotent) ---
         print('# Docker Rebuild', flush=True)
