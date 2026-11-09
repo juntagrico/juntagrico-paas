@@ -45,9 +45,12 @@ def create_database(app_env, db_name, user_name, replace=False):
         )
         with connection.cursor() as cursor:
             if replace:
-                cursor.execute(f'SET ROLE {user}')
-                cursor.execute(f'DROP DATABASE IF EXISTS {db}')
-                cursor.execute('RESET ROLE')
+                # Only SET ROLE if the user exists (needed to drop its database)
+                cursor.execute(f"SELECT 1 FROM pg_roles WHERE rolname = '{user_name}'")
+                if cursor.fetchone():
+                    cursor.execute(f'SET ROLE {user}')
+                    cursor.execute(f'DROP DATABASE IF EXISTS {db}')
+                    cursor.execute('RESET ROLE')
                 cursor.execute(f'DROP USER IF EXISTS {user}')
                 cursor.execute(f'CREATE USER {user}')
             else:

@@ -989,13 +989,15 @@ class PidCheckTests(TestCase):
 
 # create_database quotes the names; the statements take no parameters.
 class CreateDatabaseTests(TestCase):
-    def statements(self, name, password='ABC123', replace=False):  # nosec: B107
+    def statements(self, name, password='ABC123', replace=False, user_exists=True):  # nosec: B107
         from adminconsole.util.create_app import create_database
 
         app = App.objects.create(name=name, port=8010 + App.objects.count())
         env = AppEnv.objects.create(app=app)
         cursor = mock.MagicMock()
-        cursor.fetchone.return_value = None  # user/db don't exist, so CREATE runs
+        # First fetchone: pg_roles check (user_exists controls SET ROLE path)
+        # Second fetchone: pg_database check (always None so CREATE DATABASE runs)
+        cursor.fetchone.side_effect = [1 if user_exists else None, None]
         with (
             mock.patch('adminconsole.util.create_app.connection') as connection,
             mock.patch(
@@ -1011,6 +1013,7 @@ class CreateDatabaseTests(TestCase):
         self.assertEqual(
             self.statements('foo-staging', replace=True),
             [
+                "SELECT 1 FROM pg_roles WHERE rolname = 'foo_staging'",
                 'SET ROLE "foo_staging"',
                 'DROP DATABASE IF EXISTS "foo_staging"',
                 'RESET ROLE',
@@ -1028,7 +1031,7 @@ class CreateDatabaseTests(TestCase):
     def test_statements_non_replace(self):
         """Non-replace mode skips DROP statements and checks existence before creating."""
         self.assertEqual(
-            self.statements('bar', replace=False),
+            self.statements('bar', replace=False, user_exists=False),
             [
                 "SELECT 1 FROM pg_roles WHERE rolname = 'bar'",
                 'CREATE USER "bar"',
@@ -1038,6 +1041,23 @@ class CreateDatabaseTests(TestCase):
                 'ALTER ROLE "bar" SET timezone TO \'Europe/Zurich\'',
                 "SELECT 1 FROM pg_database WHERE datname = 'bar'",
                 "CREATE DATABASE \"bar\" OWNER \"bar\" TEMPLATE template0 ENCODING 'UTF8' LC_COLLATE 'en_US.UTF-8' LC_CTYPE 'en_US.UTF-8'",
+            ],
+        )
+
+    def test_statements_replace_user_not_exists(self):
+        """Replace mode skips SET ROLE when the user does not exist yet (first clone)."""
+        self.assertEqual(
+            self.statements('new-staging', replace=True, user_exists=False),
+            [
+                "SELECT 1 FROM pg_roles WHERE rolname = 'new_staging'",
+                'DROP USER IF EXISTS "new_staging"',
+                'CREATE USER "new_staging"',
+                'ALTER ROLE "new_staging" WITH PASSWORD \'ABC123\'',
+                'ALTER ROLE "new_staging" SET client_encoding TO \'utf8\'',
+                'ALTER ROLE "new_staging" SET default_transaction_isolation TO \'read committed\'',
+                'ALTER ROLE "new_staging" SET timezone TO \'Europe/Zurich\'',
+                "SELECT 1 FROM pg_database WHERE datname = 'new_staging'",
+                "CREATE DATABASE \"new_staging\" OWNER \"new_staging\" TEMPLATE template0 ENCODING 'UTF8' LC_COLLATE 'en_US.UTF-8' LC_CTYPE 'en_US.UTF-8'",
             ],
         )
 
@@ -1068,7 +1088,7 @@ class CreateDatabaseTests(TestCase):
 class CreateAdminUserTests(TestCase):
     def setUp(self):
         self.patcher = mock.patch('adminconsole.util.admin._run_in_temp_container')
-        self.run_mock = self.patcher.start().return_value
+        self.run_mock = self.patcher.start()
         self.addCleanup(self.patcher.stop)
         self.run_mock.return_value = (0, b'')
 

@@ -28,7 +28,11 @@ class Command(BaseCommand):
             app_env.app = app
             app_env.juntagrico_email_user = ''
             app_env.juntagrico_email_password = ''  # nosec: B105
-        create_database(app.env, app.name, app.name, replace=True)
+            app_env.save()
+            app.env = app_env
+        if not create_database(app.env, app.name, app.name, replace=True):
+            print('Return 1')
+            return 1
 
         # copy tables from prod app
         print('# Clone Database', flush=True)
