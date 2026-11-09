@@ -1001,6 +1001,7 @@ class CreateDatabaseTests(TestCase):
         app = App.objects.create(name=name, port=8010 + App.objects.count())
         env = AppEnv.objects.create(app=app)
         cursor = mock.MagicMock()
+        cursor.fetchone.return_value = None  # user/db don't exist, so CREATE runs
         with (
             mock.patch('adminconsole.util.create_app.connection') as connection,
             mock.patch(
@@ -1020,26 +1021,29 @@ class CreateDatabaseTests(TestCase):
                 'DROP DATABASE IF EXISTS "foo_staging"',
                 'RESET ROLE',
                 'DROP USER IF EXISTS "foo_staging"',
-                'CREATE USER IF NOT EXISTS "foo_staging"',
+                'CREATE USER "foo_staging"',
                 'ALTER ROLE "foo_staging" WITH PASSWORD \'ABC123\'',
                 'ALTER ROLE "foo_staging" SET client_encoding TO \'utf8\'',
                 'ALTER ROLE "foo_staging" SET default_transaction_isolation TO \'read committed\'',
                 'ALTER ROLE "foo_staging" SET timezone TO \'Europe/Zurich\'',
-                "CREATE DATABASE IF NOT EXISTS \"foo_staging\" OWNER \"foo_staging\" TEMPLATE template0 ENCODING 'UTF8' LC_COLLATE 'en_US.UTF-8' LC_CTYPE 'en_US.UTF-8'",
+                "SELECT 1 FROM pg_database WHERE datname = 'foo_staging'",
+                "CREATE DATABASE \"foo_staging\" OWNER \"foo_staging\" TEMPLATE template0 ENCODING 'UTF8' LC_COLLATE 'en_US.UTF-8' LC_CTYPE 'en_US.UTF-8'",
             ],
         )
 
     def test_statements_non_replace(self):
-        """Non-replace mode skips DROP statements and uses idempotent CREATE."""
+        """Non-replace mode skips DROP statements and checks existence before creating."""
         self.assertEqual(
             self.statements('bar', replace=False),
             [
-                'CREATE USER IF NOT EXISTS "bar"',
+                "SELECT 1 FROM pg_roles WHERE rolname = 'bar'",
+                'CREATE USER "bar"',
                 'ALTER ROLE "bar" WITH PASSWORD \'ABC123\'',
                 'ALTER ROLE "bar" SET client_encoding TO \'utf8\'',
                 'ALTER ROLE "bar" SET default_transaction_isolation TO \'read committed\'',
                 'ALTER ROLE "bar" SET timezone TO \'Europe/Zurich\'',
-                "CREATE DATABASE IF NOT EXISTS \"bar\" OWNER \"bar\" TEMPLATE template0 ENCODING 'UTF8' LC_COLLATE 'en_US.UTF-8' LC_CTYPE 'en_US.UTF-8'",
+                "SELECT 1 FROM pg_database WHERE datname = 'bar'",
+                "CREATE DATABASE \"bar\" OWNER \"bar\" TEMPLATE template0 ENCODING 'UTF8' LC_COLLATE 'en_US.UTF-8' LC_CTYPE 'en_US.UTF-8'",
             ],
         )
 
