@@ -2,8 +2,15 @@ import logging
 from functools import wraps
 
 from django.contrib.auth import logout
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import redirect_to_login
-from django.shortcuts import render
+from django.http import JsonResponse
+from django.shortcuts import render, redirect
+
+from adminconsole.forms import ProfileForm
+from adminconsole.models import App
+from adminconsole.util import pid_finished
+from adminconsole.util.docker import get_container_statuses
 
 security_log = logging.getLogger('adminconsole.security')
 
@@ -81,3 +88,62 @@ def confirm_password(page_title, button_text):
         return wrapper
 
     return decorator
+
+
+@login_required
+def home(request):
+    superuser = request.user.is_superuser
+    if superuser:
+        available_apps = App.objects.filter(staging_of__isnull=True).order_by('name')
+    else:
+        available_apps = request.user.app.filter(staging_of__isnull=True).order_by(
+            'name'
+        )
+    number_of_apps = available_apps.count()
+    if number_of_apps == 1 and not superuser:
+        return redirect('overview', app_id=available_apps[0].id)
+
+    # Get all container statuses in a single Docker API call (include staging apps)
+    if superuser:
+        app_names = set(App.objects.values_list('name', flat=True))
+    else:
+        app_names = set(request.user.app.values_list('name', flat=True))
+    container_statuses = get_container_statuses(app_names)
+
+    # Group apps by their first letter
+    from collections import defaultdict
+
+    grouped_apps = defaultdict(list)
+    for app in available_apps:
+        first_letter = app.name[0].upper() if app.name else '#'
+        grouped_apps[first_letter].append(app)
+
+    return render(
+        request,
+        'home.html',
+        {
+            'grouped_apps': dict(sorted(grouped_apps.items())),
+            'number_of_apps': number_of_apps,
+            'can_add_app': number_of_apps < 1 or superuser,
+            'container_statuses': container_statuses,
+        },
+    )
+
+
+@login_required
+def profile(request):
+    user = request.user
+    if request.method == 'POST':
+        form = ProfileForm(request.POST)
+        if form.is_valid():
+            user.email = form.cleaned_data.get('email')
+            user.save()
+            return redirect('/')
+    else:
+        form = ProfileForm({'email': user.email})
+    return render(request, 'profile.html', {'form': form})
+
+
+@login_required
+def pidcheck(request, pid):
+    return JsonResponse({'finished': pid_finished(pid)})

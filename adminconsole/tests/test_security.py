@@ -987,7 +987,7 @@ class PidCheckTests(TestCase):
         user = User.objects.create_user('owner')
         self.client.force_login(user)
         with mock.patch(
-            'adminconsole.views.pid_finished', return_value=True
+            'adminconsole.views.generic.pid_finished', return_value=True
         ) as finished:
             self.assertEqual(self.client.get('/pid/1/').json(), {'finished': True})
         finished.assert_called_once_with(1)

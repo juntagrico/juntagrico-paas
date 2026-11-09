@@ -7,7 +7,7 @@ from django_otp import DEVICE_ID_SESSION_KEY
 from django_otp.plugins.otp_totp.models import TOTPDevice
 
 from adminconsole.models import App, AppEnv, AppEnvVar
-from adminconsole.views import _is_sensitive_key, _mask_value
+from adminconsole.util import _is_sensitive_key, _mask_value
 
 
 # =============================================================================
