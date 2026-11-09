@@ -34,7 +34,9 @@ class Command(BaseCommand):
         # --- Step 1: Init DB (idempotent) ---
         print('# Datenbank erstellen', flush=True)
         app_env = AppEnv.objects.get_or_create(app=app)[0]
-        create_database(app_env, name, name)
+        if not create_database(app_env, name, name):
+            print('Return 1')
+            return
         print('Datenbank erstellt', flush=True)
         print('Return 0')
 
@@ -69,6 +71,7 @@ class Command(BaseCommand):
             print('Cronjob einrichten fehlgeschlagen', flush=True)
             print('Return 1')
             return
+        print('Return 0')
 
         # --- Step 5: Create admin user (idempotent) ---
         print('# Admin erstellen', flush=True)
@@ -76,11 +79,11 @@ class Command(BaseCommand):
             print('Admin erstellen fehlgeschlagen', flush=True)
             print('Return 1')
             return
+        print('Return 0')
 
         # --- Collect version at the very end (non-fatal) ---
         print('# Collect Version', flush=True)
         result = call_command('collect_version', app_name=app.name)
         if result != 0:
             print('Collect Version fehlgeschlagen (ignoriert)', flush=True)
-
         print('Return 0')

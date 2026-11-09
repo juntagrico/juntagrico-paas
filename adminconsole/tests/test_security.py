@@ -1048,9 +1048,26 @@ class CreateDatabaseTests(TestCase):
         )
 
     def test_password_must_be_alphanumeric(self):
+        from adminconsole.util.create_app import create_database
+
         for password in ["abc'; DROP USER x; --", 'äöü123', 'with space']:
-            with self.subTest(password=password), self.assertRaises(ValueError):
-                self.statements(f'app{len(password)}', password=password)
+            with self.subTest(password=password):
+                app = App.objects.create(
+                    name=f'app{len(password)}', port=8010 + App.objects.count()
+                )
+                env = AppEnv.objects.create(app=app)
+                with (
+                    mock.patch('adminconsole.util.create_app.connection') as connection,
+                    mock.patch(
+                        'adminconsole.util.create_app.generate_password',
+                        return_value=password,
+                    ),
+                ):
+                    connection.ops.quote_name = lambda value: '"%s"' % value
+                    cursor = mock.MagicMock()
+                    connection.cursor.return_value.__enter__.return_value = cursor
+                    result = create_database(env, app.name, app.name)
+                self.assertFalse(result)
 
 
 # The create_admin_user utility creates the admin user in a container (idempotent).
@@ -1211,6 +1228,25 @@ class SetupCommandTests(TestCase):
         finally:
             if saved is not None:
                 os.environ[PASSWORD_ENV] = saved
+
+    def test_fails_when_database_creation_returns_false(self):
+        from adminconsole.util.admin import PASSWORD_ENV
+
+        app = App.objects.create(name='bar', port=8011)
+        os.environ[PASSWORD_ENV] = 'testpass123'
+        try:
+            with (
+                mock.patch(
+                    'adminconsole.management.commands.setup.create_database',
+                    return_value=False,
+                ),
+                mock.patch('builtins.print', autospec=True) as mock_print,
+            ):
+                call_command('setup', app.name)
+            calls = [str(c) for c in mock_print.call_args_list]
+            self.assertTrue(any('Return 1' in c for c in calls))
+        finally:
+            os.environ.pop(PASSWORD_ENV, None)
 
 
 # The git_pull function clones the repo if .git doesn't exist yet.
