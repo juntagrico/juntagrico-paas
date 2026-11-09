@@ -87,3 +87,7 @@ class Command(BaseCommand):
         if result != 0:
             print('Collect Version fehlgeschlagen (ignoriert)', flush=True)
         print('Return 0')
+
+        # --- Mark installation as complete ---
+        app.installation_pending = False
+        app.save()

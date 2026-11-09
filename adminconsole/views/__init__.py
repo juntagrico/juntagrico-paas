@@ -72,6 +72,14 @@ def home(request):
 def overview(request, app_id):
     app = get_object_or_404(App, pk=app_id)
 
+    # Redirect to repo selection if creation hasn't been completed
+    if app.creation_pending:
+        return redirect('repo-source', app_id=app.id)
+
+    # Redirect to env creation if installation hasn't been completed
+    if app.installation_pending:
+        return redirect('ca-create-env', app_id=app.id)
+
     running = app.running
 
     staging = app.staging_of is not None

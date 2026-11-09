@@ -28,7 +28,12 @@ from adminconsole.util.git import git_push_app
 def app_form(request):
     user = request.user
     if request.method == 'POST':
-        app = App(user=user, port=find_port())
+        app = App(
+            user=user,
+            port=find_port(),
+            creation_pending=True,
+            installation_pending=True,
+        )
         form = AppForm(request.POST, instance=app)
         if form.is_valid():
             form.save()
@@ -48,6 +53,8 @@ def overwrite_app(request, app_id):
         if form.is_valid():
             if form.cleaned_data['overwrite']:
                 return redirect('ca-cookiecutter', app_id=app_id)
+            app.creation_pending = False
+            app.save()
             return redirect('ca-create-env', app_id=app_id)
     else:
         form = OverwriteAppForm()
@@ -95,13 +102,14 @@ def cookiecutter_form(request, app_id):
                 if not success:
                     return render(
                         request,
-                        'generic/done_next_submit.html',
+                        'generic/error.html',
                         {
                             'step': 'Cookiecutter anwenden und repo pushen',
                             'errors': [output],
-                            'next': reverse('ca-create-env', args=[app_id]),
                         },
                     )
+            app.creation_pending = False
+            app.save()
             return redirect('ca-create-env', app_id=app_id)
     else:
         form = ProjectForm(initial={'project_slug': app.name})

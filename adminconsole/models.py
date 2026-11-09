@@ -96,6 +96,8 @@ class App(models.Model):
         help_text='Run the app in its own Docker network instead of the host network. '
         'Takes effect at the next restart (manage.py restart), see README "App network isolation".',
     )
+    creation_pending = models.BooleanField('creation pending', default=False)
+    installation_pending = models.BooleanField('installation pending', default=False)
 
     def __str__(self):
         return self.name
