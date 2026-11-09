@@ -146,5 +146,7 @@ def env_form(request, app_id):
         form = EnvForm(instance=app.env)
         formset = AppEnvVarFormSet(instance=app.env)
     return render(
-        request, 'app/env.html', {'form': form, 'formset': formset, 'app': app}
+        request,
+        'app/env.html',
+        {'form': form, 'formset': formset, 'app': app, 'is_setup': True},
     )

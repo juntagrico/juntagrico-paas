@@ -36,6 +36,7 @@ class Command(BaseCommand):
         app_env = AppEnv.objects.get_or_create(app=app)[0]
         create_database(app_env, name, name)
         print('Datenbank erstellt', flush=True)
+        print('Return 0')
 
         # --- Step 2: Redeploy (idempotent) ---
         print('# Docker Rebuild', flush=True)
@@ -51,6 +52,8 @@ class Command(BaseCommand):
             print('Domain einrichten fehlgeschlagen', flush=True)
             print('Return 1')
             return
+        else:
+            print('Return 0')
 
         # --- Parallel steps (migration, collectstatic, restart) ---
         exit_codes = run_parallel_steps(app, name)
