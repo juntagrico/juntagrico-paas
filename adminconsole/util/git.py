@@ -328,3 +328,44 @@ def git_current_branch(app):
         ['git', 'branch', '--show-current'], stdout=subprocess.PIPE, cwd=app.code_dir
     )
     return proc.stdout.read().decode().strip()
+
+
+def git_push_app(app, output=None):
+    """Add, commit, and push all changes in the app's code directory.
+
+    Returns True on success, False on push failure.
+    Appends output lines to the `output` list if provided.
+    """
+    if output is None:
+        output = []
+    directory = app.code_dir
+
+    proc = subprocess.run(  # nosec: B603, B607
+        ['git', 'add', '.', '--all'],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        cwd=directory,
+    )
+    output.append(str(proc.stdout))
+
+    proc = subprocess.run(  # nosec: B603, B607
+        ['git', 'commit', '-a', '-m', '"adminconsole"'],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        cwd=directory,
+    )
+    output.append(str(proc.stdout))
+
+    token = app.get_installation_token()
+    env = github_auth_env(token) if token else None
+
+    proc = subprocess.run(  # nosec: B603, B607
+        ['git', 'push'],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        cwd=directory,
+        env=env,
+    )
+    output.append(str(proc.stdout))
+
+    return proc.returncode == 0

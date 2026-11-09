@@ -45,7 +45,6 @@ urlpatterns = [
     path('ca/clonerepo/<int:app_id>/', git.clone_repo, name='ca-git-clone'),
     path('ca/overwrite/<int:app_id>/', create.overwrite_app, name='ca-overwrite'),
     path('ck/form/<int:app_id>/', create.cookiecutter_form, name='ca-cookiecutter'),
-    path('git/push/<int:app_id>/', git.git_push, name='ca-git-push'),
     path('ca/db/<int:app_id>/', create.init_db, name='ca-init-db'),
     path('ca/env/form/<int:app_id>/', create.env_form, name='ca-create-env'),
     path('ca/domain/<int:app_id>/', create.init_domain, name='ca-init-domain'),

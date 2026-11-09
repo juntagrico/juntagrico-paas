@@ -1,5 +1,3 @@
-import subprocess  # nosec: B404
-
 from django.conf import settings
 from django.contrib import messages
 from django.urls import reverse
@@ -12,7 +10,6 @@ from adminconsole.decorators import owner_of_app
 from adminconsole.models import App, GitHubKey
 from adminconsole.util.git import (
     git_clone,
-    github_auth_env,
     validate_clone_url,
     list_installation_repos,
 )
@@ -194,56 +191,3 @@ def clone_repo(request, app_id):
         return redirect('repo-source', app_id=app_id)
 
     return _clone_and_render(request, app)
-
-
-@owner_of_app
-@confirm_post('Repo pushen', 'Code ins Repo pushen')
-def git_push(request, app_id):
-    app = get_object_or_404(App, pk=app_id)
-    directory = app.code_dir
-    output = []
-    proc = subprocess.run(  # nosec: B603, B607
-        ['git', 'add', '.', '--all'],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        cwd=directory,
-    )
-    output.append(str(proc.stdout))
-    proc = subprocess.run(  # nosec: B603, B607
-        ['git', 'commit', '-a', '-m', '"adminconsole"'],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        cwd=directory,
-    )
-    output.append(str(proc.stdout))
-    # Get an installation access token from the app's owner's installation
-    token = app.get_installation_token()
-    env = github_auth_env(token) if token else None
-    proc = subprocess.run(  # nosec: B603, B607
-        ['git', 'push'],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        cwd=directory,
-        env=env,
-    )
-    output.append(str(proc.stdout))
-
-    errors = []
-    if proc.returncode > 0:
-        if token is None:
-            output.insert(
-                0,
-                'Keine GitHub App-Installation gefunden. Für private Repos '
-                'musst du zuerst die GitHub App installieren.',
-            )
-        errors.append(output)
-
-    return render(
-        request,
-        'generic/done_next_submit.html',
-        {
-            'step': 'Cokkiecutter anwenden und repo pushen',
-            'errors': errors,
-            'next': reverse('ca-init-db', args=[app_id]),
-        },
-    )

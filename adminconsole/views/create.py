@@ -16,6 +16,7 @@ from adminconsole.forms import ProjectForm, EnvForm, AppForm, OverwriteAppForm
 from adminconsole.util import generate_password
 from adminconsole.util.admin import PASSWORD_ENV
 from adminconsole.util.create_app import find_port, create_database
+from adminconsole.util.git import git_push_app
 from adminconsole.views.generic import confirm_post
 
 
@@ -84,9 +85,20 @@ def cookiecutter_form(request, app_id):
                 output_dir=app.dir,
                 overwrite_if_exists=True,
             )
-            if test_localhost():
-                return redirect('ca-init-db', app_id=app_id)
-            return redirect('ca-git-push', app_id=app_id)
+            if not test_localhost():
+                output = []
+                success = git_push_app(app, output)
+                if not success:
+                    return render(
+                        request,
+                        'generic/done_next_submit.html',
+                        {
+                            'step': 'Cookiecutter anwenden und repo pushen',
+                            'errors': [output],
+                            'next': reverse('ca-init-db', args=[app_id]),
+                        },
+                    )
+            return redirect('ca-init-db', app_id=app_id)
     else:
         form = ProjectForm(initial={'project_slug': app.name})
 

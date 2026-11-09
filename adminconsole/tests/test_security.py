@@ -179,34 +179,6 @@ class GitCredentialTests(TestCase):
         self.assertEqual(Path(args[0][6]), app.code_dir)
         self.assertIsNone(kwargs['env'])
 
-    def test_push_passes_token_only_to_git_push(self):
-        from django.http import HttpResponse
-
-        user = User.objects.create_user('owner')
-        app = App.objects.create(
-            name='foo', port=8010, user=user, git_clone_url='https://github.com/a/b.git'
-        )
-        app.code_dir.mkdir(parents=True)
-        git('init', '-q', cwd=app.code_dir)
-        git('remote', 'add', 'origin', 'https://github.com/a/b.git', cwd=app.code_dir)
-        self.client.force_login(user)
-        with (
-            mock.patch('subprocess.run') as run,
-            mock.patch('adminconsole.views.git.render', return_value=HttpResponse()),
-            mock.patch.object(App, 'get_installation_token', return_value=TOKEN),
-        ):
-            run.return_value = mock.MagicMock(returncode=0, stdout=b'')
-            self.client.post(f'/git/push/{app.id}/')
-
-        # The view runs: git add, git commit, git push
-        # Only git push should have the auth env
-        calls_with_env = [call for call in run.call_args_list if call.kwargs.get('env')]
-        self.assertEqual(len(calls_with_env), 1, 'only git push should have env')
-        (push_call,) = calls_with_env
-        self.assertEqual(tuple(push_call.args[0]), ('git', 'push'))
-        for call in run.call_args_list:
-            self.assertNotIn(TOKEN, ' '.join(call.args[0]))
-
     def test_remove_credentials(self):
         for url, expected in [
             (
@@ -341,7 +313,7 @@ class CookiecutterTests(TestCase):
         self.assertIs(kwargs['accept_hooks'], False)
 
     def test_always_goes_to_push(self):
-        """Cookiecutter should always redirect to git push (not localhost)."""
+        """Cookiecutter runs git push directly and redirects to init-db on success."""
         user = User.objects.create_user('owner')
         app = App.objects.create(name='baz', port=8012, user=user)
         self.client.force_login(user)
@@ -362,12 +334,11 @@ class CookiecutterTests(TestCase):
         with (
             mock.patch('adminconsole.views.create.cookiecutter'),
             mock.patch('adminconsole.views.create.test_localhost', return_value=False),
+            mock.patch('adminconsole.views.create.git_push_app', return_value=True),
         ):
             resp = self.client.post(f'/ck/form/{app.id}/', data)
-        # Should redirect to git push
-        self.assertRedirects(
-            resp, f'/git/push/{app.id}/', fetch_redirect_response=False
-        )
+        # Should redirect to init-db (git push runs directly, no intermediate step)
+        self.assertRedirects(resp, f'/ca/db/{app.id}/', fetch_redirect_response=False)
 
 
 class SecretGenerationTests(TestCase):
