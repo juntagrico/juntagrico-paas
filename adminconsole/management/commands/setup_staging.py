@@ -34,13 +34,14 @@ class Command(BaseCommand):
         if not git_clone(app, output=errors):
             for error in errors:
                 print(error, flush=True)
-            print('Git clone fehlgeschlagen', flush=True)
-            print('Return 1')
+            print('Git clone fehlgeschlagen')
+            print('Return 1', flush=True)
             return
-        print('Return 0')
+        print('Git Clone erfolgreich')
+        print('Return 0', flush=True)
 
         # --- Step 2: Copy AppEnv from production ---
-        print('# AppEnv kopieren', flush=True)
+        print('# Einstellungen kopieren', flush=True)
         if not hasattr(app, 'env'):
             prod_env = AppEnv.objects.get(app=prod_app)
             prod_env.pk = None
@@ -48,7 +49,8 @@ class Command(BaseCommand):
             prod_env.juntagrico_email_user = ''
             prod_env.juntagrico_email_password = ''
             prod_env.save()
-        print('Return 0')
+        print('Einstellungen kopiert')
+        print('Return 0', flush=True)
 
         # --- Step 3: Clone database from production (also creates the database) ---
         print('# Clone Database', flush=True)
@@ -58,7 +60,7 @@ class Command(BaseCommand):
         if result != 0:
             print('Return 1')
             return
-        print('Return 0')
+        print('Return 0', flush=True)
 
         # --- Step 4: Set up domain ---
         print('# Domain einrichten', flush=True)
@@ -66,7 +68,7 @@ class Command(BaseCommand):
             print('Domain einrichten fehlgeschlagen', flush=True)
             print('Return 1')
             return
-        print('Return 0')
+        print('Return 0', flush=True)
 
         # --- Step 5: Docker rebuild ---
         print('# Docker Rebuild', flush=True)

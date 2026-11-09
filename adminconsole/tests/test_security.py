@@ -1061,6 +1061,92 @@ class CreateDatabaseTests(TestCase):
             ],
         )
 
+    def test_autocommit_reset_on_success(self):
+        """Autocommit is reset to False after successful CREATE DATABASE."""
+        from adminconsole.util.create_app import create_database
+
+        app = App.objects.create(name='auto-test', port=8010 + App.objects.count())
+        env = AppEnv.objects.create(app=app)
+        cursor = mock.MagicMock()
+        cursor.fetchone.side_effect = [
+            None,
+            None,
+        ]  # user doesn't exist, db doesn't exist
+        # Track autocommit assignments using a list
+        autocommit_log = []
+
+        class TrackedConnection:
+            _autocommit = False
+
+            @property
+            def autocommit(self):
+                return self._autocommit
+
+            @autocommit.setter
+            def autocommit(self, value):
+                autocommit_log.append(value)
+                self._autocommit = value
+
+        tracked = TrackedConnection()
+        tracked.ops = mock.MagicMock()
+        tracked.ops.quote_name = lambda value: '"%s"' % value
+        tracked.cursor = mock.MagicMock()
+        tracked.cursor.return_value.__enter__.return_value = cursor
+
+        with (
+            mock.patch('adminconsole.util.create_app.connection', tracked),
+            mock.patch(
+                'adminconsole.util.create_app.generate_password', return_value='ABC123'
+            ),
+        ):
+            create_database(env, app.name, app.name)
+            # Verify autocommit was set to True then reset to False
+            self.assertIn(True, autocommit_log)
+            self.assertFalse(tracked.autocommit)
+
+    def test_autocommit_reset_on_error(self):
+        """Autocommit is reset to False even when CREATE DATABASE fails."""
+        from django.db.utils import DatabaseError
+        from adminconsole.util.create_app import create_database
+
+        app = App.objects.create(name='auto-err', port=8010 + App.objects.count())
+        env = AppEnv.objects.create(app=app)
+        cursor = mock.MagicMock()
+        cursor.fetchone.side_effect = [
+            None,
+            None,
+        ]  # user doesn't exist, db doesn't exist
+        cursor.execute.side_effect = DatabaseError('simulated failure')
+
+        class TrackedConnection:
+            _autocommit = False
+
+            @property
+            def autocommit(self):
+                return self._autocommit
+
+            @autocommit.setter
+            def autocommit(self, value):
+                self._autocommit = value
+
+        tracked = TrackedConnection()
+        tracked.ops = mock.MagicMock()
+        tracked.ops.quote_name = lambda value: '"%s"' % value
+        tracked.cursor = mock.MagicMock()
+        tracked.cursor.return_value.__enter__.return_value = cursor
+
+        with (
+            mock.patch('adminconsole.util.create_app.connection', tracked),
+            mock.patch(
+                'adminconsole.util.create_app.generate_password', return_value='ABC123'
+            ),
+        ):
+            result = create_database(env, app.name, app.name)
+            # Should return False on error
+            self.assertFalse(result)
+            # Autocommit must be reset to False even on error
+            self.assertFalse(tracked.autocommit)
+
     def test_password_must_be_alphanumeric(self):
         from adminconsole.util.create_app import create_database
 

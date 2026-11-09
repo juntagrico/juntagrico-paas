@@ -69,13 +69,15 @@ def create_database(app_env, db_name, user_name, replace=False):
         with connection.cursor() as cursor:
             cursor.execute(f"SELECT 1 FROM pg_database WHERE datname = '{db_name}'")
             if not cursor.fetchone():
-                with connection.cursor() as db_cursor:
-                    connection.autocommit = True
-                    db_cursor.execute(
-                        f'CREATE DATABASE {db} OWNER {user} '
-                        f"TEMPLATE template0 ENCODING 'UTF8' "
-                        f"LC_COLLATE 'en_US.UTF-8' LC_CTYPE 'en_US.UTF-8'"
-                    )
+                connection.autocommit = True
+                try:
+                    with connection.cursor() as db_cursor:
+                        db_cursor.execute(
+                            f'CREATE DATABASE {db} OWNER {user} '
+                            f"TEMPLATE template0 ENCODING 'UTF8' "
+                            f"LC_COLLATE 'en_US.UTF-8' LC_CTYPE 'en_US.UTF-8'"
+                        )
+                finally:
                     connection.autocommit = False
         app_env.juntagrico_database_host = 'localhost'
         app_env.juntagrico_database_name = db_name
