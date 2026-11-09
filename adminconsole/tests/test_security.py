@@ -883,7 +883,7 @@ class ExportConfirmationTests(TestCase):
         for url in self.EXPORTS:
             with (
                 self.subTest(url=url),
-                self.assertLogs('adminconsole.security', 'WARNING') as logs,
+                self.assertLogs('adminconsole.audit', 'WARNING') as logs,
             ):
                 response = self.client.post(
                     url.format(self.app.id), {'password': 'wrong'}
@@ -896,7 +896,7 @@ class ExportConfirmationTests(TestCase):
         for url, extension in zip(self.EXPORTS, ['json', 'sql']):
             with (
                 self.subTest(url=url),
-                self.assertLogs('adminconsole.security', 'INFO') as logs,
+                self.assertLogs('adminconsole.audit', 'INFO') as logs,
             ):
                 response = self.client.post(
                     url.format(self.app.id),
@@ -910,7 +910,7 @@ class ExportConfirmationTests(TestCase):
 
     def test_too_many_wrong_passwords_log_out(self):
         url = self.EXPORTS[1].format(self.app.id)
-        with self.assertLogs('adminconsole.security', 'WARNING'):
+        with self.assertLogs('adminconsole.audit', 'WARNING'):
             for _ in range(4):
                 self.client.post(url, {'password': 'wrong'})
             self.assertTrue(self.client.session.get('_auth_user_id'))
@@ -921,7 +921,7 @@ class ExportConfirmationTests(TestCase):
 
     def test_correct_password_resets_failures(self):
         url = self.EXPORTS[1].format(self.app.id)
-        with self.assertLogs('adminconsole.security', 'INFO'):
+        with self.assertLogs('adminconsole.audit', 'INFO'):
             for _ in range(4):
                 self.client.post(url, {'password': 'wrong'})
             self.client.post(url, {'password': 'secret-pw'})
