@@ -18,6 +18,25 @@ $(function () {
             if (data.expected_steps) {
                 expected_steps = data.expected_steps
             }
+
+            // Setup mode: check setup_success regardless of finished flag
+            // (setup_success arrives one poll before finished=true)
+            if ($("#setup-result").length && data.setup_success !== undefined) {
+                $("#progress-title").text("Fertig!")
+                $("#progress-text").text("")
+                set_progress(100)
+                if (data.setup_success === true && adminPassword) {
+                    $("#admin-password").text(adminPassword)
+                    $("#password-box").show()
+                    $("#next").removeClass("disabled")
+                    $("#setup-result").show()
+                } else {
+                    // On failure, redirect to show_result to display the full log
+                    window.location.href = showResultUrl
+                }
+                return
+            }
+
             if (!(data.finished)) {
                 // update title
                 if (data.title !== null) {
@@ -41,24 +60,7 @@ $(function () {
                 $("#progress-title").text("Fertig!")
                 $("#progress-text").text("")
                 set_progress(100)
-
-                // Setup mode: show result box with admin password or retry
-                if ($("#setup-result").length) {
-                    if (data.setup_success === true && adminPassword) {
-                        $("#admin-password").text(adminPassword)
-                        $("#password-box").show()
-                        $("#next").removeClass("disabled")
-                    } else if (data.setup_success === false) {
-                        $("#retry-form").show()
-                        $("#retry-form").attr("action", "")
-                    } else {
-                        $("#next").removeClass("disabled")
-                    }
-                    $("#setup-result").show()
-                } else {
-                    // Default mode: just enable the next button
-                    $( "#next" ).removeClass( "disabled" );
-                }
+                $( "#next" ).removeClass( "disabled" );
             }
         }).fail(function () {
             $("#progress").removeClass("progress-bar-animated bg-success").addClass("bg-error")

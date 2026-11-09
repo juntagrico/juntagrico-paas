@@ -75,6 +75,12 @@
         {% endfor %}
     </div>
 
+    {% if request.GET.from_setup %}
+        <div class="text-center mt-3">
+            <a href="{% url 'ca-create-env' app.id %}" class="btn btn-warning">Zurück zur Konfiguration</a>
+        </div>
+    {% endif %}
+
     <div class="text-center mt-3">
         <a href="#" onclick="window.scrollTo({top: 0, behavior: 'smooth'}); return false;">Nach Oben</a>
     </div>

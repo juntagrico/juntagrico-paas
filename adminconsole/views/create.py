@@ -138,6 +138,8 @@ def env_form(request, app_id):
                     'next': reverse('overview', args=[app.id]),
                     'is_setup': True,
                     'admin_password': password,
+                    'show_result_url': reverse('show-result', args=[app.id])
+                    + '?from_setup=1',
                 },
             )
     else:
