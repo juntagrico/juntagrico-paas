@@ -128,6 +128,9 @@ def env_form(request, app_id):
             formset.save()
             # Generate admin password and pass it safely via environment variable
             password = generate_password()
+            # reset installation_pending flag if setup is repeated
+            app.installation_pending = True
+            app.save()
             with open(app.log_file, 'wb') as out:
                 proc = subprocess.Popen(  # nosec: B603
                     [settings.PYTHON_BIN, '-m', 'manage', 'setup', app.name],
