@@ -3,6 +3,7 @@ $(function () {
     let current_step = 0
     let last_section_progress = 0
     let expected_steps = 6.1
+    let setupSuccess = undefined
 
     function set_progress(value) {
         let bar = $("#progress")
@@ -19,22 +20,10 @@ $(function () {
                 expected_steps = data.expected_steps
             }
 
-            // Setup mode: check setup_success regardless of finished flag
-            // (setup_success arrives one poll before finished=true)
-            if ($("#setup-result").length && data.setup_success !== undefined) {
-                $("#progress-title").text("Fertig!")
-                $("#progress-text").text("")
-                set_progress(100)
-                if (data.setup_success === true && adminPassword) {
-                    $("#admin-password").text(adminPassword)
-                    $("#password-box").show()
-                    $("#next").removeClass("disabled")
-                    $("#setup-result").show()
-                } else {
-                    // On failure, redirect to show_result to display the full log
-                    window.location.href = showResultUrl
-                }
-                return
+            // Track setup_success on every poll so it persists even if the last
+            // finished=True response doesn't include it
+            if (data.setup_success !== undefined) {
+                setupSuccess = data.setup_success
             }
 
             if (!(data.finished)) {
@@ -60,7 +49,21 @@ $(function () {
                 $("#progress-title").text("Fertig!")
                 $("#progress-text").text("")
                 set_progress(100)
-                $( "#next" ).removeClass( "disabled" );
+
+                // Setup mode: use the stored setupSuccess value (may have arrived before finished=True)
+                if ($("#setup-result").length) {
+                    if (setupSuccess === true && adminPassword) {
+                        $("#admin-password").text(adminPassword)
+                        $("#password-box").show()
+                        $("#next").removeClass("disabled")
+                        $("#setup-result").show()
+                    } else {
+                        // On failure, redirect to show_result to display the full log
+                        window.location.href = showResultUrl
+                    }
+                } else {
+                    $( "#next" ).removeClass( "disabled" );
+                }
             }
         }).fail(function () {
             $("#progress").removeClass("progress-bar-animated bg-success").addClass("bg-error")
