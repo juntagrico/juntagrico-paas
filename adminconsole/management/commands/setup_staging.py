@@ -49,6 +49,7 @@ class Command(BaseCommand):
             prod_env.juntagrico_email_user = ''
             prod_env.juntagrico_email_password = ''
             prod_env.save()
+            app.env = prod_env
         print('Einstellungen kopiert')
         print('Return 0', flush=True)
 
@@ -60,6 +61,8 @@ class Command(BaseCommand):
         if result != 0:
             print('Return 1')
             return
+        # Refresh app.env so the migration container gets the new database password
+        app.env = AppEnv.objects.get(app=app)
         print('Return 0', flush=True)
 
         # --- Step 4: Set up domain ---

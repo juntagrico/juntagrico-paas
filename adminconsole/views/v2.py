@@ -160,9 +160,14 @@ def show_progress(request, app_id, pid):
 
     expected = None
     if start == 0:
-        if app.version >= 3:
+        if app.staging_of:
+            # Staging setup: Git Clone, Einstellungen kopieren, Clone Database,
+            # Domain einrichten, Docker Rebuild, Django Migrate, Django Collectstatic,
+            # Docker Start, Collect Version
+            expected = 9.1
+        elif app.version >= 3:
             base_steps = 5.1  # Docker Rebuild + Migrate + Collectstatic + Start + Collect Version
-            docker_build_steps = 26  # v3 counts each docker build step
+            docker_build_steps = 29  # v3 counts each docker build step
             clone_db_extra = 1 if (request.GET.get('copy_data') == '1') else 0
             expected = docker_build_steps + base_steps + clone_db_extra
         else:

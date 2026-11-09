@@ -292,6 +292,50 @@ class StagingCreationTests(TestCase):
         self.assertEqual(staging_env.juntagrico_email_user, '')
         self.assertEqual(staging_env.juntagrico_email_password, '')
 
+    def test_setup_staging_refreshes_env_after_clone_db(self):
+        """After clone_db, app.env is refreshed so migration gets the new password."""
+        staging = App.objects.create(
+            name='staging-app',
+            port=18010,
+            staging_of=self.prod_app,
+            user=self.owner,
+        )
+        staging.code_dir.mkdir(parents=True)
+
+        def fake_clone_db(*args, **kwargs):
+            # Simulate clone_db creating a new database password
+            staging.env.juntagrico_database_password = 'new_staging_password'
+            staging.env.save()
+            return 0
+
+        received_apps = []
+
+        def capture_run_parallel_steps(app, name):
+            received_apps.append(app)
+            return [0, 0, 0]
+
+        with (
+            mock.patch(
+                'adminconsole.management.commands.setup_staging.call_command',
+                side_effect=fake_clone_db,
+            ),
+            mock.patch(
+                'adminconsole.management.commands.setup_staging.setup_domain',
+                return_value=True,
+            ),
+            mock.patch(
+                'adminconsole.management.commands.setup_staging.run_parallel_steps',
+                side_effect=capture_run_parallel_steps,
+            ),
+        ):
+            call_command('setup_staging', staging.name)
+
+        # The app passed to run_parallel_steps should have the new password
+        self.assertEqual(len(received_apps), 1)
+        self.assertEqual(
+            received_apps[0].env.juntagrico_database_password, 'new_staging_password'
+        )
+
     def test_setup_staging_skips_appenv_if_exists(self):
         """Step 2 does not overwrite existing AppEnv."""
         staging = App.objects.create(
@@ -573,6 +617,34 @@ class StagingCreationTests(TestCase):
         resp = self.client.get(reverse('show-result', args=[self.prod_app.id]))
         self.assertTrue(resp.context['overall_failed'])
         self.assertNotIn('retry_url', resp.context)
+
+    # ------------------------------------------------------------------
+    # show_progress view: expected steps
+    # ------------------------------------------------------------------
+
+    def test_show_progress_expected_steps_for_staging(self):
+        """show_progress returns 9.1 expected steps for staging apps."""
+        staging = App.objects.create(
+            name='prod-app-staging',
+            port=18010,
+            staging_of=self.prod_app,
+            user=self.owner,
+        )
+        log_content = '# Git Clone\nReturn 0\n'
+        Path(staging.log_file).write_text(log_content)
+
+        resp = self.client.get(reverse('progress', args=[staging.id, 99999]))
+        data = resp.json()
+        self.assertEqual(data['expected_steps'], 9.1)
+
+    def test_show_progress_expected_steps_for_prod_v2(self):
+        """show_progress returns 6.1 expected steps for v2 production apps."""
+        log_content = '# Git Pull\nReturn 0\n'
+        Path(self.prod_app.log_file).write_text(log_content)
+
+        resp = self.client.get(reverse('progress', args=[self.prod_app.id, 99999]))
+        data = resp.json()
+        self.assertEqual(data['expected_steps'], 6.1)
 
     # ------------------------------------------------------------------
     # clone_db and renew views
