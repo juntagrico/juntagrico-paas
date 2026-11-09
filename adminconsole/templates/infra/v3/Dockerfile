@@ -23,18 +23,24 @@ RUN echo "Break Docker Cache: {% now "Y-m-d H:i:s.u" %}"
 # keeping remotes, refs, and history out of the final image.
 # If git_token secret is provided, use it to authenticate with GitHub (for private repos).
 # The token is passed as a BuildKit secret so it never appears in image layers.
+{% if has_git_token %}
 RUN --mount=type=secret,id=git_token,env=GIT_TOKEN \
     test -n "$git_repo" || (echo "git_repo build arg is required" && exit 1) \
     && git init -b main /code \
     && git -C /code remote add origin "$git_repo" \
-    && if test -n "${GIT_TOKEN}"; then \
-         git -C /code fetch --depth 1 -o "Authorization: Basic $(echo -n "x-access-token:${GIT_TOKEN}" | base64 -w0)" origin "$git_ref"; \
-       else \
-         git -C /code fetch --depth 1 origin "$git_ref"; \
-       fi \
+    && git -C /code fetch --depth 1 -o "Authorization: Basic $(echo -n "x-access-token:${GIT_TOKEN}" | base64 -w0)" origin "$git_ref" \
     && git -C /code checkout FETCH_HEAD \
     && mkdir /export \
     && git -C /code archive HEAD | tar -x -C /export
+{% else %}
+RUN test -n "$git_repo" || (echo "git_repo build arg is required" && exit 1) \
+    && git init -b main /code \
+    && git -C /code remote add origin "$git_repo" \
+    && git -C /code fetch --depth 1 origin "$git_ref" \
+    && git -C /code checkout FETCH_HEAD \
+    && mkdir /export \
+    && git -C /code archive HEAD | tar -x -C /export
+{% endif %}
 
 
 FROM base AS builder
