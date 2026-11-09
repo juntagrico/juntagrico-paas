@@ -14,6 +14,12 @@ class Command(BaseCommand):
         parser.add_argument(
             '--no-restart', action='store_true', help="Don't restart container"
         )
+        parser.add_argument(
+            '--timeout',
+            type=int,
+            default=300,
+            help='Timeout in seconds for pg_dump | psql (default: 300)',
+        )
 
     # entry point used by manage.py
     def handle(self, *args, **options):
@@ -68,8 +74,18 @@ class Command(BaseCommand):
             stdout=load.stdin,
             env={'PGPASSWORD': app.staging_of.env.juntagrico_database_password},
         )
-        dump.communicate()
-        load.communicate(b'\\q')
+        timeout = options.get('timeout')
+        try:
+            dump.communicate(timeout=timeout)
+            load.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            dump.kill()
+            load.kill()
+            dump.wait()
+            load.wait()
+            print(f'Database clone timed out after {timeout} seconds', flush=True)
+            print('Return 1')
+            return 1
         print('Return 0', flush=True)
 
         if not options.get('no_restart'):

@@ -12,6 +12,12 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('app_name', nargs=1)
+        parser.add_argument(
+            '--timeout',
+            type=int,
+            default=300,
+            help='Timeout in seconds for database clone (default: 300)',
+        )
 
     def handle(self, *args, **options):
         app = App.objects.get(name=options['app_name'][0])
@@ -46,7 +52,9 @@ class Command(BaseCommand):
 
         # --- Step 3: Clone database from production (also creates the database) ---
         print('# Clone Database', flush=True)
-        result = call_command('clone_db', '--no-restart', app.name)
+        result = call_command(
+            'clone_db', '--no-restart', '--timeout', options['timeout'], app.name
+        )
         if result != 0:
             print('Return 1')
             return

@@ -641,3 +641,138 @@ class StagingCreationTests(TestCase):
         self.client.force_login(superuser)
         resp = self.client.get(reverse('staging-create', args=[self.prod_app.id]))
         self.assertEqual(resp.status_code, 200)
+
+
+@modify_settings(
+    MIDDLEWARE={'remove': ['adminconsole.middleware.RequireOTPMiddleware']}
+)
+class CloneDbCommandTests(TestCase):
+    """Test the clone_db management command directly."""
+
+    def setUp(self):
+        self.owner = User.objects.create_user('owner', password='pw')
+        self.prod_app = App.objects.create(
+            name='prod-app',
+            port=8010,
+            git_clone_url='https://github.com/example/repo.git',
+            git_branch='main',
+            user=self.owner,
+        )
+        AppEnv.objects.create(
+            app=self.prod_app,
+            juntagrico_database_host='localhost',
+            juntagrico_database_name='prod_db',
+            juntagrico_database_password='secret',
+        )
+        self.staging = App.objects.create(
+            name='staging-app',
+            port=18010,
+            staging_of=self.prod_app,
+            user=self.owner,
+        )
+        AppEnv.objects.create(
+            app=self.staging,
+            juntagrico_database_host='localhost',
+            juntagrico_database_name='staging_db',
+            juntagrico_database_password='pw',
+            juntagrico_database_user='staging_user',
+        )
+
+    def test_clone_db_timeout_kills_processes(self):
+        """When pg_dump | psql exceeds timeout, processes are killed and command returns 1."""
+        import subprocess
+        from adminconsole.management.commands.clone_db import Command
+
+        stdout = io.StringIO()
+        with (
+            contextlib.redirect_stdout(stdout),
+            mock.patch(
+                'adminconsole.management.commands.clone_db.create_database',
+                return_value=True,
+            ),
+            mock.patch('subprocess.Popen') as mock_popen,
+        ):
+            dump_mock = mock.MagicMock()
+            load_mock = mock.MagicMock()
+            dump_mock.communicate.side_effect = subprocess.TimeoutExpired(
+                'pg_dump', 300
+            )
+            mock_popen.side_effect = [load_mock, dump_mock]
+            cmd = Command()
+            result = cmd.handle(
+                app_name=[self.staging.name], timeout=300, no_restart=False
+            )
+
+        self.assertEqual(result, 1)
+        dump_mock.kill.assert_called_once()
+        load_mock.kill.assert_called_once()
+        output = stdout.getvalue()
+        self.assertIn('timed out', output)
+        self.assertIn('Return 1', output)
+
+    def test_clone_db_default_timeout(self):
+        """The default timeout is 300 seconds."""
+        import subprocess
+        from adminconsole.management.commands.clone_db import Command
+
+        stdout = io.StringIO()
+        with (
+            contextlib.redirect_stdout(stdout),
+            mock.patch(
+                'adminconsole.management.commands.clone_db.create_database',
+                return_value=True,
+            ),
+            mock.patch('subprocess.Popen') as mock_popen,
+        ):
+            dump_mock = mock.MagicMock()
+            load_mock = mock.MagicMock()
+            dump_mock.communicate.side_effect = subprocess.TimeoutExpired(
+                'pg_dump', 300
+            )
+            mock_popen.side_effect = [load_mock, dump_mock]
+            cmd = Command()
+            cmd.handle(app_name=[self.staging.name], timeout=300, no_restart=False)
+
+        output = stdout.getvalue()
+        self.assertIn('300', output)
+
+    def test_setup_staging_passes_timeout_to_clone_db(self):
+        """setup_staging passes --timeout through to clone_db."""
+        import shutil
+        from pathlib import Path
+        import tempfile
+
+        base = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, base, ignore_errors=True)
+
+        stdout = io.StringIO()
+        with (
+            contextlib.redirect_stdout(stdout),
+            mock.patch.object(App, 'dir', new=property(lambda app: base / app.name)),
+            mock.patch(
+                'adminconsole.management.commands.setup_staging.git_clone',
+                return_value=True,
+            ),
+            mock.patch(
+                'adminconsole.management.commands.setup_staging.call_command',
+            ) as mock_call,
+            mock.patch(
+                'adminconsole.management.commands.setup_staging.setup_domain',
+                return_value=True,
+            ),
+            mock.patch(
+                'adminconsole.management.commands.setup_staging.run_parallel_steps',
+                return_value=[0, 0, 0],
+            ),
+        ):
+            call_command('setup_staging', self.staging.name, timeout=120)
+
+        # Find the clone_db call among all call_command invocations
+        clone_db_calls = [
+            c for c in mock_call.call_args_list if c[0] and c[0][0] == 'clone_db'
+        ]
+        self.assertEqual(len(clone_db_calls), 1)
+        self.assertIn('--timeout', clone_db_calls[0][0])
+        # --timeout is followed by the value 120
+        timeout_idx = list(clone_db_calls[0][0]).index('--timeout')
+        self.assertEqual(clone_db_calls[0][0][timeout_idx + 1], 120)
