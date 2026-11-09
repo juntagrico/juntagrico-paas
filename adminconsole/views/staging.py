@@ -140,6 +140,6 @@ def renew(request, app_id):
 def result(request, app_id):
     """Show the setup result for a staging app with a retry button on failure."""
     app = get_object_or_404(App, pk=app_id)
-    sections, overall_failed = parse_log_file(app)
-    context = {'app': app, 'sections': sections, 'overall_failed': overall_failed}
+    sections = parse_log_file(app)
+    context = {'app': app, 'sections': sections}
     return render(request, 'staging/result.html', context)

@@ -71,10 +71,7 @@ def _mask_value(value, secret_values=None):
 
 
 def parse_log_file(app):
-    """Parse the log file of an app into sections with summaries.
-
-    Returns (sections dict, overall_failed bool).
-    """
+    """Parse the log file of an app into sections with summaries."""
     from adminconsole.util.log_summary import build_summary, build_header_summary
 
     sections = {'Log': {'text': '', 'result': 1}}
@@ -110,5 +107,4 @@ def parse_log_file(app):
             section['text'], section['result'], section_name
         )
 
-    overall_failed = any(s.get('result', 0) != 0 for s in sections.values())
-    return sections, overall_failed
+    return sections

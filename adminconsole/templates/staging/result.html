@@ -5,12 +5,16 @@
 {% endblock %}
 
 {% block buttons %}
-    {% if overall_failed %}
+    {% if app.installation_pending %}
         <div class="mb-3">
             <form method="post" action="{% url 'staging-create' app.staging_of.id %}" class="d-inline">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-warning">Staging einrichten wiederholen</button>
             </form>
+        </div>
+    {% else %}
+        <div class="mb-3">
+            <a href="{% url 'overview' app.id %}" class="btn btn-secondary">&larr; zurück zur Übersicht</a>
         </div>
     {% endif %}
 {% endblock %}

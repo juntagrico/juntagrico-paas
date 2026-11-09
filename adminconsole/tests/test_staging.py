@@ -609,7 +609,6 @@ class StagingCreationTests(TestCase):
         Path(staging.log_file).write_text(log_content)
 
         resp = self.client.get(reverse('staging-result', args=[staging.id]))
-        self.assertFalse(resp.context['overall_failed'])
         self.assertNotIn('retry_url', resp.context)
 
     def test_show_result_no_retry_url_for_prod_app(self):
@@ -619,7 +618,6 @@ class StagingCreationTests(TestCase):
         Path(self.prod_app.log_file).write_text(log_content)
 
         resp = self.client.get(reverse('show-result', args=[self.prod_app.id]))
-        self.assertTrue(resp.context['overall_failed'])
         self.assertNotIn('retry_url', resp.context)
 
     # ------------------------------------------------------------------

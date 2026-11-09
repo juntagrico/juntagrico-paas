@@ -131,12 +131,12 @@ def overview(request, app_id):
 @owner_of_app
 def show_result(request, app_id):
     app = get_object_or_404(App, pk=app_id)
-    sections, overall_failed = parse_log_file(app)
+    sections = parse_log_file(app)
 
     return render(
         request,
         'flow/show_result.html',
-        {'app': app, 'sections': sections, 'overall_failed': overall_failed},
+        {'app': app, 'sections': sections},
     )
 
 
