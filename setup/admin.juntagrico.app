@@ -12,5 +12,6 @@ server {
         proxy_pass http://unix:/run/adminconsole/gunicorn.sock;
     }
 
+    set $can_use_sorp yes;
     include /etc/nginx/snippets/juntagrico-common.conf;
 }

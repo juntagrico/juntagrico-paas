@@ -6,5 +6,7 @@ server {
     set $juntagrico_app_port {{port}};
     set $juntagrico_app_host 0.0.0.0;
 
+    {% if supports_same_origin_referrer_policy }set $can_use_sorp yes;{% endif %}
+
     include /etc/nginx/snippets/juntagrico-domain.conf;
 }

@@ -264,7 +264,7 @@ class CertbotWrapperTests(TestCase):
         app.domains.create(name='foo.example.org')
         with (
             mock.patch(
-                'adminconsole.management.commands.add_domain.open',
+                'adminconsole.util.create_app.open',
                 mock.mock_open(),
                 create=True,
             ),

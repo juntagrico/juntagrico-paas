@@ -129,6 +129,44 @@ def create_docker_file(app):
         )
 
 
+def write_domain_config(app, domain_name):
+    """Write the nginx domain config file for the given domain.
+
+    Sets supports_same_origin_referrer_policy to True for Juntagrico >= 2.0.11,
+    which natively supports the same-origin referrer policy.
+    """
+    from packaging.version import Version
+
+    supports_sorp = False
+    if app.juntagrico_version:
+        try:
+            supports_sorp = Version(app.juntagrico_version) >= Version('2.0.11')
+        except Exception:
+            pass
+
+    with open(f'/var/django/domains/{domain_name}', 'w') as domain_file:
+        domain_file.write(
+            get_template('infra/domain.txt').render({
+                'name': app.name,
+                'port': app.port,
+                'domain': domain_name,
+                'supports_same_origin_referrer_policy': supports_sorp,
+            })
+        )
+
+
+def request_ssl_certificate(domain_name):
+    """Request an SSL certificate for the given domain via certbot.
+    Returns True on success, False on failure.
+    """
+    proc = subprocess.run(  # nosec: B603, B607
+        ['sudo', '/usr/local/sbin/juntagrico-certbot', domain_name],
+        stdout=subprocess.PIPE,
+    )
+    print(str(proc.stdout))
+    return proc.returncode == 0
+
+
 def setup_domain(app):
     """Create the default domain for an app and request an SSL certificate.
     Returns True on success, False on failure.
@@ -138,20 +176,8 @@ def setup_domain(app):
         domain, _ = Domain.objects.get_or_create(
             name=domain_name, defaults={'app': app}
         )
-        with open(f'/var/django/domains/{domain_name}', 'w') as domain_file:
-            domain_file.write(
-                get_template('infra/domain.txt').render({
-                    'name': app.name,
-                    'port': app.port,
-                    'domain': domain_name,
-                })
-            )
-        proc = subprocess.run(  # nosec: B603, B607
-            ['sudo', '/usr/local/sbin/juntagrico-certbot', domain_name],
-            stdout=subprocess.PIPE,
-        )
-        print(str(proc.stdout))
-        return proc.returncode == 0
+        write_domain_config(app, domain_name)
+        return request_ssl_certificate(domain_name)
     except (Domain.DoesNotExist, DatabaseError) as e:
         print(f'Domain erstellen fehlgeschlagen: {e}', flush=True)
         return False
