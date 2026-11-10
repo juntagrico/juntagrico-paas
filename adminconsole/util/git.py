@@ -260,11 +260,16 @@ def git_switch(app, branch):
         app.set_branch(branch)  # save current branch in db
         return ''
 
+    # Try to get an installation token for private repo access
+    token = app.get_installation_token()
+    env = github_auth_env(token) if token else None
+
     proc = subprocess.run(  # nosec: B603, B607
         ['git', 'remote', 'set-branches', 'origin', branch],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         cwd=cdir,
+        env=env,
     )
     if proc.returncode != 0:
         return 'git remote: ' + proc.stdout.decode()
@@ -274,6 +279,7 @@ def git_switch(app, branch):
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         cwd=cdir,
+        env=env,
     )
     if proc.returncode != 0:
         error = 'git fetch: ' + proc.stdout.decode()
@@ -285,6 +291,7 @@ def git_switch(app, branch):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 cwd=cdir,
+                env=env,
             )
         return error
 
