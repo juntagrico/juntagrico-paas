@@ -14,4 +14,5 @@ class Command(BaseCommand):
             write_domain_config(domain.app, domain.name)
 
             # install ssl, the wrapper is the only command the user may run with sudo
-            request_ssl_certificate(domain.name)
+            success = request_ssl_certificate(domain.name)
+            print('Return', '0' if success else '1')
