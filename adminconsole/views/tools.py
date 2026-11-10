@@ -68,8 +68,9 @@ def sanitize_richtext(request, app_id):
             # Expected format: "app.Model.field: N record(s) would update."
             line = line.strip()
             if ': ' in line and 'record(s) would update' in line:
-                field_name = line.split(': ')[0]
-                sanitized.append(field_name)
+                field_name, count_text = line.split(': ')
+                count = count_text.split(' ')[0]
+                sanitized.append((field_name, count))
 
     return render(
         request,

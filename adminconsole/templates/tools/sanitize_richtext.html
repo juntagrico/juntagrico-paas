@@ -4,8 +4,8 @@
     {% if sanitized %}
         <p>Diese Rich-Texte werden bereinigt:</p>
         <ul>
-            {% for item in sanitized %}
-                <li>{{ item }}</li>
+            {% for field, count in sanitized %}
+                <li>{{ field }}: {{ count }}</li>
             {% endfor %}
         </ul>
         <div>
