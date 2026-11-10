@@ -81,5 +81,10 @@ urlpatterns = [
         tools.update_permissions,
         name='update-permissions',
     ),
+    path(
+        'tools/sanitize_richtext/<int:app_id>/',
+        tools.sanitize_richtext,
+        name='sanitize-richtext',
+    ),
     path('tools/reload_versions', tools.reload_versions, name='reload-versions'),
 ]

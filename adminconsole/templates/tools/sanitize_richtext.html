@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+    {% if sanitized %}
+        <p>Diese Rich-Texte werden bereinigt:</p>
+        <ul>
+            {% for item in sanitized %}
+                <li>{{ item }}</li>
+            {% endfor %}
+        </ul>
+        <div>
+            <p>Diese Aktion lässt sich nicht rückgängig machen!</p>
+            <form method="POST">
+                {% csrf_token %}
+                <a href="{% url "overview" app.id %}" class="btn btn-secondary">zurück</a>
+                <input type="submit" class="btn btn-success" value="anwenden"/>
+            </form>
+        </div>
+    {% else %}
+        {% if error %}
+            <p>Diese Funktion benötigt Juntagrico >= 2.0.11.</p>
+        {% else %}
+            <p>Die Richtexte sind schon bereinigt.</p>
+        {% endif %}
+        <div>
+            <a href="{% url "overview" app.id %}" class="btn btn-secondary">zurück</a>
+        </div>
+    {% endif %}
+{% endblock %}

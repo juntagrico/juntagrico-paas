@@ -446,6 +446,20 @@
                         </div>
                     </div>
                 </div>
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <h4 class="card-header">Rich-Text bereinigen</h4>
+                        <div class="card-body">
+                            <p class="card-text">
+                                Bereinigt HTML in allen Rich-Text-Feldern. Dies muss nur einmal nach dem Update auf
+                                Juntagrico 2.0.11 ausgeführt werden. Diese Aktion lässt sich nicht rückgängig machen!
+                            </p>
+                            <a href="{% url "sanitize-richtext" app.id %}" class="btn btn-outline-primary">
+                                Rich-Text bereinigen
+                            </a>
+                        </div>
+                    </div>
+                </div>
                 {% if request.user.is_staff %}
                     <div class="col-md-6">
                         <div class="card mb-3">

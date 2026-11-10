@@ -51,6 +51,37 @@ def update_permissions(request, app_id):
     )
 
 
+@owner_of_app
+def sanitize_richtext(request, app_id):
+    app = get_object_or_404(App, pk=app_id)
+    cmd = ['python', '-m', 'manage', 'sanitize_richtext', '--dry-run']
+    container = docker.from_env().containers.get(app.name)
+    if request.method == 'POST':
+        result = container.exec_run(cmd[:-1])
+        messages.success(request, result[1].decode().strip())
+        return redirect('overview', app_id)
+
+    result = container.exec_run(cmd)
+    sanitized = []
+    if result[0] == 0:
+        for line in result[1].decode().split('\n'):
+            # Expected format: "app.Model.field: N record(s) would update."
+            line = line.strip()
+            if ': ' in line and 'record(s) would update' in line:
+                field_name = line.split(': ')[0]
+                sanitized.append(field_name)
+
+    return render(
+        request,
+        'tools/sanitize_richtext.html',
+        {
+            'app': app,
+            'sanitized': sanitized,
+            'error': result[0],
+        },
+    )
+
+
 @user_passes_test(lambda u: u.is_superuser)
 def reload_versions(request):
     app_name = request.GET.get('app')
