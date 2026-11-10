@@ -12,6 +12,6 @@ server {
         proxy_pass http://unix:/run/adminconsole/gunicorn.sock;
     }
 
-    set $can_use_sorp yes;
+    add_header Referrer-Policy $django_fallback_same_origin_referrer_policy always;
     include /etc/nginx/snippets/juntagrico-common.conf;
 }

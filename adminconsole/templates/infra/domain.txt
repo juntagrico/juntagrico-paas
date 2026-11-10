@@ -6,7 +6,11 @@ server {
     set $juntagrico_app_port {{port}};
     set $juntagrico_app_host 0.0.0.0;
 
-    {% if supports_same_origin_referrer_policy }set $can_use_sorp yes;{% endif %}
+    {% if supports_same_origin_referrer_policy }
+        add_header Referrer-Policy $django_fallback_same_origin_referrer_policy always;
+    {% else %}
+        add_header Referrer-Policy $django_fallback_referrer_policy always;
+    {% endif %}
 
     include /etc/nginx/snippets/juntagrico-domain.conf;
 }
