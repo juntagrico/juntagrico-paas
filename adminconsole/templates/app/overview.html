@@ -401,6 +401,30 @@
                 </div>
                 <div class="col-md-6">
                     <div class="card mb-3">
+                        <h4 class="card-header">Cache-Tabelle erstellen</h4>
+                        <div class="card-body">
+                            <p class="card-text">
+                                Erstellt die Datenbanktabelle für Django's database cache backend
+                                mit <code>manage.py createcachetable</code>.
+                                Nötig, wenn du das Database-Cache-Backend verwendest.
+                            </p>
+                            {% if running %}
+                            <form action="{% url 'create-cache-table' app.id %}" method="post">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-primary">
+                                    Cache-Tabelle erstellen
+                                </button>
+                            </form>
+                            {% else %}
+                            <button class="btn btn-outline-secondary" disabled>
+                                Cache-Tabelle erstellen
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card mb-3">
                         <h4 class="card-header">Depotliste erzeugen</h4>
                         <div class="card-body">
                             <p class="card-text">

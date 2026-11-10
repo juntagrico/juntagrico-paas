@@ -438,6 +438,32 @@ def logs(request, app_id):
     )
 
 
+@require_POST
+@owner_of_app
+def create_cache_table(request, app_id):
+    app = get_object_or_404(App, pk=app_id)
+    audit_log.info(
+        '%s creates cache table for %s from %s',
+        request.user,
+        app.name,
+        client_address(request),
+    )
+    try:
+        container = docker.from_env().containers.get(app.name)
+    except NotFound:
+        messages.error(request, 'Die Instanz ist nicht aktiv.')
+        return redirect('overview', app_id)
+    result = container.exec_run(['python', '-m', 'manage', 'createcachetable'])
+    if result.exit_code == 0:
+        messages.success(request, 'Cache-Tabelle wurde erstellt.')
+    else:
+        messages.error(
+            request,
+            f'Fehler beim Erstellen der Cache-Tabelle: {result.output.decode()[-200:]}',
+        )
+    return redirect('overview', app_id)
+
+
 @owner_of_app
 def versions(request, app_id):
     app = get_object_or_404(App, pk=app_id)

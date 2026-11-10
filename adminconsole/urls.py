@@ -46,6 +46,11 @@ urlpatterns = [
     path('branch/change/<int:app_id>/', app.change_branch, name='change-branch'),
     path('dumpdata/<int:app_id>/', app.dumpdata, name='dumpdata'),
     path('pgdump/<int:app_id>/', app.pgdump, name='pgdump'),
+    path(
+        'app/<int:app_id>/create-cache-table/',
+        app.create_cache_table,
+        name='create-cache-table',
+    ),
     # create application urls in the right order how they flow
     path('ca/af', create.app_form, name='create-app'),
     path('ca/source/<int:app_id>/', git.repo_source, name='repo-source'),
