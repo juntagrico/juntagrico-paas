@@ -857,19 +857,27 @@ class ExportConfirmationTests(TestCase):
         self.app = App.objects.create(name='foo', port=8010, user=self.owner)
         AppEnv.objects.create(app=self.app, juntagrico_database_name='foo')
         self.client.force_login(self.owner)
-        for name, target in [('docker', 'docker.from_env'), ('run', 'subprocess.run')]:
+        for name, target in [
+            ('docker', 'docker.from_env'),
+            ('popen', 'subprocess.Popen'),
+        ]:
             patcher = mock.patch(target)
             setattr(self, name, patcher.start())
             self.addCleanup(patcher.stop)
-        self.docker.return_value.containers.get.return_value.exec_run.return_value = (
-            mock.MagicMock(output=b'[]')
-        )
-        self.run.return_value = mock.MagicMock(stdout=b'-- dump')
+        # Mock the Docker API exec_create + exec_start path used by the custom exec_run
+        api = self.docker.return_value.containers.get.return_value.client.api
+        api.exec_create.return_value = {'Id': 'exec1'}
+        api.exec_start.return_value = iter([b'[]'])
+        api.exec_inspect.return_value = {'ExitCode': 0}
+        # Mock subprocess.Popen for pgdump
+        mock_proc = mock.MagicMock()
+        mock_proc.stdout.read.side_effect = [b'-- dump', b'']
+        self.popen.return_value = mock_proc
 
     def exported(self):
         return (
-            self.docker.return_value.containers.get.return_value.exec_run.called
-            or self.run.called
+            self.docker.return_value.containers.get.return_value.client.api.exec_create.called
+            or self.popen.called
         )
 
     def test_get_asks_for_password(self):

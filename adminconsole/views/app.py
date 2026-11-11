@@ -8,7 +8,7 @@ import docker
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
-from django.http import HttpResponse
+from django.http import StreamingHttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.cache import never_cache
@@ -21,7 +21,7 @@ from adminconsole.forms import EnvForm, BranchForm, AppEnvVarFormSet
 from adminconsole.models import App
 from adminconsole.util import generate_password, parse_log_file, _mask_value
 from adminconsole.util.admin import ADMIN_USERNAME, set_admin_password_in_container
-from adminconsole.util.docker import create_container, stop_container
+from adminconsole.util.docker import create_container, exec_run, stop_container
 from adminconsole.util.git import git_switch, git_current_branch
 from adminconsole.util.log_parsing import parse_log_line, format_timestamp
 from adminconsole.views.generic import (
@@ -350,6 +350,13 @@ def mailtexts(request, app_id):
     )
 
 
+def _stream_dumpdata(container, cmd):
+    """Stream dumpdata output from a Docker container in real-time."""
+    result = exec_run(container, cmd, stderr=False, stream=True)
+    for chunk in result.output:
+        yield chunk
+
+
 @owner_of_app
 @confirm_password('Daten exportieren (JSON)', 'Exportieren')
 def dumpdata(request, app_id):
@@ -370,14 +377,32 @@ def dumpdata(request, app_id):
         '-e',
         'sessions',
     ]
-    result = container.exec_run(cmd, stderr=False)
-    response = HttpResponse(
-        result.output.decode('utf-8'), content_type='application/json'
+    response = StreamingHttpResponse(
+        _stream_dumpdata(container, cmd), content_type='application/json'
     )
     response['Content-Disposition'] = (
         f'attachment; filename={name}-{timezone.now().strftime("%y_%m_%d_%H_%M")}.json'
     )
     return response
+
+
+def _stream_pgdump(app):
+    """Stream pg_dump output in real-time."""
+    db_user = settings.DATABASES['default']['USER']
+    db_pw = settings.DATABASES['default']['PASSWORD']
+
+    proc = subprocess.Popen(  # nosec: B603, B607
+        ['pg_dump', '-U', db_user, '--no-password', app.env.juntagrico_database_name],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env={'PGPASSWORD': db_pw},
+    )
+    try:
+        for chunk in iter(lambda: proc.stdout.read(65536), b''):
+            yield chunk
+    finally:
+        proc.stdout.close()
+        proc.wait()
 
 
 @owner_of_app
@@ -388,15 +413,9 @@ def pgdump(request, app_id):
     audit_log.info(
         '%s exports SQL of %s from %s', request.user, name, client_address(request)
     )
-    db_user = settings.DATABASES['default']['USER']
-    db_pw = settings.DATABASES['default']['PASSWORD']
-
-    dump = subprocess.run(  # nosec: B603, B607
-        ['pg_dump', '-U', db_user, '--no-password', app.env.juntagrico_database_name],
-        stdout=subprocess.PIPE,
-        env={'PGPASSWORD': db_pw},
+    response = StreamingHttpResponse(
+        _stream_pgdump(app), content_type='application/sql'
     )
-    response = HttpResponse(dump.stdout.decode('utf-8'), content_type='application/sql')
     response['Content-Disposition'] = (
         f'attachment; filename={name}-{timezone.now().strftime("%y_%m_%d_%H_%M")}.sql'
     )
