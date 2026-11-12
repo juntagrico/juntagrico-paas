@@ -26,40 +26,54 @@
             {% endif %}
 
             <h3>Status</h3>
-            <div id="app-status-alert" data-app-name="{{ app.name }}" data-running="{{ running|lower }}">
-                {% if running %}
+            <div id="app-status-alert" data-app-name="{{ app.name }}">
+                <div class="status-alert status-alert-loading">
+                    <div class="alert alert-secondary">
+                        <p>Status wird abgefragt...</p>
+                    </div>
+                </div>
+                <div class="status-alert status-alert-healthy" style="display:none">
                     <div class="alert alert-success">
-                        <p>
-                            Die Instanz läuft.
-                        </p>
+                        <p>Die Instanz läuft.</p>
                         <form action="{% url 'app-stop' app.id %}" method="POST">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-danger">stoppen</button>
                         </form>
                         {% if staging %}
-                            <p>
+                            <p class="staging-renew-msg" style="display:none">
                                 Diese Staging-App wird in {{ app.run_until|timeuntil }} automatisch gestoppt.
                             </p>
-                            <form action="{% url 'staging-renew' app.id %}" method="POST">
+                            <form action="{% url 'staging-renew' app.id %}" method="POST" class="staging-renew-form" style="display:none">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-warning">verlängern</button>
                             </form>
                         {% endif %}
                     </div>
-                {% else %}
+                </div>
+                <div class="status-alert status-alert-unhealthy" style="display:none">
                     <div class="alert alert-danger">
-                        <p>
-                            Die Instanz ist nicht aktiv.
-                        </p>
-                        <p class="mb-2">
-                            Einige Funktionen sind erst verfügbar, wenn die Instanz gestartet wird.
-                        </p>
+                        <p>Die Instanz läuft, ist aber <strong>ungesund</strong>.</p>
+                        <form action="{% url 'app-stop' app.id %}" method="POST">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">stoppen</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="status-alert status-alert-starting" style="display:none">
+                    <div class="alert alert-warning">
+                        <p>Die Instanz startet gerade.</p>
+                    </div>
+                </div>
+                <div class="status-alert status-alert-stopped" style="display:none">
+                    <div class="alert alert-danger">
+                        <p>Die Instanz ist nicht aktiv.</p>
+                        <p class="mb-2">Einige Funktionen sind erst verfügbar, wenn die Instanz gestartet wird.</p>
                         <form action="{% url 'app-start' app.id %}" method="POST">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-success">starten</button>
                         </form>
                     </div>
-                {% endif %}
+                </div>
             </div>
             {% if staging %}
                 <div class="alert alert-warning">
@@ -516,19 +530,24 @@
                     $badge.remove();
                 }
 
-                // Update alert class and message based on health
+                // Show the relevant pre-rendered alert based on health status
                 var $alert = $('#app-status-alert');
-                var $innerAlert = $alert.find('.alert');
+
+                // Hide all status alerts, then show the relevant one
+                $alert.find('.status-alert').hide();
+                var key;
                 if (health === 'unhealthy') {
-                    $innerAlert.removeClass('alert-success alert-warning').addClass('alert-danger');
-                    $innerAlert.find('p:first').html('Die Instanz läuft, ist aber <strong>ungesund</strong> (unhealthy).');
+                    key = 'status-alert-unhealthy';
                 } else if (health === 'starting') {
-                    $innerAlert.removeClass('alert-success alert-danger').addClass('alert-warning');
-                    $innerAlert.find('p:first').html('Die Instanz läuft und startet gerade (starting).');
+                    key = 'status-alert-starting';
                 } else if (running) {
-                    $innerAlert.removeClass('alert-warning alert-danger').addClass('alert-success');
-                    $innerAlert.find('p:first').html('Die Instanz läuft.');
+                    key = 'status-alert-healthy';
+                    // Show staging renew controls if applicable
+                    $alert.find('.staging-renew-msg, .staging-renew-form').show();
+                } else {
+                    key = 'status-alert-stopped';
                 }
+                $alert.find('.' + key).show();
 
                 // Update staging app status badge (if shown on main app overview)
                 $('.app-status-badge').each(function() {

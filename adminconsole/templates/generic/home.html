@@ -82,13 +82,22 @@
                     var pythonVersion = $(this).data('python-version');
                     var html = '';
                     if (juntagricoVersion) {
-                        html += '<span class="badge badge-secondary">j' + juntagricoVersion + '</span>';
+                        var jBadgeClass = 'badge badge-success';
+                        var jv = juntagricoVersion.split('.').map(Number);
+                        if (jv[0] >= 2) {
+                            jBadgeClass = 'badge badge-success';
+                        } else if (jv[0] === 1 && jv[1] >= 7) {
+                            jBadgeClass = 'badge badge-warning';
+                        } else {
+                            jBadgeClass = 'badge badge-danger';
+                        }
+                        html += '<span class="' + jBadgeClass + ' mr-1">j' + juntagricoVersion + '</span>';
                     }
                     if (appVersion == 3) {
-                        html += '<span class="badge bg-info text-dark">v3</span>';
+                        html += '<span class="badge bg-info text-dark mr-1">v3</span>';
                     }
                     if (pythonVersion) {
-                        html += '<span class="badge badge-secondary">p' + pythonVersion + '</span>';
+                        html += '<span class="badge badge-secondary mr-1">p' + pythonVersion + '</span>';
                     }
                     $(this).html(html);
                 });
