@@ -103,13 +103,6 @@ def home(request):
     if number_of_apps == 1 and not superuser:
         return redirect('overview', app_id=available_apps[0].id)
 
-    # Get all container statuses in a single Docker API call (include staging apps)
-    if superuser:
-        app_names = set(App.objects.values_list('name', flat=True))
-    else:
-        app_names = set(request.user.app.values_list('name', flat=True))
-    container_statuses = get_container_statuses(app_names)
-
     # Group apps by their first letter
     from collections import defaultdict
 
@@ -125,7 +118,6 @@ def home(request):
             'grouped_apps': dict(sorted(grouped_apps.items())),
             'number_of_apps': number_of_apps,
             'can_add_app': number_of_apps < 1 or superuser,
-            'container_statuses': container_statuses,
         },
     )
 
@@ -147,3 +139,26 @@ def profile(request):
 @login_required
 def pidcheck(request, pid):
     return JsonResponse({'finished': pid_finished(pid)})
+
+
+@login_required
+def health_status(request):
+    """AJAX endpoint returning running and health status for all apps accessible to the user."""
+    superuser = request.user.is_superuser
+    if superuser:
+        app_names = set(App.objects.values_list('name', flat=True))
+    else:
+        app_names = set(request.user.app.values_list('name', flat=True))
+    app_versions = dict(
+        App.objects.filter(name__in=app_names).values_list('name', 'version')
+    )
+    container_statuses = get_container_statuses(app_names, app_versions)
+
+    # Build a flat dict: {app_name: {'running': bool, 'health': str|None}}
+    result = {}
+    for name, status in container_statuses.items():
+        result[name] = {
+            'running': status['running'],
+            'health': status.get('health'),
+        }
+    return JsonResponse(result)

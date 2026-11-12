@@ -2,7 +2,7 @@
 {% load extras %}
 
 {% block page_title %}
-    <h1>{{ app.name }}{% if not running %} <span class="badge bg-secondary">inaktiv</span>{% endif %}</h1>
+    <h1 id="overview-title">{{ app.name }}{% if not running %} <span class="badge bg-secondary overview-inactive-badge">inaktiv</span>{% endif %}</h1>
 {% endblock %}
 
 {% block content %}
@@ -26,6 +26,7 @@
             {% endif %}
 
             <h3>Status</h3>
+            <div id="app-status-alert" data-app-name="{{ app.name }}" data-running="{{ running|lower }}">
                 {% if running %}
                     <div class="alert alert-success">
                         <p>
@@ -59,6 +60,7 @@
                         </form>
                     </div>
                 {% endif %}
+            </div>
             {% if staging %}
                 <div class="alert alert-warning">
                     <h4>Staging</h4>
@@ -147,7 +149,7 @@
                 {% if not staging %}
                     <div class="col-md-6">
                         <div class="card mb-3">
-                            <h4 class="card-header">Staging{% if app.stagings.exists %}{% include 'fragments/running_badge.html' with running=staging_running %}{% endif %}</h4>
+                            <h4 class="card-header">Staging{% if app.stagings.exists %} <span class="app-status-badge" data-app-name="{{ app.stagings.first.name }}"></span>{% endif %}</h4>
                             <div class="card-body">
                                 {% if app.stagings.exists %}
                                     <p class="card-text">
@@ -485,4 +487,79 @@
             </div>
         </div>
     </div>
+{% endblock %}
+
+{% block scripts %}
+<script type="text/javascript">
+(function() {
+    var healthUrl = '{% url "health-status" %}';
+    var appName = '{{ app.name }}';
+    var pollInterval = 30000; // 30 seconds
+
+    function updateOverviewStatus() {
+        $.ajax({
+            url: healthUrl,
+            method: 'GET',
+            dataType: 'json',
+            success: function(data) {
+                var status = data[appName];
+                if (!status) return;
+                var running = status.running;
+                var health = status.health;
+
+                // Update page title badge
+                var $title = $('#overview-title');
+                var $badge = $title.find('.overview-inactive-badge');
+                if (!running && $badge.length === 0) {
+                    $title.append(' <span class="badge bg-secondary overview-inactive-badge">inaktiv</span>');
+                } else if (running && $badge.length > 0) {
+                    $badge.remove();
+                }
+
+                // Update alert class and message based on health
+                var $alert = $('#app-status-alert');
+                var $innerAlert = $alert.find('.alert');
+                if (health === 'unhealthy') {
+                    $innerAlert.removeClass('alert-success alert-warning').addClass('alert-danger');
+                    $innerAlert.find('p:first').html('Die Instanz läuft, ist aber <strong>ungesund</strong> (unhealthy).');
+                } else if (health === 'starting') {
+                    $innerAlert.removeClass('alert-success alert-danger').addClass('alert-warning');
+                    $innerAlert.find('p:first').html('Die Instanz läuft und startet gerade (starting).');
+                } else if (running) {
+                    $innerAlert.removeClass('alert-warning alert-danger').addClass('alert-success');
+                    $innerAlert.find('p:first').html('Die Instanz läuft.');
+                }
+
+                // Update staging app status badge (if shown on main app overview)
+                $('.app-status-badge').each(function() {
+                    var badgeAppName = $(this).data('app-name');
+                    var badgeStatus = data[badgeAppName];
+                    var badgeRunning = badgeStatus ? badgeStatus.running : false;
+                    var badgeHealth = badgeStatus ? badgeStatus.health : null;
+
+                    var className = 'status-circle';
+                    if (!badgeRunning) {
+                        className += ' status-circle-inactive';
+                    } else if (badgeHealth === 'unhealthy') {
+                        className += ' status-circle-unhealthy';
+                    } else if (badgeHealth === 'starting') {
+                        className += ' status-circle-starting';
+                    } else {
+                        className += ' status-circle-active';
+                    }
+                    var title = '';
+                    if (badgeHealth === 'unhealthy') title = ' title="Unhealthy"';
+                    else if (badgeHealth === 'starting') title = ' title="Starting"';
+                    $(this).html('<span class="' + className + '"' + title + '></span>');
+                });
+            }
+        });
+    }
+
+    // Initial fetch
+    updateOverviewStatus();
+    // Poll every 30 seconds
+    setInterval(updateOverviewStatus, pollInterval);
+})();
+</script>
 {% endblock %}

@@ -112,17 +112,10 @@ def overview(request, app_id):
 
     running = app.running
 
-    # Get staging app running status if this is the main app
-    staging_running = None
-    if not staging and app.stagings.exists():
-        staging_app = app.stagings.first()
-        staging_running = staging_app.running
-
     renderdict = {
         'app': app,
         'running': running,
         'staging': staging,
-        'staging_running': staging_running,
         'has_2fa': user_has_device(request.user),
     }
     return render(request, 'app/overview.html', renderdict)

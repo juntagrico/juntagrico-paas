@@ -439,9 +439,12 @@ tr.shown td.details-control::before {
 .status-circle-active {
     background-color: #28a745;
 }
-.status-circle-stopped {
-    background-color: #dc3545;
-}
 .status-circle-inactive {
     background-color: #6c757d;
+}
+.status-circle-unhealthy {
+    background-color: #dc3545;
+}
+.status-circle-starting {
+    background-color: #ffc107;
 }

@@ -207,18 +207,32 @@ def stop_container(name):
         pass
 
 
-def get_container_statuses(app_names):
+def get_container_statuses(app_names, app_versions=None):
     """
-    Efficiently get the running status of multiple containers in a single Docker API call.
-    Returns a dict mapping container names to booleans (True if running).
+    Efficiently get the running status and health status of multiple containers in a single Docker API call.
+    Args:
+        app_names: set/list of container names to look up
+        app_versions: optional dict mapping app names to their version int (e.g. {'myapp': 3})
+    Returns a dict mapping container names to dicts:
+        {'running': bool, 'health': str|None}
+        health is one of 'starting', 'healthy', 'unhealthy', or None if no health check configured.
     """
+    if app_versions is None:
+        app_versions = {}
     client = docker.from_env()
     all_containers = client.containers.list(all=True)
     statuses = {}
     for container in all_containers:
         name = container.name
         if name in app_names:
-            statuses[name] = container.status in ('running', 'created', 'restarting')
+            running = container.status in ('running', 'created', 'restarting')
+            health = None
+            # Only fetch health for v3+ apps (they have HEALTHCHECK in Dockerfile)
+            if app_versions.get(name, 0) >= 3:
+                health_info = container.attrs.get('State', {}).get('Health')
+                if health_info is not None:
+                    health = health_info.get('Status')
+            statuses[name] = {'running': running, 'health': health}
     return statuses
 
 

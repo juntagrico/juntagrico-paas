@@ -35,4 +35,73 @@
     {% endif %}
 {% endblock %}
 
+{% block scripts %}
+<script type="text/javascript">
+(function() {
+    var healthUrl = '{% url "health-status" %}';
+    var pollInterval = 30000; // 30 seconds
+
+    function updateStatusBadges() {
+        $.ajax({
+            url: healthUrl,
+            method: 'GET',
+            dataType: 'json',
+            success: function(data) {
+                $('.app-status-badge').each(function() {
+                    var appName = $(this).data('app-name');
+                    var status = data[appName];
+                    var running = status ? status.running : false;
+                    var health = status ? status.health : null;
+
+                    var className = 'status-circle';
+                    if (!running) {
+                        className += ' status-circle-inactive';
+                    } else if (health === 'unhealthy') {
+                        className += ' status-circle-unhealthy';
+                    } else if (health === 'starting') {
+                        className += ' status-circle-starting';
+                    } else {
+                        className += ' status-circle-active';
+                    }
+                    var title = '';
+                    if (health === 'unhealthy') title = 'title="Unhealthy"';
+                    else if (health === 'starting') title = 'title="Starting"';
+                    $(this).html('<span class="' + className + '"' + title + '></span>');
+                });
+
+                $('.app-version-badges').each(function() {
+                    var appName = $(this).data('app-name');
+                    var status = data[appName];
+                    var running = status ? status.running : false;
+                    if (!running) {
+                        $(this).empty();
+                        return;
+                    }
+                    var appVersion = $(this).data('app-version');
+                    var juntagricoVersion = $(this).data('juntagrico-version');
+                    var pythonVersion = $(this).data('python-version');
+                    var html = '';
+                    if (juntagricoVersion) {
+                        html += '<span class="badge badge-secondary">j' + juntagricoVersion + '</span>';
+                    }
+                    if (appVersion == 3) {
+                        html += '<span class="badge bg-info text-dark">v3</span>';
+                    }
+                    if (pythonVersion) {
+                        html += '<span class="badge badge-secondary">p' + pythonVersion + '</span>';
+                    }
+                    $(this).html(html);
+                });
+            }
+        });
+    }
+
+    // Initial fetch
+    updateStatusBadges();
+    // Poll every 30 seconds
+    setInterval(updateStatusBadges, pollInterval);
+})();
+</script>
+{% endblock %}
+
 

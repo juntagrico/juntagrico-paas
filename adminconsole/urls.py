@@ -87,4 +87,5 @@ urlpatterns = [
         name='sanitize-richtext',
     ),
     path('tools/reload_versions', tools.reload_versions, name='reload-versions'),
+    path('api/health/', generic.health_status, name='health-status'),
 ]
