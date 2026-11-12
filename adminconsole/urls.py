@@ -88,4 +88,9 @@ urlpatterns = [
     ),
     path('tools/reload_versions', tools.reload_versions, name='reload-versions'),
     path('api/health/', generic.health_status, name='health-status'),
+    path(
+        'api/app/<int:app_id>/health/',
+        generic.app_health_status,
+        name='app-health-status',
+    ),
 ]

@@ -506,7 +506,7 @@
 {% block scripts %}
 <script type="text/javascript">
 (function() {
-    var healthUrl = '{% url "health-status" %}';
+    var healthUrl = '{% url "app-health-status" app.id %}';
     var appName = '{{ app.name }}';
     var pollInterval = 30000; // 30 seconds
 
@@ -517,9 +517,8 @@
             dataType: 'json',
             success: function(data) {
                 var status = data[appName];
-                if (!status) return;
-                var running = status.running;
-                var health = status.health;
+                var running = status ? status.running : false;
+                var health = status ? status.health : null;
 
                 // Update page title badge
                 var $title = $('#overview-title');

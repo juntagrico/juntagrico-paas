@@ -162,3 +162,37 @@ def health_status(request):
             'health': status.get('health'),
         }
     return JsonResponse(result)
+
+
+@login_required
+def app_health_status(request, app_id):
+    """AJAX endpoint returning running and health status for a single app and its staging app (if any)."""
+    try:
+        app = App.objects.get(pk=app_id)
+    except App.DoesNotExist:
+        return JsonResponse({'error': 'not found'}, status=404)
+
+    # Check access
+    if (
+        not request.user.is_superuser
+        and not request.user.app.filter(pk=app_id).exists()
+    ):
+        return JsonResponse({'error': 'forbidden'}, status=403)
+
+    # Collect the app name and its staging app name (if exists)
+    names = [app.name]
+    app_versions = {app.name: app.version}
+    staging = app.stagings.first()
+    if staging:
+        names.append(staging.name)
+        app_versions[staging.name] = staging.version
+
+    container_statuses = get_container_statuses(set(names), app_versions)
+
+    result = {}
+    for name, status in container_statuses.items():
+        result[name] = {
+            'running': status['running'],
+            'health': status.get('health'),
+        }
+    return JsonResponse(result)
