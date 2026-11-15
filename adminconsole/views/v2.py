@@ -182,7 +182,7 @@ def show_progress(request, app_id, pid):
 
     expected = None
     if start == 0:
-        if app.staging_of:
+        if app.staging_of and app.installation_pending:
             # Staging setup: Git Clone, Einstellungen kopieren, Clone Database,
             # Domain einrichten, Docker Rebuild, Django Migrate, Django Collectstatic,
             # Docker Start, Collect Version

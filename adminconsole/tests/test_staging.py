@@ -625,12 +625,13 @@ class StagingCreationTests(TestCase):
     # ------------------------------------------------------------------
 
     def test_show_progress_expected_steps_for_staging(self):
-        """show_progress returns 9.1 expected steps for staging apps."""
+        """show_progress returns 9.1 expected steps for staging apps during initial setup."""
         staging = App.objects.create(
             name='prod-app-staging',
             port=18010,
             staging_of=self.prod_app,
             user=self.owner,
+            installation_pending=True,
         )
         log_content = '# Git Clone\nReturn 0\n'
         Path(staging.log_file).write_text(log_content)
