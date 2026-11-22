@@ -19,7 +19,12 @@ from django_otp import user_has_device
 from adminconsole.decorators import owner_of_app
 from adminconsole.forms import EnvForm, BranchForm, AppEnvVarFormSet
 from adminconsole.models import App
-from adminconsole.util import generate_password, parse_log_file, _mask_value
+from adminconsole.util import (
+    generate_password,
+    get_juntagrico_version_badge,
+    parse_log_file,
+    _mask_value,
+)
 from adminconsole.util.admin import ADMIN_USERNAME, set_admin_password_in_container
 from adminconsole.util.docker import create_container, exec_run, stop_container
 from adminconsole.util.git import git_switch, git_current_branch
@@ -112,11 +117,13 @@ def overview(request, app_id):
 
     running = app.running
 
+    juntagrico_badge = get_juntagrico_version_badge(app.juntagrico_version)
     renderdict = {
         'app': app,
         'running': running,
         'staging': staging,
         'has_2fa': user_has_device(request.user),
+        'juntagrico_badge': juntagrico_badge,
     }
     return render(request, 'app/overview.html', renderdict)
 
