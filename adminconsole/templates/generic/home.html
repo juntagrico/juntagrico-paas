@@ -80,18 +80,10 @@
                     var appVersion = $(this).data('app-version');
                     var juntagricoVersion = $(this).data('juntagrico-version');
                     var pythonVersion = $(this).data('python-version');
+                    var juntagricoBadge = status ? status.juntagrico_badge : 'warning';
                     var html = '';
                     if (juntagricoVersion) {
-                        var jBadgeClass = 'badge badge-success';
-                        var jv = juntagricoVersion.split('.').map(Number);
-                        if (jv[0] >= 2) {
-                            jBadgeClass = 'badge badge-success';
-                        } else if (jv[0] === 1 && jv[1] >= 7) {
-                            jBadgeClass = 'badge badge-warning';
-                        } else {
-                            jBadgeClass = 'badge badge-danger';
-                        }
-                        html += '<span class="' + jBadgeClass + ' mr-1">j' + juntagricoVersion + '</span>';
+                        html += '<span class="badge badge-' + juntagricoBadge + ' mr-1">j' + juntagricoVersion + '</span>';
                     }
                     if (appVersion == 3) {
                         html += '<span class="badge bg-info text-dark mr-1">v3</span>';

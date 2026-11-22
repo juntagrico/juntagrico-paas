@@ -1,8 +1,17 @@
 from django.contrib import admin
+from django.core.management import call_command
 from django.urls import reverse
 from django.utils.html import format_html
 
-from adminconsole.models import GitHubKey, App, AppEnv, AppEnvVar, Domain, AppCronjob
+from adminconsole.models import (
+    GitHubKey,
+    App,
+    AppEnv,
+    AppEnvVar,
+    Domain,
+    AppCronjob,
+    JuntagricoVersion,
+)
 
 
 class AppCronjobInline(admin.TabularInline):
@@ -62,6 +71,24 @@ class DomainAdmin(admin.ModelAdmin):
     @admin.display(description='port')
     def port(self, obj):
         return obj.app.port
+
+
+def update_juntagrico_versions_action(modeladmin, request, queryset):
+    """Admin action to trigger fetching juntagrico versions from PyPI."""
+    call_command('update_juntagrico_versions')
+    modeladmin.message_user(request, 'Juntagrico versions have been updated from PyPI.')
+
+
+update_juntagrico_versions_action.short_description = (
+    'Update juntagrico versions from PyPI'
+)
+
+
+@admin.register(JuntagricoVersion)
+class JuntagricoVersionAdmin(admin.ModelAdmin):
+    list_display = ['version']
+    search_fields = ['version']
+    actions = [update_juntagrico_versions_action]
 
 
 admin.site.register(GitHubKey)

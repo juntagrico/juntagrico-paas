@@ -161,6 +161,9 @@ if GITHUB_APP_PRIVATE_KEY_PATH:
 
 DEFAULT_PYTHON_VERSION = '3.12'
 
+# Minimum supported juntagrico version. Versions below this will be colored red (danger).
+JUNTAGRICO_MIN_VERSION = os.environ.get('JUNTAGRICO_MIN_VERSION', '2.0.0')
+
 PYTHON_BIN = os.environ.get('JUNTAGRICO_PYTHON_BIN', '.venv/bin/python')
 
 # Location of the projects directory

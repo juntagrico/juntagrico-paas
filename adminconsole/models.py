@@ -317,6 +317,23 @@ class AppCronjob(models.Model):
         return f'{self.app.name}: {self.cronjob_id}'
 
 
+class JuntagricoVersion(models.Model):
+    """Store the latest stable juntagrico versions from PyPI.
+
+    Only the latest stable (non-prerelease) bugfix release per major.minor
+    line that is >= the configured minimum version is stored.
+    For example, if min_version is 2.0.0, only 2.0.14 and 2.1.1 would be stored.
+    """
+
+    version = models.CharField(max_length=50, unique=True)
+
+    class Meta:
+        ordering = ['version']
+
+    def __str__(self):
+        return self.version
+
+
 class Domain(models.Model):
     app = models.ForeignKey(App, related_name='domains', on_delete=models.CASCADE)
     name = models.CharField(

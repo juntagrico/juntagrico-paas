@@ -3,6 +3,7 @@ import secrets
 import string
 
 import psutil
+from packaging.version import Version
 
 
 def generate_password():
@@ -108,3 +109,38 @@ def parse_log_file(app):
         )
 
     return sections
+
+
+def get_juntagrico_version_badge(juntagrico_version_str):
+    """Determine the badge CSS class for a given juntagrico version string.
+
+    Returns one of: 'success' (green), 'warning' (yellow), or 'danger' (red).
+    Green = the version matches the latest bugfix release stored in the DB.
+    Yellow = the version is supported but not the latest bugfix release.
+    Red = the version is below the minimum supported version.
+    """
+    from django.conf import settings
+
+    from adminconsole.models import JuntagricoVersion
+
+    if not juntagrico_version_str:
+        return 'warning'
+
+    try:
+        ver = Version(juntagrico_version_str)
+    except Exception:
+        return 'warning'
+
+    try:
+        min_ver = Version(settings.JUNTAGRICO_MIN_VERSION)
+    except Exception:
+        min_ver = Version('0')
+
+    if ver < min_ver:
+        return 'danger'
+
+    # If the version exists in DB, it is the latest bugfix for its major.minor
+    if JuntagricoVersion.objects.filter(version=juntagrico_version_str).exists():
+        return 'success'
+
+    return 'warning'

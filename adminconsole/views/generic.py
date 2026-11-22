@@ -9,7 +9,7 @@ from django.shortcuts import render, redirect
 
 from adminconsole.forms import ProfileForm
 from adminconsole.models import App
-from adminconsole.util import pid_finished
+from adminconsole.util import get_juntagrico_version_badge, pid_finished
 from adminconsole.util.docker import get_container_statuses
 
 audit_log = logging.getLogger('adminconsole.audit')
@@ -146,21 +146,25 @@ def health_status(request):
     """AJAX endpoint returning running and health status for all apps accessible to the user."""
     superuser = request.user.is_superuser
     if superuser:
-        app_names = set(App.objects.values_list('name', flat=True))
+        apps = App.objects.all()
     else:
-        app_names = set(request.user.app.values_list('name', flat=True))
-    app_versions = dict(
-        App.objects.filter(name__in=app_names).values_list('name', 'version')
-    )
+        apps = request.user.app.all()
+
+    app_names = set(apps.values_list('name', flat=True))
+    app_versions = dict(apps.values_list('name', 'version'))
+    app_juntagrico_versions = dict(apps.values_list('name', 'juntagrico_version'))
     container_statuses = get_container_statuses(app_names, app_versions)
 
-    # Build a flat dict: {app_name: {'running': bool, 'health': str|None}}
+    # Build a flat dict: {app_name: {'running': bool, 'health': str|None, 'juntagrico_badge': str}}
     result = {}
     for name, status in container_statuses.items():
+        juntagrico_ver = app_juntagrico_versions.get(name)
         result[name] = {
             'running': status['running'],
             'health': status.get('health'),
+            'juntagrico_badge': get_juntagrico_version_badge(juntagrico_ver),
         }
+
     return JsonResponse(result)
 
 
