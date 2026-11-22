@@ -93,4 +93,9 @@ urlpatterns = [
         generic.app_health_status,
         name='app-health-status',
     ),
+    path(
+        'tools/update-juntagrico-versions/',
+        generic.update_juntagrico_versions,
+        name='update-juntagrico-versions',
+    ),
 ]

@@ -1,9 +1,12 @@
 import logging
 from functools import wraps
 
+from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import redirect_to_login
+from django.core.management import call_command
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 
@@ -200,3 +203,12 @@ def app_health_status(request, app_id):
             'health': status.get('health'),
         }
     return JsonResponse(result)
+
+
+@staff_member_required
+def update_juntagrico_versions(request):
+    """View to trigger fetching juntagrico versions from PyPI via POST."""
+    if request.method == 'POST':
+        call_command('update_juntagrico_versions')
+        messages.success(request, 'Juntagrico versions have been updated from PyPI.')
+    return redirect('admin:adminconsole_juntagricoversion_changelist')

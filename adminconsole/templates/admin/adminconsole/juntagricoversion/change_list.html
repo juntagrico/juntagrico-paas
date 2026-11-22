@@ -1,0 +1,12 @@
+{% extends "admin/change_list.html" %}
+{% load i18n %}
+
+{% block actions %}
+    {{ block.super }}
+    <form method="post" action="{% url 'update-juntagrico-versions' %}" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" class="button" style="margin-left:8px;">
+            {% translate 'Update Versions' %}
+        </button>
+    </form>
+{% endblock %}

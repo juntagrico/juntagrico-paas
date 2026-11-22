@@ -1,5 +1,4 @@
 from django.contrib import admin
-from django.core.management import call_command
 from django.urls import reverse
 from django.utils.html import format_html
 
@@ -73,22 +72,11 @@ class DomainAdmin(admin.ModelAdmin):
         return obj.app.port
 
 
-def update_juntagrico_versions_action(modeladmin, request, queryset):
-    """Admin action to trigger fetching juntagrico versions from PyPI."""
-    call_command('update_juntagrico_versions')
-    modeladmin.message_user(request, 'Juntagrico versions have been updated from PyPI.')
-
-
-update_juntagrico_versions_action.short_description = (
-    'Update juntagrico versions from PyPI'
-)
-
-
 @admin.register(JuntagricoVersion)
 class JuntagricoVersionAdmin(admin.ModelAdmin):
     list_display = ['version']
     search_fields = ['version']
-    actions = [update_juntagrico_versions_action]
+    change_list_template = 'admin/adminconsole/juntagricoversion/change_list.html'
 
 
 admin.site.register(GitHubKey)
