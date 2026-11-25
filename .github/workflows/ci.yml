@@ -77,7 +77,7 @@ jobs:
       run: coverage lcov -o coverage.lcov
 
     - name: Report to QLTY
-      uses: qltysh/qlty-action/coverage@ebcd284bf32e36a030afe15f1e136c7be08b9506 # v2
+      uses: qltysh/qlty-action/coverage@a46e29cfd54065ae8a2c6b1fd3446aed1b1a4257 # v2
       with:
         token: ${{ secrets.QLTY_COVERAGE_TOKEN }}
         files: coverage.lcov
