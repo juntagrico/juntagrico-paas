@@ -51,12 +51,10 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
 # Core runtime dependencies, installed first so they can be ommited from the requirements.txt
-# svg lib is forced < 1.6.0 due to a cairo dependency
 ARG gunicorn_ver=">=25.2.2"
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv pip install --system --link-mode=copy \
         'psycopg[binary]' \
-        'svglib<1.6.0' \
         "gunicorn${gunicorn_ver}"
 
 # Project requirements
