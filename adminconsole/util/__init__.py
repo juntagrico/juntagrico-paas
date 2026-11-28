@@ -38,7 +38,7 @@ def pid_finished(pid):
 
 def _is_sensitive_key(key):
     """Check if a key name contains sensitive patterns."""
-    sensitive_patterns = {'SECRET', 'PASSWORD'}
+    sensitive_patterns = {'SECRET', 'PASSWORD', 'KEY'}
     return any(pattern in str(key).upper() for pattern in sensitive_patterns)
 
 
