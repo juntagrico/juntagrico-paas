@@ -452,7 +452,7 @@ class ShowEnvTests(TestCase):
         Django templates resolve value.items as a dict key lookup when 'items' is a key,
         not as the .items() method. The dict_items filter avoids this ambiguity.
         """
-        output = b"OPTIONS = {'items': ['a', 'b'], 'key': 'val'}\n"
+        output = b"OPTIONS = {'items': ['a', 'b'], 'other': 'val'}\n"
         mock_container = self._mock_container(output)
 
         self.login_verified()
@@ -463,7 +463,7 @@ class ShowEnvTests(TestCase):
         self.assertEqual(response.status_code, 200)
         settings = {s['key']: s['value'] for s in response.context['settings']}
         self.assertEqual(settings['OPTIONS']['items'], ['a', 'b'])
-        self.assertEqual(settings['OPTIONS']['key'], 'val')
+        self.assertEqual(settings['OPTIONS']['other'], 'val')
 
     def test_show_env_nested_dict_with_items_key(self):
         """Nested dicts with 'items' keys should render correctly."""
